@@ -47,20 +47,84 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — các sự thật đã khảo sát
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**
 
-- Prefix API: **`/v1.0/api`** (`Constants.VERSION_PREFIX`).
-- Backend hiện **chỉ có `AuthenticateController` + `FileController`**. Chưa có API nghiệp vụ nào
-  (sản phẩm, kho, đơn, POS, khuyến mại, chi nhánh, khách hàng). Mọi màn nghiệp vụ phải chạy trên
-  **lớp mock sau service layer** (PLAN Phase 6) cho tới khi backend bổ sung.
-- **Hai shape response cùng tồn tại** — API client phải xử lý cả hai:
-  - `BaseResponse<T>` = `{code, message, data}` (`/register`, `/logout`, `/forgot-password`, `/reset-password`, `/activate-account`)
-  - **`/authenticate` và `/refresh` trả `LoginResDTO` trần** (`{accessToken, user}`), KHÔNG bọc `BaseResponse`.
-- Lỗi: `ErrorResponse` = `{code, message, logInfo, subKey}`. `subKey` dạng `a.b.c` → map i18n, fallback `message`.
-- Cookie `refresh_token`: `httpOnly`, `path=/v1.0/api/refresh`, `secure=false`
-  ⇒ **bắt buộc chạy same-origin qua Vite dev proxy**, không gọi thẳng cross-origin.
-- `SysUserDTO` mang `role: ERole` (`CUSTOMER | STAFF | ADMIN | SUPER_ADMIN`), `branchId`, `langKey`
-  — đây là nguồn để dựng menu theo role và khoá bộ chọn chi nhánh.
+- Prefix API: **`/v1.0/api`**. Auth: `bearerAuth` (JWT) áp dụng **global** cho mọi endpoint.
+- **Response đã được chuẩn hoá hoàn toàn**: *mọi* endpoint bọc `BaseResponse<T>` = `{code, message, data}`,
+  kể cả `/authenticate` và `/refresh` (trước đây trả DTO trần — điều này **không còn đúng**).
+- **`code === 1` là thành công**, không phải `0`. Xem `ResponseCode` phía backend:
+  `1` thành công · `3` đã tồn tại · `4` không tồn tại · `7` dữ liệu không hợp lệ · `15` xác thực thất bại · `24` không đủ quyền.
+- Lỗi trả kèm **HTTP status tương ứng** (login sai ⇒ 401) với body
+  `ErrorResponse` = `{code, message, logInfo, subKey}`, ví dụ thật: `subKey: "error.login.fail"`.
+  `subKey` dạng `a.b.c` → map i18n, fallback `message`.
+- **API danh sách là `POST .../search`** với body `{page, size, sortBy, sortDir, keyword, status, ...}`.
+  Kết quả lồng 2 tầng: `data.data` mới là mảng, `data.total` là tổng;
+  `staff/search` + `branch/search` có thêm `data.activeTotal` / `data.inactiveTotal`.
+- Cookie `refresh_token`: `path=/v1.0/api/refresh; HttpOnly; Max-Age=864000`, không `Secure`, không `SameSite`
+  ⇒ **bắt buộc same-origin qua Vite dev proxy**. **Chỉ được set khi login gửi `rememberMe: true`.**
+- `SysUserDTO` mang `role` (`CUSTOMER | STAFF | ADMIN | SUPER_ADMIN`), `branchId` (null với SUPER_ADMIN),
+  `langKey` — nguồn để dựng menu theo role và khoá bộ chọn chi nhánh.
+- Quy ước dữ liệu: `status` **`1` = ACTIVE, `0` = INACTIVE**; ngày giờ ISO-8601 UTC (`2026-08-05T16:17:10Z`);
+  id là UUID chuỗi. Địa chỉ hành chính chỉ **2 cấp**: Tỉnh/Thành → Phường/Xã (không có Quận/Huyện).
+- Validate của backend cần khớp sang zod ở FE: mật khẩu `^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{6,50}$`,
+  SĐT `^0\d{9}$`, username 6–50 ký tự.
+
+### Phân quyền — role phân cấp, đọc từ `summary` của api-docs
+
+Backend fix cứng **thang bậc kế thừa**, role bên trái kế thừa **toàn bộ** quyền của role bên phải:
+
+```
+SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
+```
+
+`summary` của mỗi endpoint mang tiền tố **`[ROLE]`** = **role tối thiểu** được gọi endpoint đó,
+theo cấu trúc `[ROLE] Tên api` (ví dụ `[ANONYMOUS] Đăng nhập`). Nhờ kế thừa, `[ADMIN]` nghĩa là
+**ADMIN và SUPER_ADMIN** gọi được, còn STAFF thì không.
+
+FE **suy quyền từ đúng thang bậc này**, không dùng ma trận quyền rời rạc và **không có API ma trận quyền**.
+Cách làm: so sánh bậc của role người dùng với bậc tối thiểu của route/hành động
+(`rank(SUPER_ADMIN)=4 … rank(ANONYMOUS)=0`, cho phép khi `rank(user) >= rank(required)`).
+
+### API đã có (đủ để code Phase 7 bằng API thật)
+
+Cột **Role** là role tối thiểu, lấy từ tiền tố `[ROLE]` trong `summary`.
+
+| Nhóm | Role | Endpoint |
+|---|---|---|
+| Auth | `ANONYMOUS` | `POST /authenticate` · `/refresh` · `/register` · `/activate-account?code=` · `/forgot-password` · `/reset-password` |
+| Đăng xuất | `CUSTOMER` | `POST /logout` |
+| Tài khoản đang đăng nhập | `CUSTOMER` | `GET /account/me` · `POST /account/change-password` · `POST /sys-user/update-avatar` |
+| Ảnh | `ANONYMOUS` | `GET /image?imageUrl=` |
+| Địa chỉ hành chính | `STAFF` | `GET /administrative-address/provinces` · `/wards?provinceCode=` |
+| Chi nhánh — đọc | `STAFF` | `POST /branch/search` · `GET /branch/{id}` |
+| Chi nhánh — sửa | `ADMIN` | `PUT /branch/{id}` |
+| Chi nhánh — tạo/xoá/bật-tắt | `SUPER_ADMIN` | `POST /branch` · `/branch/update-status` · `DELETE /branch/{id}` |
+| Nhân viên (toàn bộ) | `ADMIN` | `POST /staff` · `/staff/search` · `/staff/assign-role` · `/staff/update-status` · `/staff/{id}/reset-password` · `GET|PUT|DELETE /staff/{id}` |
+| Audit log | `ADMIN` | `POST /audit-log/search` · `GET /audit-log/{id}` |
+
+**Chưa có** API: sản phẩm/SKU, giá, kho, POS, đơn hàng, đổi/trả, khuyến mại, khách hàng
+⇒ các phase đó vẫn chạy trên **lớp mock sau service layer** (PLAN Phase 6).
+
+Ngoài bậc role, backend còn **tự giới hạn phạm vi dữ liệu** (ghi trong `description` từng endpoint):
+ADMIN chỉ thấy/tạo nhân viên chi nhánh mình và chỉ gán được role STAFF; điều chuyển chi nhánh chỉ SUPER_ADMIN.
+FE vẫn phải chặn ở UI nhưng **không được coi đó là lớp bảo mật duy nhất**.
+
+### Tài khoản test (môi trường dev local)
+
+Dùng để gọi thử API và kiểm tra RBAC theo từng role. Đăng nhập bằng `POST /v1.0/api/authenticate`
+với body `LoginReqDTO` = `{username, password, rememberMe}` — field là **`username`**, không phải email.
+**Luôn gửi `rememberMe: true`** (user đã chốt): backend chỉ set cookie `refresh_token` khi cờ này bật,
+và FE **không hiển thị checkbox "Ghi nhớ đăng nhập"**.
+
+| Username | Password | Role |
+|---|---|---|
+| `superadmin` | `Admin@123` | `SUPER_ADMIN` |
+| `adminbranch` | `Admin@123` | `ADMIN` |
+| `staffone` | `Admin@123` | `STAFF` |
+
+- Chỉ dùng cho backend local (`http://localhost:8080`). **Không** hardcode các tài khoản này vào code,
+  không dùng làm giá trị mặc định của form đăng nhập, không đưa lên môi trường ngoài dev.
+- Mọi thay đổi liên quan menu/route theo role (PLAN Phase 4) phải test đủ **cả 3 tài khoản**.
 
 ### Luồng dữ liệu dự kiến
 

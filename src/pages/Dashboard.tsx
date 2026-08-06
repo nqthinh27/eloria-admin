@@ -1,17 +1,25 @@
-import { PageHeader, PageHeaderHeading } from "@/components/page-header";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslation } from 'react-i18next'
 
+import { PageHeader } from '@/components/page-header'
+import { Card, CardContent } from '@/components/ui/card'
+
+/**
+ * Trang giữ chỗ. Nội dung thật (KPI card, biểu đồ doanh thu, tình trạng kho,
+ * so sánh chi nhánh) được dựng ở PLAN Phase 15 theo `design/01-dashboard-bao-cao.png`.
+ */
 export default function Dashboard() {
+    const { t } = useTranslation('menu')
+
     return (
         <>
-            <PageHeader>
-                <PageHeaderHeading>Dashboard</PageHeaderHeading>
-            </PageHeader>
+            <PageHeader
+                title={t('menu.dashboard')}
+                description={t('shell.allBranches')}
+            />
             <Card>
-                <CardHeader>
-                    <CardTitle>React Shadcn Starter</CardTitle>
-                    <CardDescription>React + Vite + TypeScript template for building apps with shadcn/ui.</CardDescription>
-                </CardHeader>
+                <CardContent className="text-muted-foreground text-sm">
+                    {t('shell.comingSoon')} (Phase 15)
+                </CardContent>
             </Card>
         </>
     )

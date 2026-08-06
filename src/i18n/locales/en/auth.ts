@@ -1,0 +1,67 @@
+export default {
+    auth: {
+        brand: {
+            headline1: 'Retail management platform',
+            headline2: 'for fashion chains',
+            tagline:
+                'Run the whole operation — from in-store checkout to inventory, pricing and promotions — in a single interface.',
+            feature1: 'Omni-channel sales management',
+            feature2: 'Real-time inventory control',
+            feature3: 'CRM & customer tiering',
+            feature4: 'Chain-wide consolidated reporting',
+            copyright: 'ELORIA · Internal administration system',
+        },
+        login: {
+            title: 'Sign in',
+            subtitle: 'Internal administration portal',
+            username: 'Username',
+            usernamePlaceholder: 'Enter your username',
+            password: 'Password',
+            passwordPlaceholder: 'Enter your password',
+            forgotPassword: 'Forgot password?',
+            submit: 'Sign in',
+            submitting: 'Signing in…',
+            notice: 'This session is encrypted and recorded in the system audit log',
+        },
+        forgot: {
+            title: 'Forgot password',
+            subtitle: 'Enter your account email and we will send you a reset link.',
+            email: 'Email',
+            emailPlaceholder: 'Enter your email',
+            submit: 'Send reset link',
+            submitting: 'Sending…',
+            backToLogin: 'Back to sign in',
+            sentTitle: 'Request submitted',
+            sentMessage:
+                'If this email belongs to a valid account, we have sent a password reset link. Please check your inbox.',
+        },
+        reset: {
+            title: 'Reset password',
+            subtitle: 'Enter a new password for your account.',
+            newPassword: 'New password',
+            newPasswordPlaceholder: 'Enter your new password',
+            confirmPassword: 'Confirm password',
+            confirmPasswordPlaceholder: 'Re-enter your new password',
+            submit: 'Reset password',
+            submitting: 'Processing…',
+            successTitle: 'Password changed',
+            successMessage: 'You can now sign in with your new password.',
+            goToLogin: 'Go to sign in',
+            missingToken: 'This reset link is invalid or has expired. Please request a new one.',
+        },
+        validation: {
+            usernameRequired: 'Please enter your username',
+            passwordRequired: 'Please enter your password',
+            emailRequired: 'Please enter your email',
+            emailInvalid: 'This email address is not valid',
+            passwordRule:
+                'Password must be at least 6 characters and include uppercase, lowercase and a special character',
+            passwordMismatch: 'The confirmation password does not match',
+        },
+        error: {
+            notAdminAccount: 'This account cannot access the administration portal.',
+        },
+        logout: 'Sign out',
+        loading: 'Loading your session…',
+    },
+}

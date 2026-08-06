@@ -11,6 +11,8 @@ Stack hiện tại: React 19 + TypeScript + Vite + React Router 7 + TailwindCSS 
 ## 1. Nguồn sự thật cho API & DTO
 
 - API doc (OpenAPI/Swagger JSON): **http://localhost:8080/v3/api-docs/api**
+  — khảo sát gần nhất: **2026-08-06**. Kết quả đã chắt lọc vào [CLAUDE.md](CLAUDE.md) (danh sách endpoint,
+  quy ước dữ liệu) và [PLAN.md](PLAN.md) mục A/B.
 - **Mọi DTO, endpoint, tên field, kiểu dữ liệu, enum ở frontend PHẢI khớp 100% với tài liệu này.**
   Không được tự bịa field, tự đổi tên field, tự thêm field "cho tiện".
 - Nếu tài liệu thiếu thứ gì frontend cần → **báo lại người dùng**, không tự chế API giả.
@@ -33,6 +35,12 @@ Quy tắc bắt buộc:
 
 - Access token **chỉ nằm trong bộ nhớ**. Reload trang ⇒ mất token ⇒ gọi refresh để lấy lại.
 - Refresh token do backend set/xoá qua cookie. Frontend **không đọc, không ghi, không parse** cookie này.
+- ⚠️ **Backend chỉ set cookie `refresh_token` khi request login có `rememberMe: true`** (đã kiểm chứng thực tế).
+  Với `rememberMe: false` không có cookie ⇒ F5 là mất phiên, không refresh được.
+  ⇒ Form đăng nhập **luôn gửi `rememberMe: true`** và **không hiển thị checkbox "Ghi nhớ đăng nhập"**
+  (user đã chốt). Không tự đổi thành `false` hay thêm checkbox.
+- Cookie thực tế backend trả: `path=/v1.0/api/refresh; HttpOnly; Max-Age=864000` (10 ngày),
+  **không có `SameSite`/`Secure`** ⇒ trình duyệt mặc định `Lax`, bắt buộc same-origin.
 - Mọi request gọi API phải bật `credentials: 'include'` (fetch) / `withCredentials: true` (axios)
   để cookie refresh được gửi kèm.
 - Khi access token hết hạn (401) → gọi endpoint refresh **một lần**, dùng cơ chế
@@ -40,22 +48,33 @@ Quy tắc bắt buộc:
   sau đó **retry** request gốc. Refresh thất bại → xoá state auth → điều hướng `/login`.
 - **Agent KHÔNG được tự đổi chiến lược này** (ví dụ: chuyển token sang localStorage, tự lưu refresh token ở FE,
   đổi sang scheme khác) nếu chưa có yêu cầu rõ ràng từ người dùng.
+- **Tài khoản test dev** cho 3 role (`superadmin` / `adminbranch` / `staffone`) khai báo tại
+  [CLAUDE.md](CLAUDE.md#tài-khoản-test-môi-trường-dev-local). Chỉ dùng để gọi thử API local —
+  **không hardcode vào code**, không đặt làm giá trị mặc định của form đăng nhập.
 
 ---
 
 ## 3. Định dạng response của Backend
 
+> Backend **đã chuẩn hoá toàn bộ response** (khảo sát ngày 2026-08-06 trên `/v3/api-docs/api`):
+> **mọi** endpoint đều bọc `BaseResponse<T>`, kể cả `/authenticate` và `/refresh`. Không còn ngoại lệ.
+
 ### 3.1 Thành công
 
 ```json
 {
-  "code": 0,
-  "message": "string",
-  "data": "string"
+  "code": 1,
+  "message": "Thành công",
+  "data": { }
 }
 ```
 
-- `code === 0` ⇒ thành công. Dữ liệu nghiệp vụ **luôn nằm trong `data`**.
+- **`code === 1` ⇒ thành công** (`ResponseCode.TRANSACTION_SUCCESSFUL`), **không phải `0`**.
+  Các mã khác là mã lỗi nghiệp vụ (3 = đã tồn tại, 4 = không tồn tại, 15 = xác thực thất bại, 24 = không đủ quyền…).
+- Dữ liệu nghiệp vụ **luôn nằm trong `data`**; `data` có thể là object, mảng, chuỗi hoặc `null`.
+- API danh sách trả `data` dạng bao ngoài:
+  `{ total, data: [...] }` — riêng `staff/search` và `branch/search` có thêm `activeTotal`, `inactiveTotal`.
+  Tức là **`data.data`** mới là mảng bản ghi.
 - Hàm gọi API dùng chung phải **tự bóc `data`** trả về cho tầng UI; UI không tự đụng vào `code`/`message` khi thành công.
 - Khi thao tác thành công (create / update / delete / submit…) → hiển thị **toast thành công**
   với **message mặc định riêng cho từng màn hình** (ví dụ: "Tạo sản phẩm thành công", "Cập nhật danh mục thành công"),
@@ -94,7 +113,7 @@ Quy tắc bắt buộc:
 - Client dùng chung chịu trách nhiệm:
   - Gắn base URL từ `VITE_API_BASE_URL`, header `Content-Type`, `Accept-Language` (theo i18n hiện tại).
   - Gắn `Authorization: Bearer <access token in memory>`; gửi cookie (`credentials: 'include'`).
-  - Bóc tách response thành công (`code === 0` ⇒ trả `data`), chuẩn hoá lỗi về đúng shape `ErrorResponse`.
+  - Bóc tách response thành công (`code === 1` ⇒ trả `data`), chuẩn hoá lỗi về đúng shape `ErrorResponse`.
   - Xử lý mặc định theo HTTP status:
     | Status | Hành vi mặc định |
     |---|---|
@@ -208,13 +227,29 @@ Thực tế:
 
 - Role của người dùng được xác định **từ kết quả login / thông tin phiên do backend trả về**.
 - **Menu, route và quyền thao tác được sinh theo role sau khi login**, người dùng không tự chuyển role trên UI.
-- 3 role: `STAFF` (bán hàng tại quầy), `ADMIN` (quản lý 1 chi nhánh), `SUPER_ADMIN` (toàn chuỗi).
 - Phân quyền phải chặn **cả route lẫn UI**: mục không có quyền thì **ẩn khỏi menu** *và* truy cập thẳng URL
   cũng bị chặn (redirect / trang 403). Không chỉ ẩn nút.
-- Ma trận quyền tham chiếu tại `09-phan-quyen.png`, nhưng **giá trị thực tế phải lấy từ backend**,
-  không hardcode ma trận này trong code.
 - Bộ chọn chi nhánh trên top bar: `SUPER_ADMIN` được chọn "Tất cả chi nhánh"/từng chi nhánh;
   `ADMIN`/`STAFF` bị **cố định** theo chi nhánh được gán (hiển thị dạng read-only).
+
+**Mô hình quyền: thang bậc kế thừa** (backend fix cứng, FE bám theo — **không có ma trận quyền**):
+
+```
+SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
+```
+
+- Role bên trái **kế thừa toàn bộ** quyền của role bên phải.
+- Mỗi endpoint trong api-docs mang tiền tố **`[ROLE]`** ở `summary` theo cấu trúc `[ROLE] Tên api`
+  (ví dụ `[ANONYMOUS] Đăng nhập`, `[ADMIN] Danh sách nhân viên`) — đó là **role tối thiểu** gọi được.
+- FE khai báo **một** hàm so bậc dùng chung, cho phép khi `rank(user) >= rank(required)`.
+  Không viết `if (role === 'ADMIN' || role === 'SUPER_ADMIN')` rải rác — sai ngay khi thêm bậc mới.
+- Bảng role tối thiểu của từng endpoint đã chắt lọc sẵn ở [CLAUDE.md](CLAUDE.md).
+- Màn `09-phan-quyen.png` chỉ là **bảng mô tả tĩnh** để người dùng đọc, **không phải cấu hình**:
+  không có API đọc/ghi ma trận quyền, không được dựng UI cho phép sửa.
+
+> ⚠️ `CUSTOMER` là role của khách mua hàng bên storefront, **không được đăng nhập vào web quản trị này**.
+> Endpoint gắn `[CUSTOMER]` (ví dụ `/account/me`, `/logout`) chỉ có nghĩa "cần đã đăng nhập" —
+> đừng hiểu nhầm thành "web admin có màn cho CUSTOMER".
 
 ---
 
