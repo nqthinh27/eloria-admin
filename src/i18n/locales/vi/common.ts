@@ -20,5 +20,25 @@ export default {
     action: {
         retry: 'Thử lại',
         close: 'Đóng',
+        cancel: 'Huỷ',
+        confirm: 'Xác nhận',
+        export: 'Xuất dữ liệu',
+        exportExcel: 'Xuất Excel',
+        exportPdf: 'Xuất PDF',
+        edit: 'Sửa',
+        save: 'Lưu',
+        detail: 'Chi tiết',
+    },
+    dataTable: {
+        empty: 'Không có dữ liệu',
+        error: 'Không tải được dữ liệu. Vui lòng thử lại.',
+        searchPlaceholder: 'Tìm kiếm…',
+        showingRange: 'Hiển thị {{from}}–{{to}} trong tổng số {{total}} {{unit}}',
+        pageOf: 'Trang {{page}} / {{pageCount}}',
+        prevPage: 'Trang trước',
+        nextPage: 'Trang sau',
+    },
+    confirmDialog: {
+        auditNotice: 'Hành động này sẽ được lưu vào nhật ký (audit log).',
     },
 }

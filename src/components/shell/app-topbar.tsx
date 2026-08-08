@@ -4,15 +4,16 @@ import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { AccountMenu } from './account-menu'
 import { AppBreadcrumb } from './app-breadcrumb'
-import { BranchSelector } from './branch-selector'
 import { LanguageSwitcher } from './language-switcher'
 
 /**
- * Top bar theo mockup: breadcrumb bên trái; bên phải là bộ chọn chi nhánh,
- * bộ chuyển ngôn ngữ, chuông thông báo, avatar + tên/role.
+ * Top bar theo mockup: breadcrumb bên trái; bên phải là bộ chuyển ngôn ngữ,
+ * chuông thông báo, avatar + tên/role.
  *
  * KHÔNG có cụm tab `STAFF | ADMIN | SA` — đó chỉ là demo của bản thiết kế
  * để người xem đổi vai trò khi review (CONVENTIONS mục 6.4).
+ * **Bộ chọn chi nhánh đã bỏ khỏi top bar theo yêu cầu user (2026-08-09)** — khác với mockup
+ * gốc; màn nào cần filter theo chi nhánh sẽ tự implement riêng khi tới lượt.
  */
 export function AppTopbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }) {
     const { t } = useTranslation('menu')
@@ -33,7 +34,6 @@ export function AppTopbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-                <BranchSelector />
                 <LanguageSwitcher />
 
                 {/* Thông báo — chưa có API, Phase sau nối dữ liệu thật. */}

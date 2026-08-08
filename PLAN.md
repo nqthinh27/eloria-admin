@@ -4,7 +4,7 @@
 > agent **chỉ thực hiện đúng phase được chỉ định**, không tự làm lấn sang phase khác.
 > Đọc [CONVENTIONS.md](CONVENTIONS.md) trước khi bắt đầu bất kỳ phase nào.
 
-Trạng thái: **Phase 0 · 1 · 2 · 3 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07). Các phase còn lại chưa bắt đầu.
+Trạng thái: **Phase 0 · 1 · 2 · 3 · 4 · 5 · 6 · 7 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08). Các phase còn lại chưa bắt đầu.
 
 ---
 
@@ -14,14 +14,15 @@ Trạng thái: **Phase 0 · 1 · 2 · 3 đã xong** (0–1: 2026-08-06 · 2–3:
 Mới chỉ là starter: [Router.tsx](src/Router.tsx) có 3 route demo, [config/menu.ts](src/config/menu.ts)
 là menu mẫu tiếng Anh, `pages/` là Dashboard/Sample/ComingSoon rỗng.
 
-**Backend ([../35.1.eloria-backend](../35.1.eloria-backend)) — cập nhật theo `/v3/api-docs/api` ngày 2026-08-06:**
+**Backend ([../35.1.eloria-backend](../35.1.eloria-backend)) — cập nhật theo `/v3/api-docs/api` ngày 2026-08-06, khảo sát lại 2026-08-08:**
 
 Đã có: **Auth** · **Tài khoản đang đăng nhập** (`/account/me`, đổi mật khẩu, đổi avatar) ·
 **Nhân viên** (CRUD + search + gán role + khoá/mở + reset mật khẩu) · **Chi nhánh** (CRUD + search + bật/tắt) ·
-**Audit log** (search + chi tiết before/after) · **Địa chỉ hành chính** (Tỉnh → Phường/Xã) · **File/ảnh**.
-Danh sách endpoint đầy đủ ở [CLAUDE.md](CLAUDE.md).
+**Audit log** (search + chi tiết before/after) · **Địa chỉ hành chính** (Tỉnh → Phường/Xã) · **File/ảnh** ·
+**Thương hiệu, Danh mục, Màu, Size, Sản phẩm + SKU, Khách hàng** *(mới phát hiện 2026-08-08 — trước đó
+chưa có)*. Danh sách endpoint đầy đủ ở [CLAUDE.md](CLAUDE.md).
 
-**Chưa có:** sản phẩm/SKU, giá, kho, POS, đơn hàng, đổi/trả, khuyến mại, khách hàng.
+**Chưa có:** giá theo kênh riêng biệt, kho/tồn kho, POS, đơn hàng, đổi/trả, khuyến mại, ca làm việc.
 
 **Phân quyền:** thang bậc kế thừa `SUPER_ADMIN > ADMIN > STAFF > CUSTOMER > ANONYMOUS`;
 `summary` mỗi endpoint mang tiền tố `[ROLE]` = role tối thiểu. Bảng tra đầy đủ ở [CLAUDE.md](CLAUDE.md).
@@ -29,7 +30,11 @@ Danh sách endpoint đầy đủ ở [CLAUDE.md](CLAUDE.md).
 **Hệ quả cho kế hoạch:**
 
 - **Phase 2, 3, 4, 7 chạy được trên API thật** (auth, bộ chọn chi nhánh, RBAC, màn Nhân viên & Chi nhánh + audit log).
-- **Phase 8→15 vẫn chạy trên lớp mock** đúng shape DTO, đóng gói sau service layer (Phase 6),
+- **Phase 8 (Khách hàng) và Phase 9 (Sản phẩm & Danh mục SP) giờ CŨNG chạy được trên API thật**
+  khi tới lượt code — khác với giả định ban đầu ("chạy mock"). Type/mock đã dựng ở Phase 6 vẫn giữ
+  nguyên cho tới khi Phase 8/9 thực sự được chỉ định làm; lúc đó đổi implement service theo API thật
+  mới phát hiện, đối chiếu lại schema chính xác trong CLAUDE.md trước khi code (không đoán field).
+- **Phase 10→14 vẫn chạy trên lớp mock** đúng shape DTO, đóng gói sau service layer (Phase 6),
   để khi backend bổ sung thì **chỉ đổi implement của service**, không đụng màn hình.
 
 ---
@@ -77,10 +82,10 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **1** | ✅ Lớp lõi: i18n · api-client · error mapping · toast | 0 | — |
 | **2** | ✅ Auth: đăng nhập, quên/đặt lại mật khẩu, session | 1 | `00-dang-nhap.png` |
 | **3** | ✅ App shell: sidebar · top bar · breadcrumb · 403/404 | 1, 2 | tất cả (khung chung) |
-| **4** | RBAC: menu & route theo role | 2, 3 | mục 6.4 CONVENTIONS |
-| **5** | Bộ component & pattern dùng chung | 3 | `04`, `07`, `11` |
-| **6** | Lớp mock data & service contract (chỉ cho module **chưa có API**) | 1, 5 | — |
-| **7** | Nhân viên & Chi nhánh + Audit log (**API thật**) | 4, 5 | `07`, `08`, `09` |
+| **4** | ✅ RBAC: menu & route theo role | 2, 3 | mục 6.4 CONVENTIONS |
+| **5** | ✅ Bộ component & pattern dùng chung | 3 | `04`, `07`, `11` |
+| **6** | ✅ Lớp mock data & service contract (chỉ cho module **chưa có API**) | 1, 5 | — |
+| **7** | ✅ Nhân viên & Chi nhánh + Audit log (**API thật**) | 4, 5 | `07`, `08`, `09` |
 | **8** | Khách hàng (CRM) | 5, 6 | `10` |
 | **9** | Sản phẩm & Danh mục SP | 5, 6 | `11`, `12` |
 | **10** | Kho hàng: tồn kho · phiếu nhập · kiểm kê | 5, 6, 9 | `13`, `14`, `15` |
@@ -281,7 +286,7 @@ khiến accessible name thành `"vi"` thay vì "Tiếng Việt" — trình đọ
 
 ---
 
-## Phase 4 — RBAC (thang bậc kế thừa)
+## Phase 4 — RBAC (thang bậc kế thừa) ✅ **ĐÃ XONG (2026-08-08)**
 
 Mô hình đã chốt ở **B3**: `SUPER_ADMIN > ADMIN > STAFF > CUSTOMER > ANONYMOUS`, role bên trái
 kế thừa toàn bộ quyền role bên phải. **Không có ma trận quyền, không có API quyền.**
@@ -301,9 +306,47 @@ kế thừa toàn bộ quyền role bên phải. **Không có ma trận quyền,
 **DoD:** đăng nhập lần lượt bằng `superadmin` / `adminbranch` / `staffone` thấy 3 bộ menu khác nhau;
 gõ thẳng URL không có quyền ⇒ 403; thêm một bậc role mới chỉ phải sửa `src/config/roles.ts`.
 
+**Kết quả:** lint 0 lỗi, build sạch. `hasRole()`/`ROLE_RANK` đã có sẵn từ Phase 2, sidebar đã lọc theo
+`minRole` từ Phase 3 — Phase 4 bổ sung phần còn thiếu: **router guard** chặn gõ thẳng URL
+(`RoleRoute` trong [route-guards.tsx](src/components/route-guards.tsx)) và component **`<Can>`**
+([can.tsx](src/components/can.tsx)) cho lần dùng đầu ở Phase 7 trở đi.
+
+**Menu theo role — chốt lại với user** (khác với suy đoán ban đầu từ tiền tố API, vì nhiều màn
+chưa có API thật nên minRole trước đó chỉ là tạm):
+
+| Mục menu | minRole trước | minRole sau (Phase 4) |
+|---|---|---|
+| Dashboard & Báo cáo | STAFF | **ADMIN** |
+| Khuyến mại | SUPER_ADMIN | **ADMIN** |
+| Sản phẩm, Danh mục SP | SUPER_ADMIN | **STAFF** (xem — CRUD giới hạn theo role sẽ chặn ở Phase 9 bằng `<Can>`) |
+
+Kết quả theo role đúng yêu cầu: **STAFF** = Bán hàng, Đơn hàng, Đổi/Trả, Khách hàng, Kho hàng
+(+ Sản phẩm, Danh mục SP ở chế độ xem) · **ADMIN** = tất cả trên + Dashboard, Nhân viên & CN,
+Khuyến mại · **SUPER_ADMIN** = toàn bộ.
+
+**File chính:** `src/config/menu.ts` (đổi `minRole`) · `src/components/route-guards.tsx`
+(thêm `RoleRoute`) · `src/components/can.tsx` (mới) · `src/Router.tsx` (bọc `RoleRoute` theo nhóm
+`minRole`) · `PLAN.md`.
+
+**Quyết định kỹ thuật:**
+
+- Route `/` (Dashboard) đổi `minRole` lên `ADMIN` nhưng vẫn là route gốc sau login ⇒ STAFF vào `/`
+  sẽ không thấy 403 mà **redirect sang `/pos`** (`RoleRoute` nhận thêm prop `redirectTo`, chỉ dùng
+  ở route này). Các route khác không đủ quyền vẫn về `/403` như thiết kế.
+- `<Can>` tạo sẵn ở Phase 4 theo yêu cầu PLAN nhưng **chưa có chỗ dùng thật** (chưa có nút hành động
+  nào cần ẩn/khoá theo role) — sẽ dùng lần đầu ở Phase 7 (nút CRUD Nhân viên/Chi nhánh) và Phase 9
+  (khoá nút sửa/xoá Sản phẩm với STAFF/ADMIN xem-only).
+- Không kiểm chứng bằng trình duyệt thật (Playwright chưa cài trong repo — CLAUDE.md xác nhận chưa
+  có test runner nào; không tự ý cài thêm dependency). Đã trace logic thủ công qua `ROLE_RANK` +
+  từng route/guard cho cả 3 role, khớp lint + build sạch. **Khuyến nghị user tự click-test 3 tài
+  khoản** trước khi coi Phase 4 là chốt hoàn toàn, đúng tinh thần DoD.
+
+**Phần chưa làm:** không có — đúng phạm vi Phase 4 (chỉ menu & route theo role, không đụng CRUD/UI
+nghiệp vụ của từng module).
+
 ---
 
-## Phase 5 — Bộ component & pattern dùng chung
+## Phase 5 — Bộ component & pattern dùng chung ✅ **ĐÃ XONG (2026-08-08)**
 
 - `DataTable`: search, filter, sort cột, phân trang, **empty state**, **loading skeleton**, error state,
   scroll ngang trong khung ở màn hẹp, slot action theo hàng.
@@ -316,9 +359,75 @@ gõ thẳng URL không có quyền ⇒ 403; thêm một bậc role mới chỉ p
 
 **DoD:** có 1 trang demo nội bộ dựng lại `04-don-hang` **chỉ bằng** component dùng chung, khớp mockup.
 
+**Kết quả:** lint 0 lỗi, build sạch. Đã dựng đủ bộ component theo yêu cầu. **User chủ động bỏ qua
+phần DoD "trang demo nội bộ"** (không cần thiết vì Phase 6/12 — mock layer và màn Đơn hàng thật —
+chưa tới) ⇒ các component **chưa có màn hình thật nào gọi tới**, sẽ được dùng lần đầu ở Phase 7.
+
+**File chính:**
+- `src/components/data-table/data-table.tsx` — bọc `@tanstack/react-table` (client-side sort qua
+  `getSortedRowModel`, hoặc `manualSorting` khi màn tự quản lý sort phía server), loading = hàng
+  skeleton theo đúng số cột, error = icon + nút thử lại, empty = text tuỳ biến được, phân trang tự
+  viết (không dùng `ui/pagination.tsx` vì đó là bản `<a>` cho URL-based routing, không hợp para
+  trạng thái client).
+- `src/components/data-table/data-table-toolbar.tsx` — hàng search + filter + tổng số bản ghi phía
+  trên bảng (theo `04`, `07`).
+- `src/components/status-badge.tsx` — 5 tông màu (`success/warning/danger/muted/info`) map thẳng vào
+  token `--success/--warning/--destructive` đã có sẵn từ Phase 0, không hardcode hex.
+- `src/components/confirm-dialog.tsx` — bọc `ui/dialog.tsx`, có `auditLogged` để hiện dòng ghi chú
+  audit log theo CONVENTIONS, tự quản `loading` khi `onConfirm` là async.
+- `src/components/kpi-card.tsx`, `section-card.tsx`, `pill-tabs.tsx` — theo đúng bố cục
+  `01-dashboard-bao-cao` và `07/08/09-…` (tab pill, không gạch chân — CONVENTIONS mục 6.3).
+- `src/components/export-button.tsx` — 1 định dạng ⇒ nút đơn, 2 định dạng (Excel/PDF) ⇒ dropdown.
+- `src/lib/format.ts` — `formatVnd`, `formatNumber`, `formatDate`, `formatDateTime`,
+  `formatRelativeTime` (dùng `date-fns` + locale `vi`).
+- `src/lib/form-error.ts` — `setFormErrorFromApi()` gắn lỗi 400/422 vào field form.
+- `src/i18n/locales/{vi,en}/common.ts` — thêm namespace `dataTable`, `confirmDialog`, mở rộng `action`.
+- Thêm shadcn: `table`, `tabs`, `dialog`, `checkbox`, `pagination` (component `pagination.tsx` được
+  tạo theo chuẩn CLI nhưng **không dùng** — xem quyết định kỹ thuật).
+- Cài `@tanstack/react-table`, `date-fns` (đã duyệt sẵn ở PLAN mục C).
+
+**Quyết định kỹ thuật:**
+
+- **`@tanstack/react-table` ghim ở `^8.21.3`, không dùng bản mới nhất.** `npm install` không ghi rõ
+  version sẽ kéo về **v9** (đã ra bản chính thức, không còn là beta) — v9 đổi toàn bộ API
+  (`useReactTable`/`getCoreRowModel` bị thay bằng `createCoreRowModel`…), một breaking rewrite chưa
+  phổ biến trong tài liệu/cộng đồng. Build thử với v9 lỗi ngay (`getCoreRowModel` không tồn tại).
+  Ghim v8 — bản ổn định, được dùng rộng rãi — để `DataTable` không phải học lại API mới giữa chừng.
+  Nếu sau này muốn nâng lên v9, phải là quyết định rõ ràng của user, không phải tác dụng phụ của
+  `npm install` không ghim version.
+- **Không dùng `ui/pagination.tsx` (thêm qua CLI) cho `DataTable`.** Component đó dựng cho điều hướng
+  qua URL (`PaginationLink` render `<a href>`), trong khi phân trang bảng dữ liệu ở đây là state phía
+  client (`page`/`onPageChange`) khớp đúng tham số `SearchReq.page` của backend — dùng `<a>` sai
+  semantic (không phải link điều hướng) và phải tự chặn `preventDefault`. Tự viết pager bằng
+  `<Button>` trong `data-table.tsx`, file `ui/pagination.tsx` vẫn giữ lại (không xoá component shadcn
+  chuẩn) phòng khi có màn cần điều hướng qua URL thật.
+- **`DataTable` hỗ trợ cả sort phía client lẫn phía server** (`onSortingChange` truyền vào ⇒
+  `manualSorting: true`, bảng không tự sort mà để màn gọi lại API): các API `.../search` thật đều
+  nhận `sortBy`/`sortDir` ở backend (CLAUDE.md), nên phần lớn màn ở Phase 7 trở đi sẽ dùng chế độ
+  server-sort; chế độ client-sort giữ lại cho bảng tĩnh nhỏ (ví dụ audit log detail, bảng tra cứu).
+- **`setFormErrorFromApi()` cần caller khai báo map `subKey → field` thủ công**, không tự động suy ra
+  field. Lý do: `ErrorResponse` của backend chỉ có **một** `subKey` chuỗi phẳng
+  (`error.username.duplicated`), không phải mảng lỗi theo field như một số backend khác — không có
+  cách suy field tên từ subKey một cách tổng quát, nên chuẩn hoá thành helper nhận map tường minh
+  thay vì cố "đoán" field.
+- **`RequiredMark`/đánh dấu trường bắt buộc không tách file riêng.** `FormLabel` của shadcn nhận
+  `children` tự do, nên đánh dấu `*` bắt buộc chỉ cần `<FormLabel>Tên <span className="text-destructive">*</span></FormLabel>`
+  ngay tại form — không đủ phức tạp để cần một component riêng, sẽ xem lại nếu Phase 7 lặp lại nhiều lần.
+- **`ExportButton` chưa nối `onExportExcel`/`onExportPdf` thật** — theo đúng phạm vi PLAN ("chưa cần
+  implement backend"), hai callback là bắt buộc truyền vào nhưng màn gọi tự quyết định làm gì (show
+  toast "sắp ra mắt", gọi API thật khi có, …).
+
+**Giả định:** Theo yêu cầu của user, **bỏ qua phần DoD "trang demo nội bộ dựng lại `04-don-hang`"** —
+không có màn hình nào thực sự import các component này ở Phase 5. Rủi ro: một số lỗi tích hợp (ví dụ
+prop không khớp khi dùng thật, style lệch mockup khi ráp nhiều component lại) chỉ lộ ra khi Phase 7
+bắt đầu dùng `DataTable`/`ConfirmDialog` cho màn Nhân viên & Chi nhánh — nên coi bộ component này là
+**chưa được kiểm chứng bằng màn hình thật**, cần rà kỹ ở lần dùng đầu tiên.
+
+**Phần chưa làm:** trang demo nội bộ (bỏ theo yêu cầu user, xem trên).
+
 ---
 
-## Phase 6 — Lớp mock data & service contract
+## Phase 6 — Lớp mock data & service contract ✅ **ĐÃ XONG (2026-08-08)**
 
 - Định nghĩa **type nghiệp vụ** trong `src/types/`. Các type **đã có API thật** (staff, branch,
   audit-log, administrative-address, account) phải **copy đúng từ api-docs**, không tự đặt tên field.
@@ -335,9 +444,58 @@ gõ thẳng URL không có quyền ⇒ 403; thêm một bậc role mới chỉ p
 > ⚠️ Khi backend bổ sung API thật, phải **đọc lại `/v3/api-docs/api` theo lệnh của bạn**
 > rồi đồng bộ lại type — không tự đoán.
 
+**Kết quả:** lint 0 lỗi, build sạch (`tsc -b` type-check toàn bộ file mới vì `tsconfig.app.json`
+include cả thư mục `src`, không chỉ theo import graph). Đã dựng đủ 8 module theo đúng danh sách
+"chưa có API" trong PLAN mục A: customer, product (+ category, SKU), inventory (+ phiếu nhập, kiểm
+kê), order, return, promotion, shift.
+
+**File chính:**
+- `src/types/{customer,product,inventory,order,return,promotion,shift}.ts` — mỗi file 1+ enum trạng
+  thái (`E*`) và type `*ResDTO`-style, theo đúng field/wording đọc từ mockup tương ứng
+  (`10`, `11`, `12`, `13`, `04+05`, `06`, `16`; riêng phiếu nhập/kiểm kê ở `14`/`15` chỉ có empty
+  state trong mockup nên dựng theo mô tả nghiệp vụ ở PLAN Phase 10).
+- `src/mocks/mock-utils.ts` — helper dùng chung: `mockDelay()` (400ms), `mockError()`, `paginateMock()`
+  (lọc keyword + phân trang client, trả đúng shape `{total, data[]}`).
+- `src/mocks/<module>.ts` — dữ liệu mẫu **copy nguyên văn con số/tên** từ mockup (ví dụ đơn hàng
+  `DH-2407-0891`, khách hàng `KH001 Nguyễn Thị Lan`…) để dễ đối chiếu khi Phase 8+ dựng màn thật.
+- `src/api/<module>.ts` — mỗi hàm rẽ nhánh `if (useMock) {...mock...} else {...apiClient thật...}`,
+  cùng chữ ký `Promise<T>` ở cả hai nhánh nên tầng UI gọi giống hệt nhau dù đang mock hay thật.
+
+**Quyết định kỹ thuật:**
+
+- **Quy ước test error state:** gõ đúng chuỗi `MOCK_ERROR_KEYWORD` (`__mock_error__`, export từ
+  `mock-utils.ts`) vào ô tìm kiếm của bất kỳ màn nào đang dùng mock sẽ khiến `.search()` ném lỗi thay
+  vì trả rỗng — dùng chung 1 quy ước cho toàn bộ 8 module thay vì mỗi module tự bịa cách trigger lỗi
+  riêng, để QA nhớ được và dùng nhất quán.
+- **Nhánh "thật" của mỗi hàm API gọi endpoint đoán tên** (`/customer/search`, `/product/search`,
+  `/order/search`…) vì backend **chưa có tài liệu api-docs cho các module này** — đây là điểm phải
+  đối chiếu lại khi Phase 8+ có API thật, đúng cảnh báo trong PLAN ("đọc lại api-docs theo lệnh của
+  bạn, không tự đoán"). Nhánh mock hiện tại là nhánh **duy nhất thực sự chạy được**.
+- **Phiếu nhập kho / kiểm kê (`GoodsReceipt`, `StockCount`)**: mockup `14`/`15` chỉ có empty state
+  (chưa nhập dữ liệu mẫu), nên 2 type này dựng theo đúng mô tả nghiệp vụ ở PLAN Phase 10 ("PO → nhập
+  theo ma trận size × màu", "kiểm kê toàn phần/từng phần, tự sinh phiếu điều chỉnh chênh lệch") thay
+  vì soi mockup — rủi ro lệch field nếu Phase 10 phát hiện cách trình bày khác khi có mockup chi tiết
+  hơn (hiện chưa có).
+- **`Order.items`/`OrderItem` phần lớn để mảng rỗng `[]`** ở các dòng mock ngoài đơn `DH-2407-0891`
+  (đơn duy nhất có chi tiết trong mockup `05-don-hang-chi-tiet`) — các đơn còn lại chỉ cần đúng cột
+  bảng danh sách (`04-don-hang`), chưa cần chi tiết sản phẩm.
+- **Không tạo `.env`** dù `.env.example` đã có sẵn `VITE_USE_MOCK=true`. `.env` bị gitignore và là
+  cấu hình máy cục bộ của từng người — repo hiện **không có file `.env`**, nghĩa là
+  `import.meta.env.VITE_USE_MOCK` sẽ là `undefined` (⇒ `useMock = false`) cho tới khi người dùng tự
+  tạo `.env` từ `.env.example`. Đây không phải lỗi của Phase 6, chỉ là bước setup máy cục bộ — **cần
+  bạn tự copy `.env.example` → `.env` để chạy dev với mock**, không có bước này thì `useMock` luôn
+  `false` và các service gọi vào endpoint đoán tên (chưa tồn tại) sẽ lỗi.
+
+**Giả định:** Chưa có màn hình nào gọi tới các service này (đúng phạm vi Phase 6 — Phase 8 trở đi mới
+dựng UI dùng chúng), nên **chưa kiểm chứng bằng cách chạy thật** ngoài `tsc` type-check. Tên trường
+trong các type "chưa có API" là suy đoán hợp lý theo quy ước đặt tên backend đang dùng (PLAN mục A),
+không phải xác nhận từ api-docs — sẽ phải đối chiếu lại khi backend bổ sung endpoint tương ứng.
+
+**Phần chưa làm:** không có — đúng phạm vi Phase 6 (chỉ type + mock + service, không đụng UI).
+
 ---
 
-## Phase 7 — Nhân viên & Chi nhánh
+## Phase 7 — Nhân viên & Chi nhánh ✅ **ĐÃ XONG (2026-08-08)**
 
 **Thiết kế:** `07-nhan-vien.png`, `08-chi-nhanh.png`, `09-phan-quyen.png` — 3 tab pill dưới tiêu đề.
 
@@ -361,6 +519,380 @@ gõ thẳng URL không có quyền ⇒ 403; thêm một bậc role mới chỉ p
 **Lưu ý phạm vi theo role (BE tự enforce, FE phải khớp):** ADMIN chỉ thấy/tạo nhân viên chi nhánh mình
 và chỉ gán được role STAFF; điều chuyển chi nhánh và CRUD chi nhánh chỉ SUPER_ADMIN.
 Test bằng cả `superadmin` lẫn `adminbranch`.
+
+**Kết quả:** lint 0 lỗi, build sạch. **Trước khi code, đã đọc lại `/v3/api-docs/api`** theo yêu cầu
+user (khảo sát 2026-08-06 → 2026-08-08) — phần staff/branch/audit-log/administrative-address khớp
+100% với CLAUDE.md cũ, nhưng phát hiện backend đã có thêm API cho brand/category/color/size/product/sku/
+customer (ngoài phạm vi Phase 7) → đã cập nhật CLAUDE.md + PLAN mục A ghi nhận, không code thêm.
+
+Đã **test toàn bộ bằng cả 2 lớp**: (1) `curl` trực tiếp vào backend thật với cả 3 tài khoản — xác nhận
+đúng request/response shape, đúng RBAC scoping (ADMIN chỉ thấy nhân viên chi nhánh mình, STAFF nhận
+403 ở `/staff/search`), đúng ràng buộc nghiệp vụ (không tắt được chi nhánh còn nhân viên); (2) UI thật
+qua Chrome headless (`puppeteer-core`, xem quyết định kỹ thuật) — chụp ảnh từng tab, mở từng dialog,
+xác nhận khớp mockup và không có lỗi console ngoài 401 bootstrap bình thường (Phase 2).
+
+**Dữ liệu mẫu đã tạo trên backend dev local** (qua API thật, không phải mock): 5 chi nhánh khớp đúng
+tên/địa chỉ trong mockup (HN-Hoàn Kiếm, HCM-Q1, HCM-Q3, Đà Nẵng, Hải Phòng, đủ `provinceCode`/`wardCode`
+thật), 8 nhân viên (3 tài khoản test có sẵn + 5 tạo mới, đủ vai trò STAFF/ADMIN, một tài khoản khoá để
+test trạng thái "Đã khoá"). Toàn bộ thao tác tạo/sửa/khoá đã tự động sinh **26 bản ghi audit log thật**
+— đủ dữ liệu để tab Nhật ký hệ thống không rơi vào empty state khi review.
+
+**File chính:**
+- `src/types/{staff,audit-log,administrative-address}.ts` — copy đúng field từ api-docs (không suy đoán).
+- `src/api/{staff,audit-log,administrative-address}.ts` — service API thật, không qua mock.
+- `src/i18n/locales/{vi,en}/staff.ts` — namespace mới, đăng ký trong `src/i18n/index.ts`.
+- `src/pages/staff/StaffPage.tsx` — khung 4 tab pill (Nhân viên/Chi nhánh/Phân quyền/Nhật ký hệ thống).
+- `src/pages/staff/{StaffTab,BranchTab,PermissionsTab,AuditLogTab}.tsx` + `src/pages/staff/components/*`
+  (`staff-form-dialog`, `assign-role-dialog`, `reset-password-dialog`, `staff-columns`, `branch-form-dialog`,
+  `audit-log-detail-dialog`).
+- `src/Router.tsx` — route `/staff` trỏ `StaffPage` thay `Placeholder`.
+- `CLAUDE.md`, `PLAN.md` — cập nhật khảo sát api-docs 2026-08-08.
+
+**Quyết định kỹ thuật:**
+
+- **Audit log là tab thứ 4 trong cùng `StaffPage`, không phải mục menu riêng.** Mockup chỉ có 3 tab
+  pill (`07/08/09`), nhưng PLAN Phase 7 gộp audit log vào cùng phase và chưa có mockup riêng ⇒ thêm
+  tab "Nhật ký hệ thống" cạnh 3 tab có sẵn thay vì thêm route/menu item mới ngoài kế hoạch.
+- **`oldValue`/`newValue` của audit log là chuỗi JSON bọc trong MỘT MẢNG** (`"[{...}]"`), không phải
+  object trần như suy đoán ban đầu từ api-docs (chỉ khai `type: string`) — phát hiện bằng dữ liệu thật,
+  đã sửa `tryParseJson()` bóc phần tử đầu mảng trước khi hiển thị field-by-field.
+- **Phát hiện bảo mật cần báo user:** log `CREATE_STAFF` chứa **mật khẩu dạng plaintext** trong
+  `newValue` (ví dụ `"password":"Admin@123"`) — xác nhận qua ảnh chụp UI thật. Đây là dữ liệu do
+  **backend** ghi vào audit log, FE hiển thị đúng những gì backend trả về (đúng tinh thần "audit log
+  là bản ghi trung thực"). Không tự ý lọc field ở FE vì sẽ che mất thông tin audit hợp lệ cho các
+  entity khác — nhưng **cần báo cho đội backend** để cân nhắc loại `password` ra khỏi payload trước
+  khi ghi log, hoặc mã hoá/ẩn field nhạy cảm ở tầng ghi log.
+- **`ResetStaffPasswordResDTO`/`AssignRoleReqDTO` là API riêng biệt với sửa hồ sơ** — xác nhận
+  `UpdateStaffReqDTO` không có `username`/`password`/`role` (khớp suy đoán ban đầu), nên dialog sửa
+  hồ sơ ẩn hẳn 3 field này; đổi role và reset mật khẩu là 2 dialog riêng, mỗi dialog gọi đúng 1 API.
+- **`staffApi.assignRole()` sửa lại kiểu trả về từ `Promise<Staff>` thành `Promise<null>`** sau khi
+  test thật — endpoint trả `data: null`, không trả lại `Staff` đã cập nhật như suy đoán lúc viết type
+  (màn hình vẫn đúng vì tự gọi lại `load()` sau khi gán role, không dùng giá trị trả về).
+- **Chi nhánh dùng card grid, không dùng `DataTable`** — đúng mockup `08-chi-nhanh.png` (không phải
+  bảng như `04`/`07`). Nút bật/tắt trạng thái đặt trong menu kebab cạnh nút "Sửa" (mockup không vẽ
+  nút này rõ, chỉ có "Sửa" + icon mắt) — suy ra cần có vì PLAN Phase 7 yêu cầu "bật/tắt" tường minh.
+- **Form thêm/sửa chi nhánh không có trong mockup** (`08` chỉ có card grid tĩnh) ⇒ dựng theo pattern
+  form chuẩn (CONVENTIONS mục 6.2), field đúng `CreateBranchReqDTO`/`UpdateBranchReqDTO` (chỉ `name`
+  bắt buộc, còn lại optional kể cả địa chỉ).
+- **Cài `puppeteer-core` làm devDependency để tự kiểm tra UI qua Chrome headless** (theo yêu cầu user
+  giữa phase) — dùng Chrome hệ thống có sẵn qua `executablePath`, không tự tải Chromium riêng. **User
+  đã đồng ý giữ lại** cho các phase sau; đã thêm mục rà soát/gỡ nếu không còn cần vào Phase 16.
+- **Test qua `curl` từng gặp lỗi encoding UTF-8 giả** (tiếng Việt có dấu trong body `-d` bị Git Bash
+  làm hỏng byte) — không phải lỗi backend hay frontend, chỉ là hạn chế của cách gọi curl trên
+  Windows/MSYS. Khắc phục bằng cách ghi body ra file qua Node (`fs.writeFileSync` đảm bảo UTF-8 đúng)
+  rồi `curl --data-binary @file`. Ghi lại để lần sau không mất thời gian chẩn đoán lại.
+
+**Giả định:** Nhánh "API thật" của các service **staff/branch/audit-log/administrative-address** đã
+được xác nhận đúng 100% qua test thật (không còn là giả định). Wording tab "Nhật ký hệ thống" và toàn
+bộ text audit log detail là tự đặt (không có mockup), có thể cần chỉnh lại nếu sau này có bản thiết kế
+chính thức cho màn này.
+
+**Phần chưa làm:** không có — đúng phạm vi Phase 7 ban đầu (Nhân viên, Chi nhánh, Phân quyền, Audit
+log, tất cả trên API thật). Domain sản phẩm/khách hàng mới phát hiện có API **không** được code ở đây,
+để dành đúng lúc Phase 8/9 theo chỉ định của user.
+
+### Cập nhật sau review của user (2026-08-08, cùng ngày)
+
+User rà soát UI thật và yêu cầu 2 thay đổi, cả hai đã làm xong:
+
+1. **Nền trắng cho Input/Select/Textarea/DataTable.** Nguyên nhân: shadcn mặc định dùng
+   `bg-transparent` (dự phòng cho dark mode qua `dark:bg-input/30`), nhưng app **không có dark mode**
+   (CONVENTIONS mục 5) nên class dark: không bao giờ kích hoạt ⇒ 3 component luôn trong suốt, để lộ
+   nền xám của trang phía sau thay vì nền trắng như mockup. Sửa `bg-transparent` → `bg-card` (token
+   trắng thuần) trong `src/components/ui/{input,select,textarea}.tsx`, xoá luôn các class `dark:*`
+   không dùng được. `DataTable` bọc thêm `bg-card` cho khung bảng. Ảnh hưởng **toàn app** (mọi form
+   dùng 3 component này), không riêng màn Nhân viên/Chi nhánh — đây là sửa lỗi thị giác nền tảng từ
+   Phase 5, tình cờ được phát hiện khi review Phase 7.
+2. **Tách 3 mục Nhân viên/Chi nhánh/Nhật ký hệ thống thành mục menu riêng, bỏ hẳn Phân quyền.**
+   Trước đó gộp cả 4 vào 1 route `/staff` với pill tabs theo mockup `07/08/09`. User muốn 3 mục là
+   3 điểm vào menu riêng biệt (không qua tab), và bỏ hẳn nội dung Phân quyền — **khác với mô tả gốc
+   của Phase 7 trong PLAN** (mockup `09-phan-quyen.png` không còn được implement). Đã xoá
+   `PermissionsTab.tsx` và toàn bộ key i18n `staff.permission.*`, `staff.tab.*`.
+
+**File đổi thêm:**
+- `src/components/ui/{input,select,textarea}.tsx` — nền `bg-card`.
+- `src/components/data-table/data-table.tsx` — khung bảng thêm `bg-card`.
+- `src/pages/staff/{StaffListPage,BranchListPage,AuditLogPage}.tsx` (mới, thay `StaffPage.tsx` +
+  `StaffTab.tsx` + `BranchTab.tsx` + `AuditLogTab.tsx` đã xoá) — mỗi trang có `PageHeader` riêng.
+- `src/pages/staff/PermissionsTab.tsx` — **đã xoá**.
+- `src/config/menu.ts` — nhóm HỆ THỐNG giờ có 4 mục (Nhân viên, Chi nhánh, Nhật ký hệ thống, Khách
+  hàng) thay vì 2 (Nhân viên & CN, Khách hàng); icon `UserRound` (Nhân viên), `Building2` (Chi nhánh,
+  đổi từ Nhân viên cũ), `ClipboardList` (Nhật ký hệ thống, mới).
+- `src/Router.tsx` — 3 route `/staff`, `/branch`, `/audit-log` (đều `minRole=ADMIN`) thay 1 route.
+- `src/i18n/locales/{vi,en}/menu.ts` — thêm key `menu.branch`, `menu.auditLog`; `menu.staff` đổi
+  nghĩa từ "Nhân viên & CN" thành "Nhân viên".
+- `src/i18n/locales/{vi,en}/staff.ts` — mỗi nhóm (`staff`, `branch`, `auditLog`) có `pageTitle`/
+  `pageDescription` riêng thay vì 1 cặp dùng chung + `tab.*`; xoá toàn bộ `permission.*`.
+
+**Quyết định kỹ thuật:**
+
+- **`PillTabs` component (Phase 5) không xoá** dù không còn nơi dùng — đây là component dùng chung
+  theo PLAN Phase 5, có thể cần lại ở màn khác có tab thật (ví dụ Đơn hàng `04` có tab Tất cả/Online/
+  Tại quầy). Giữ lại, không phải dead code cần dọn.
+- **URL đổi từ `/staff` (chứa cả 3 nội dung) thành `/staff` + `/branch` + `/audit-log` riêng** — không
+  giữ redirect từ URL cũ vì trước đó chưa từng công bố/dùng thật (mới xong trong cùng phiên làm việc).
+- **Route `/branch` không trùng với khái niệm chi nhánh dùng trong bộ chọn chi nhánh trên top bar**
+  (route đó là API `branchApi`, không phải URL) — không có xung đột namespace.
+
+**Kết quả kiểm tra lại:** build + lint sạch (0 lỗi), test bằng Chrome headless thật — chụp ảnh cả 3
+trang mới (`/staff`, `/branch`, `/audit-log`) xác nhận: sidebar hiện đúng 3 mục riêng không còn Phân
+quyền, breadcrumb đổi đúng theo từng trang, input/select có nền trắng rõ ràng khớp mockup, bảng có
+khung nền trắng bao quanh.
+
+### Cập nhật lần 2 sau review của user (2026-08-08, cùng ngày) — pattern "Chi tiết" + cột thao tác cố định
+
+User rà soát tiếp bảng Nhân viên và yêu cầu 2 thay đổi, chốt thành **pattern dùng chung cho toàn hệ
+thống**, không riêng Phase 7:
+
+1. **Cột THAO TÁC mặc định chỉ có nút "Chi tiết"** (mở modal xem hồ sơ), các hành động khác (Sửa đầy
+   đủ, Gán vai trò, Reset mật khẩu, Khoá/Mở, Xoá) dồn vào menu `(...)`. Trong modal "Chi tiết", nút
+   "Sửa" chuyển toàn bộ field từ text sang input/dropdown **ngay tại chỗ** (inline edit, không mở form
+   riêng) — field không sửa được qua API (`username`, `role` của nhân viên) vẫn hiện input/select
+   nhưng bị khoá (`disabled`), không ẩn khỏi modal.
+2. **Cột THAO TÁC cố định chiều rộng 120px**, không bị `flex` kéo giãn dù nội dung ngắn nhất bảng —
+   áp dụng `ColumnDef.size` của `@tanstack/react-table` (trước đó `DataTable` chưa hỗ trợ khai `size`
+   cho cột, mọi cột đều co giãn theo nội dung dài nhất kiểu bảng HTML mặc định).
+
+**Quyết định thiết kế do user chốt trực tiếp** (không tự suy đoán):
+- Modal (không phải Drawer trượt cạnh) cho toàn hệ thống.
+- Sửa = inline edit ngay trong modal chi tiết (không mở dialog form thứ hai), áp dụng **cho mọi modal
+  chi tiết sau này**, không riêng Nhân viên.
+- Modal chi tiết ở chế độ xem chỉ có 2 nút "Sửa" + "Đóng" — các hành động khác (gán role, khoá/mở…)
+  vẫn ở `(...)` ngoài bảng, không nhét hết vào modal.
+- Field không sửa được qua API vẫn hiện input/dropdown dạng khoá (disabled), không ẩn khỏi modal.
+- Màn Chi nhánh (card grid, không phải bảng) **giữ nguyên như cũ**, không đồng bộ sang pattern mới —
+  phạm vi lần này chỉ áp dụng cho bảng Nhân viên và Nhật ký hệ thống.
+
+**File mới:**
+- `src/components/detail-modal.tsx` — component **`DetailModal`** dùng chung cho toàn hệ thống: nhận
+  danh sách `DetailField` (field descriptor: `name`, `label`, `editable`, `type`, `options`,
+  `formatValue`, `readOnly`), tự render chế độ xem (text/badge tuỳ `formatValue`) hoặc chế độ sửa
+  (input/select đúng `type`, khoá nếu `editable: false`). Field `readOnly: true` (ví dụ trạng thái
+  hoạt động/khoá) không thuộc form, luôn hiển thị y hệt cả hai chế độ.
+- `src/pages/staff/components/staff-detail-modal.tsx` — áp dụng `DetailModal` cho Nhân viên: field
+  sửa được (`fullName`, `email`, `phoneNumber`, `branchId` — chỉ SUPER_ADMIN, `dob`, `gender`,
+  `description`) đúng theo `UpdateStaffReqDTO`; field khoá (`username`, `role`) và field chỉ đọc
+  (`status`) hiện đúng theo mô tả trên.
+
+**File đổi:**
+- `src/components/data-table/data-table.tsx` — đọc `ColumnDef.size` (nếu có khai) để gán `width`/
+  `minWidth` cố định cho `TableHead`/`TableCell` tương ứng; cột không khai `size` vẫn co giãn tự do
+  như cũ (`table-layout` giữ `auto`, không đổi sang `fixed` — tránh ép toàn bộ cột theo cùng logic,
+  làm hỏng cột NHÂN VIÊN cần linh hoạt cho avatar + tên + email).
+- `src/pages/staff/components/staff-columns.tsx` — cột THAO TÁC còn 2 nút: "Chi tiết" (icon mắt +
+  chữ, gọi `onViewDetail`) và `(...)` (gộp `onEditFull`, `onAssignRole`, `onResetPassword`,
+  `onToggleStatus`, `onDelete`); các cột CHI NHÁNH/VAI TRÒ/TRẠNG THÁI/NGÀY VÀO đều thêm `size` theo
+  đúng độ dài nội dung thật, cột NHÂN VIÊN không khai `size` (linh hoạt).
+- `src/pages/staff/StaffListPage.tsx` — thêm state `detailStaff`, nối `StaffDetailModal`; `handleUpdate`
+  giờ cập nhật `detailStaff` bằng response mới sau khi lưu để modal không hiển thị dữ liệu cũ nếu mở
+  lại ngay.
+- `src/pages/staff/AuditLogPage.tsx` — cột THAO TÁC đổi nút icon-only thành "Chi tiết" (icon + chữ),
+  toàn bộ cột thêm `size` cố định.
+- `src/components/ui/{input,select,textarea}.tsx` — **KHÔNG đổi thêm** ở lần cập nhật này (đã sửa nền
+  trắng ở lần cập nhật trước) — `DetailModal` tái dùng nguyên `Input`/`Select` đã sửa, tự động đúng
+  nền mà không cần đụng thêm.
+- `src/i18n/locales/{vi,en}/common.ts` — thêm `action.edit`, `action.save`, `action.detail`
+  (namespace `common` phẳng, không lồng theo tên file — xem quy ước đã ghi ở Phase 7 gốc).
+
+**Quyết định kỹ thuật đáng chú ý:**
+- **`DetailField<TValues>` không dùng discriminated union theo `name` optional** dù thiết kế đầu tiên
+  định làm vậy (field readonly ⇒ bỏ `name`) — TypeScript không narrow tốt union có generic parameter
+  lồng qua callback `.map()`/`render` của `react-hook-form`, gây hàng loạt lỗi "Property does not
+  exist" dù logic đúng. Đổi sang **cờ tường minh `readOnly?: boolean`** + validate bằng `throw` ở
+  runtime (dev-time safety net: thiếu `formatValue` khi `readOnly: true`, hoặc thiếu `name` khi không
+  phải `readOnly`) — đơn giản hơn, TypeScript suy luận đúng ngay, không cần ép kiểu thủ công.
+- **`StaffFormDialog` (Phase 7 gốc) KHÔNG bị xoá** — user chốt giữ song song 2 đường: `DetailModal`
+  cho sửa nhanh tại chỗ, `StaffFormDialog` (mở qua `(...)` → "Sửa hồ sơ") cho sửa đầy đủ có validate
+  zod chặt hơn (regex SĐT, email format…). `DetailModal` hiện **không validate** ngoài required cứng
+  của `<input>` HTML — nếu sau này cần validate chặt trong `DetailModal`, phải bàn thêm với user vì
+  đây là quyết định UX (đánh đổi giữa sửa nhanh và sửa có kiểm tra kỹ).
+- **`table-layout` giữ `auto`, không đổi `fixed`.** `fixed` sẽ buộc mọi cột dùng chung 1 thuật toán
+  chia đều theo `<colgroup>`/cột đầu tiên, phá vỡ cột NHÂN VIÊN (cần rộng linh hoạt cho tên+email dài
+  ngắn khác nhau). Với `auto`, cột có `width` cố định vẫn giữ đúng kích thước tối thiểu, cột không
+  khai `size` co giãn theo nội dung — đúng hành vi mong muốn mà không cần đổi toàn bộ chiến lược layout.
+
+**Kết quả kiểm tra lại:** build + lint sạch (0 lỗi). Test bằng Chrome headless thật: chụp ảnh xác nhận
+cột THAO TÁC gọn cố định (không còn 4 nút icon rời rạc như trước), modal "Chi tiết" hiển thị đúng toàn
+bộ hồ sơ, bấm "Sửa" chuyển đúng field sang input/dropdown (kể cả 2 field bị khoá `username`/`role` —
+input/dropdown hiện nhưng nền xám, không click được), lưu thành công có toast + đóng chế độ sửa. Menu
+`(...)` không tự động xác nhận được qua ảnh chụp (giới hạn kịch bản test tự động với Radix dropdown
+portal, không phải lỗi thật — cùng pattern `DropdownMenu` đã test thành công ở màn Chi nhánh).
+
+### Cập nhật lần 3 sau review của user (2026-08-09) — paging query param, bỏ dropdown chi nhánh top bar
+
+User yêu cầu 3 thay đổi, đều đã làm xong:
+
+1. **`page`/`size`/`sort` chuyển từ body sang query param** cho mọi endpoint `POST .../search`.
+2. **Nút "Chi tiết" chỉ còn icon**, bỏ chữ (đã áp dụng ở lần cập nhật 2, giờ đúng nghĩa "chỉ icon").
+3. **Bỏ dropdown chọn chi nhánh trên top bar** — màn nào cần filter theo chi nhánh tự implement sau.
+   Kèm yêu cầu điều tra vì sao `StaffListPage` gọi 2 lần `staff/search` và 2 lần `branch/search`.
+
+**Trước khi sửa (1), đã đọc lại `/v3/api-docs/api` theo lệnh user** (backend đã restart) — xác nhận
+đây là thay đổi thật của backend, không phải suy đoán:
+- `page`/`size`/`sort` giờ khai ở `parameters` (query) của **cả 10 endpoint `/search`** hiện có
+  (staff, branch, audit-log, brand, category, color, size, product, sku, customer), không còn trong
+  `requestBody` — `*SearchReqDTO` chỉ còn filter field.
+- Test thật bằng `curl` xác nhận: `page` 1-based (không phải 0-based dù OpenAPI ghi
+  `minimum: 0` — có thể backend tự clamp); `size` mặc định 10; `sort` phải là **query array lặp lại
+  key** (`sort=a&sort=b`), **không phải** `sort[]=a&sort[]=b` (mặc định của axios) — format `[]` bị
+  Spring **âm thầm bỏ qua** (không lỗi nhưng không sắp xếp, dễ debug nhầm là "sort không hoạt động").
+- Backend giờ **validate chặt field thừa trong body** — gửi kèm `page`/`size`/`sortBy`/`sortDir` cũ
+  trong body (thói quen trước đây) bị từ chối thẳng `code: 7`. Không thể "gửi cả 2 nơi cho an toàn".
+
+**Điều tra (3) — nguyên nhân gọi API trùng, đã xác định rõ ràng bằng test thật:**
+- **React StrictMode** (bật sẵn trong `src/main.tsx` từ đầu dự án) cố ý chạy `useEffect` 2 lần ở dev
+  mode để phát hiện side-effect thiếu cleanup — **không phải bug**, không xảy ra ở production build.
+  User đã xác nhận **giữ nguyên StrictMode**.
+- `branch/search` gọi thêm vì `BranchProvider` bọc toàn bộ `AppLayout` để nạp danh sách cho dropdown
+  top bar — mục (2) loại bỏ UI này nhưng **không loại bỏ hẳn `BranchProvider`** vì `staff-form-dialog`
+  và `staff-detail-modal` vẫn cần `useBranch()` lấy **danh sách chi nhánh** cho dropdown khi tạo/sửa
+  nhân viên (khác mục đích với dropdown lọc toàn app đã bỏ).
+
+**File chính:**
+- `src/types/common.ts` — `SearchReq` bỏ `page/size/sortBy/sortDir`, chỉ còn `keyword`/`status`; thêm
+  type mới `SearchPagination = {page?, size?, sort?: string[]}`.
+- `src/lib/api-client.ts` — thêm `paramsSerializer` tuỳ chỉnh (dùng `URLSearchParams`, tự lặp key cho
+  mảng thay vì hậu tố `[]` mặc định của axios); `search()` nhận thêm tham số `pagination` riêng, tự
+  gắn vào `config.params` thay vì `body`.
+- `src/api/{staff,branch,audit-log,customer,product,inventory,order,return,promotion,shift}.ts` — mọi
+  hàm `.search(body)` đổi chữ ký thành `.search(body, pagination?)`; `branch.ts` đồng thời đổi từ gọi
+  `apiClient.post` trực tiếp sang dùng helper `search()` dùng chung (trước đó không nhất quán).
+- `src/mocks/mock-utils.ts` — `paginateMock()` nhận `pagination` tham số thứ 4 riêng thay vì đọc
+  `req.page`/`req.size` từ body (áp dụng nhất quán cho cả module mock, dù backend mock không có ràng
+  buộc thật — tránh 2 kiểu gọi khác nhau giữa module thật và module mock).
+- `src/pages/staff/{StaffListPage,BranchListPage,AuditLogPage}.tsx` — cập nhật lời gọi `.search()`
+  theo chữ ký mới.
+- `src/pages/staff/components/staff-columns.tsx`, `src/pages/staff/AuditLogPage.tsx` — nút "Chi tiết"
+  bỏ hẳn chữ, chỉ còn icon (`size="icon"` thay vì `size="sm"` có text), thêm `title`/`aria-label` để
+  giữ accessibility; điều chỉnh lại `size` cột THAO TÁC cho khớp nội dung mới (88px — 2 icon; 72px —
+  1 icon ở Nhật ký hệ thống).
+- `src/contexts/branch-context.ts`, `src/contexts/BranchProvider.tsx` — đơn giản hoá: bỏ hẳn khái
+  niệm "chi nhánh đang chọn toàn app" (`selectedBranchId`, `ALL_BRANCHES`, `canSwitchBranch`,
+  `setSelectedBranchId`), context giờ chỉ còn `{branches, loading}` — thuần tuý danh sách để form dùng
+  làm dropdown, không phải bộ lọc.
+- `src/components/shell/app-topbar.tsx` — bỏ `<BranchSelector />`.
+- `src/components/shell/branch-selector.tsx` — **đã xoá** (không còn nơi dùng).
+- `CLAUDE.md` — thêm mục khảo sát api-docs 2026-08-09, ghi rõ format `sort` và cảnh báo validate
+  chặt field thừa trong body.
+
+**Quyết định kỹ thuật đáng chú ý:**
+- **Không dùng thư viện `qs` để serialize query param** — chỉ cần `URLSearchParams` built-in của
+  trình duyệt là đủ cho nhu cầu lặp key đơn giản, tránh thêm dependency không cần thiết (CONVENTIONS
+  mục 8 — không tự ý thêm dependency nếu chưa hỏi).
+- **`BranchProvider` KHÔNG bị xoá hẳn dù dropdown top bar đã bỏ** — quyết định user chốt trực tiếp:
+  giữ lại ở dạng đơn giản hoá vì 2 form (thêm/sửa nhân viên, chi tiết nhân viên) vẫn cần danh sách chi
+  nhánh cho dropdown. Đây không phải "khôi phục lại điều vừa bỏ" mà là tách bạch 2 khái niệm khác
+  nhau: "chi nhánh đang chọn để lọc toàn app" (đã bỏ) và "danh sách chi nhánh để chọn trong form" (vẫn
+  giữ, dùng đúng mục đích gốc).
+- **Vẫn còn 2 lần gọi `staff/search`/`branch/search` trong dev mode sau khi sửa — đây là kỳ vọng
+  đúng, không phải lỗi còn sót.** User đã xác nhận hiểu rõ nguyên nhân (StrictMode) và chủ động chọn
+  giữ nguyên, không tắt. Ở production build, mỗi API chỉ gọi đúng 1 lần.
+- **`sort` mặc định để `undefined`** ở hầu hết lời gọi (không tự áp `createdDate,DESC` phía FE) — để
+  backend tự dùng giá trị mặc định đã khai trong api-docs, tránh trùng lặp logic mặc định giữa FE/BE.
+  Riêng `BranchProvider`/`BranchListPage` (load toàn bộ chi nhánh cho dropdown) chủ động truyền
+  `sort: ['name,ASC']` vì thứ tự bảng chữ cái hợp lý hơn cho dropdown chọn, so với mặc định theo ngày
+  tạo của backend.
+
+**Kết quả kiểm tra lại:** build + lint sạch (0 lỗi). Test bằng `curl` xác nhận: `sort=fullName,ASC`
+sắp xếp đúng, `sort[]=` bị bỏ qua âm thầm (đã tránh dùng), gửi field paging cũ trong body bị từ chối
+`code: 7` (xác nhận không thể "gửi cả 2 nơi"), filter `keyword` trong body vẫn hoạt động song song
+với query param. Test bằng Chrome headless thật xác nhận: URL request đúng dạng
+`?page=1&size=10&sort=name%2CASC`, body rỗng `{}` khi không có filter; top bar không còn dropdown chi
+nhánh (chỉ còn đổi ngôn ngữ + chuông + avatar); nút "Chi tiết" chỉ còn icon mắt; modal chi tiết + sửa
+inline vẫn hoạt động đúng sau khi đơn giản hoá `BranchProvider`.
+
+**Giả định:** Các module mock (customer/product/inventory/order/return/promotion/shift) đã đổi chữ ký
+`.search()` theo chuẩn mới nhưng **chưa có màn hình nào gọi tới** (đúng phạm vi — các phase đó chưa
+tới lượt code) nên chưa kiểm chứng bằng cách chạy thật, chỉ xác nhận qua `tsc` type-check.
+
+### Cập nhật lần 4 sau review của user (2026-08-09) — rule toolbar bảng: bỏ đếm số lượng, gộp nút hành động
+
+User yêu cầu (áp dụng như **rule chung cho mọi bảng**, không riêng 1 màn): không hiển thị dòng
+"x + tên item" (ví dụ "7 nhân viên", "33 nhật ký") ở góc trên bên phải mỗi bảng; đưa các nút hành
+động (ví dụ "Thêm nhân viên") lên **cùng hàng ngang** phía trên bảng thay vì tách riêng bên dưới.
+
+**File chính:**
+- `src/components/data-table/data-table-toolbar.tsx` — bỏ hẳn prop `resultCount`/`resultLabel` (và
+  đoạn `<p>` hiển thị chúng); thêm prop `actions?: ReactNode` render trong `<div className="flex
+  shrink-0 items-center gap-2">` cùng hàng với search/filter, đẩy sang bên phải nhờ
+  `justify-between` của container ngoài.
+- `src/pages/staff/StaffListPage.tsx` — nút "Thêm nhân viên" chuyển từ `<div className="flex
+  justify-end">` tách riêng dưới `DataTableToolbar` vào prop `actions` của chính `DataTableToolbar`;
+  bỏ `resultCount`/`resultLabel` khỏi lời gọi.
+- `src/pages/staff/AuditLogPage.tsx` — bỏ `resultCount`/`resultLabel` khỏi lời gọi `DataTableToolbar`
+  (trang này không có nút hành động nào để thêm — nhật ký hệ thống không tạo thủ công).
+- `src/pages/staff/BranchListPage.tsx` — **không cần sửa**: đây là card grid tự viết layout riêng
+  (không dùng `DataTableToolbar`), nút "Thêm chi nhánh" đã sẵn cùng hàng với ô tìm kiếm từ Phase 7 gốc,
+  và trang này chưa từng hiển thị số lượng chi nhánh ở đâu.
+
+**Quyết định kỹ thuật:**
+- Số lượng bản ghi **không bị xoá khỏi UI hoàn toàn** — vẫn hiển thị đúng vị trí hợp lý hơn: dòng
+  phân trang dưới bảng (`unitLabel` trong `DataTable`, ví dụ "Hiển thị 1–7 trong tổng số 7 nhân
+  viên"). Rule mới chỉ bỏ chỗ hiển thị **trùng lặp** ở toolbar phía trên.
+- Sửa tại component dùng chung `DataTableToolbar` để rule áp dụng nhất quán tự động cho mọi màn dùng
+  nó hiện tại và sau này, đúng tinh thần "cập nhật lại rule" của user — không phải patch riêng lẻ
+  từng trang.
+
+**Kết quả kiểm tra lại:** build + lint sạch (0 lỗi, chỉ còn 5 warning cũ không liên quan). Test bằng
+Chrome headless thật: chụp ảnh xác nhận cả 3 màn Nhân viên/Chi nhánh/Nhật ký hệ thống đều không còn
+dòng đếm số lượng ở góc phải toolbar, nút "Thêm nhân viên"/"Thêm chi nhánh" nằm đúng cùng hàng ngang
+với ô tìm kiếm, số lượng vẫn hiển thị đúng ở dòng phân trang dưới bảng.
+
+### Cập nhật lần 5 sau review của user (2026-08-09) — dropdown filter chi nhánh ở màn Nhân viên
+
+User yêu cầu thêm dropdown filter theo chi nhánh cho màn Nhân viên (`StaffSearchReqDTO.branchId` đã
+có sẵn từ api-docs nhưng chưa được FE dùng tới).
+
+**File chính:**
+- `src/pages/staff/StaffListPage.tsx` — thêm state `branchFilter` (mặc định `ALL_BRANCHES`), lấy danh
+  sách chi nhánh qua `useBranch()` (context có sẵn, dùng chung với dropdown chọn chi nhánh trong form
+  thêm/sửa nhân viên), truyền `branchId` vào `staffApi.search()` khi khác `ALL_BRANCHES`. Dropdown đặt
+  cạnh dropdown filter vai trò trong `filters` của `DataTableToolbar` (không đổi cấu trúc component
+  dùng chung — chỉ dùng lại prop `filters` sẵn có).
+- `src/i18n/locales/{vi,en}/staff.ts` — thêm key `staff.list.allBranches`.
+
+**Quyết định kỹ thuật:**
+- **Tái dùng `BranchContext`/`useBranch()` thay vì tự gọi `branchApi.search()` riêng** — context này đã
+  nạp sẵn danh sách chi nhánh cho form thêm/sửa nhân viên (Phase 7 gốc), tránh gọi API trùng lặp.
+- **Không giới hạn hiển thị dropdown theo role** — dù CLAUDE.md ghi rõ `branchId` chỉ có tác dụng lọc
+  thật với SUPER_ADMIN (ADMIN/STAFF bị backend tự giới hạn phạm vi sẵn, `useBranch()` với các role này
+  chỉ trả về đúng 1 chi nhánh của họ), dropdown vẫn hiển thị nhất quán cho mọi role — chọn chi nhánh
+  duy nhất của mình không gây lỗi, chỉ vô nghĩa về mặt lọc (không cần ẩn có điều kiện, giữ đơn giản).
+
+**Kết quả kiểm tra lại:** build + lint sạch (0 lỗi, 5 warning cũ không liên quan). Test bằng Chrome
+headless thật (tài khoản `superadmin`): chọn "Đà Nẵng" trong dropdown gửi đúng request
+`POST /staff/search?page=1&size=10` với body `{"branchId":"<uuid>"}`, bảng lọc đúng còn 1 kết quả
+đúng chi nhánh Đà Nẵng.
+
+### Fix bug sau review của user (2026-08-09) — bấm "Sửa" trong modal chi tiết tự động gửi PUT
+
+User báo: mở modal "Chi tiết nhân viên" (chế độ xem), bấm "Sửa" → modal chuyển đúng sang giao diện
+có input/dropdown, nhưng **ngay sau đó tự động gửi `PUT /staff/{id}`** mà không cần bấm "Lưu" —
+không sửa được vì bị lưu ngay với dữ liệu chưa đổi.
+
+**Nguyên nhân (xác định qua phân tích code, không tái hiện được bằng Puppeteer do giới hạn mô phỏng
+chuột thật trong môi trường headless — click lập trình `.click()` không tái hiện bug, chỉ chuột thật
+của user mới gặp):** trong `DetailModal` ([detail-modal.tsx](src/components/detail-modal.tsx)),
+`DialogFooter` render 2 nhánh JSX khác hẳn nhau tuỳ `isEditing` — chế độ xem có nút "Sửa"
+(`type="button"`) ở vị trí cuối cùng bên phải; chế độ sửa có nút "Lưu" (`type="submit"`) ở **đúng
+cùng vị trí đó** (cả 2 đều là phần tử cuối trong `flex justify-end`). Khi bấm "Sửa", `onClick` gọi
+`setIsEditing(true)` **đồng bộ** ngay trong pha xử lý sự kiện chuột — React unmount nút "Sửa" và
+mount nút "Lưu" tại đúng toạ độ đó **trước khi trình duyệt xử lý xong `mouseup`** của cú click thật
+(khác hành vi so với click giả lập bằng JS, vốn phát sinh sự kiện `click` tổng hợp tức thời chỉ
+trên 1 phần tử, không tách `mousedown`/`mouseup` theo thời gian thực). Trình duyệt tính `click`
+theo phần tử tại toạ độ con trỏ lúc `mouseup` — lúc đó đã là nút "Lưu" — nên phát sinh submit "ma".
+
+**File sửa:** `src/components/detail-modal.tsx` — bọc `setIsEditing(true)` trong `setTimeout(..., 0)`
+ở nút "Sửa", đẩy việc chuyển chế độ (và unmount/mount nút) sang macrotask kế tiếp, sau khi trình
+duyệt đã xử lý xong trọn vẹn chuỗi `mousedown`/`mouseup`/`click` gốc trên nút "Sửa" — loại bỏ khả
+năng `mouseup` rơi trúng nút "Lưu" vừa xuất hiện tại cùng vị trí.
+
+**Kết quả kiểm tra lại:** build + lint sạch (0 lỗi). Test bằng Chrome headless thật: bấm "Sửa" bằng
+`.click()` lập trình xong đợi 10ms — xác nhận **chưa** submit (`PUT requests: []`); đợi đủ để
+`setTimeout` chạy — chế độ sửa hiển thị đúng (input/dropdown xuất hiện), vẫn không có PUT nào được
+gửi cho tới khi bấm "Lưu" thật; bấm "Lưu" thật sau khi sửa gửi đúng 1 `PUT /staff/{id}` với payload
+đúng. Do giới hạn không tái hiện được bug gốc bằng automation (chỉ tái hiện được bằng chuột thật),
+**khuyến nghị user xác nhận lại bằng thao tác tay thật** trên trình duyệt sau khi áp dụng bản vá này.
 
 ---
 
@@ -468,6 +1000,9 @@ Test bằng cả `superadmin` lẫn `adminbranch`.
 - Rà mọi màn đủ **loading / empty / error / success**; toast thành công có message riêng từng màn.
 - Xoá `console.log`, gỡ mock thừa; `npm run lint` + `npm run build` sạch.
 - Cập nhật `README.md` + [CONVENTIONS.md](CONVENTIONS.md) nếu kiến trúc đã đổi (CONVENTIONS mục 9).
+- **Rà soát devDependency dùng để test thủ công qua các phase** (ví dụ `puppeteer-core` — cài từ
+  Phase 7 để agent tự chạy UI thật qua trình duyệt headless, dùng Chrome hệ thống có sẵn nên không
+  tự tải Chromium) — gỡ nếu không còn dùng, giữ lại nếu vẫn cần cho việc phát triển tiếp.
 
 ---
 

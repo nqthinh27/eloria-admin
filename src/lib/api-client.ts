@@ -24,6 +24,7 @@ import {
     RESPONSE_CODE_SUCCESS,
     type BaseResponse,
     type ErrorResponse,
+    type SearchPagination,
 } from '@/types/common'
 
 /** Endpoint đổi refresh cookie lấy access token mới. */
@@ -46,6 +47,25 @@ export type ApiRequestOptions = {
 type RequestConfig = AxiosRequestConfig & ApiRequestOptions
 type InternalConfig = InternalAxiosRequestConfig & ApiRequestOptions & { _retried?: boolean }
 
+/**
+ * Serialize query param — đặc biệt là mảng (`sort`) — theo đúng format Spring lặp lại key
+ * (`sort=a&sort=b`), KHÔNG dùng `sort[]=a&sort[]=b` (mặc định của axios) vì Spring bỏ qua param
+ * dạng `[]`, khiến `sort` bị silent-ignore (đã xác nhận qua test thật 2026-08-09 — sort[] không
+ * lỗi nhưng cũng không sắp xếp). `undefined`/`null` bị bỏ qua hoàn toàn, không serialize thành chuỗi.
+ */
+function serializeParams(params: Record<string, unknown>): string {
+    const search = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+        if (value === undefined || value === null) continue
+        if (Array.isArray(value)) {
+            value.forEach((item) => search.append(key, String(item)))
+        } else {
+            search.append(key, String(value))
+        }
+    }
+    return search.toString()
+}
+
 export const http: AxiosInstance = axios.create({
     baseURL: apiBaseUrl,
     // Bắt buộc để cookie `refresh_token` được gửi kèm. Chỉ hoạt động khi same-origin,
@@ -53,6 +73,7 @@ export const http: AxiosInstance = axios.create({
     withCredentials: true,
     timeout: 30_000,
     headers: { 'Content-Type': 'application/json' },
+    paramsSerializer: { serialize: serializeParams },
 })
 
 http.interceptors.request.use((config: InternalConfig) => {
@@ -282,12 +303,24 @@ export const apiClient = {
 
 /**
  * Helper cho pattern `POST .../search` của backend.
- * Kết quả lồng 2 tầng: `data.total` và `data.data` (xem CONVENTIONS mục 3.1).
+ *
+ * ⚠️ Từ 2026-08-09: `page`/`size`/`sort` bắt buộc ở **query param**, KHÔNG được gửi trong `body`
+ * (backend validate chặt field thừa, gửi kèm sẽ bị từ chối `code: 7`). `body` chỉ chứa filter
+ * (`keyword`, `status`, và filter riêng từng module). Kết quả response vẫn lồng 2 tầng:
+ * `data.total` và `data.data` (xem CONVENTIONS mục 3.1) — không đổi.
  */
 export function search<TResult>(
     url: string,
     body: unknown,
+    pagination?: SearchPagination,
     config?: RequestConfig,
 ): Promise<TResult> {
-    return apiClient.post<TResult>(url, body, config)
+    return apiClient.post<TResult>(url, body, {
+        ...config,
+        params: {
+            page: pagination?.page,
+            size: pagination?.size,
+            sort: pagination?.sort,
+        },
+    })
 }

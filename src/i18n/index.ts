@@ -6,10 +6,12 @@ import viCommon from './locales/vi/common'
 import viErrors from './locales/vi/errors'
 import viAuth from './locales/vi/auth'
 import viMenu from './locales/vi/menu'
+import viStaff from './locales/vi/staff'
 import enCommon from './locales/en/common'
 import enErrors from './locales/en/errors'
 import enAuth from './locales/en/auth'
 import enMenu from './locales/en/menu'
+import enStaff from './locales/en/staff'
 
 export const SUPPORTED_LANGUAGES = ['vi', 'en'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
@@ -20,8 +22,8 @@ export const DEFAULT_LANGUAGE: SupportedLanguage = 'vi'
 export const LANGUAGE_STORAGE_KEY = 'eloria-lang'
 
 const resources = {
-    vi: { common: viCommon, errors: viErrors, auth: viAuth, menu: viMenu },
-    en: { common: enCommon, errors: enErrors, auth: enAuth, menu: enMenu },
+    vi: { common: viCommon, errors: viErrors, auth: viAuth, menu: viMenu, staff: viStaff },
+    en: { common: enCommon, errors: enErrors, auth: enAuth, menu: enMenu, staff: enStaff },
 }
 
 /*
@@ -41,7 +43,7 @@ i18n
         resources,
         fallbackLng: DEFAULT_LANGUAGE,
         supportedLngs: SUPPORTED_LANGUAGES,
-        ns: ['common', 'errors', 'auth', 'menu'],
+        ns: ['common', 'errors', 'auth', 'menu', 'staff'],
         defaultNS: 'common',
         /*
          * CHỈ đọc lựa chọn đã lưu, KHÔNG dò `navigator.language`.

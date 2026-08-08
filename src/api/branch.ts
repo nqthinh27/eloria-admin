@@ -1,6 +1,6 @@
-import { apiClient } from '@/lib/api-client'
+import { apiClient, search } from '@/lib/api-client'
 import type { Branch, BranchPayload, BranchSearchReq } from '@/types/branch'
-import type { BaseListResStatus, EntityStatus } from '@/types/common'
+import type { BaseListResStatus, EntityStatus, SearchPagination } from '@/types/common'
 
 /**
  * Service chi nhánh — API thật (không mock).
@@ -9,9 +9,9 @@ import type { BaseListResStatus, EntityStatus } from '@/types/common'
  * SUPER_ADMIN thấy toàn chuỗi. FE không cần lọc lại.
  */
 export const branchApi = {
-    /** `[STAFF] POST /branch/search`. */
-    search(body: BranchSearchReq) {
-        return apiClient.post<BaseListResStatus<Branch>>('/branch/search', body)
+    /** `[STAFF] POST /branch/search` — `page`/`size`/`sort` ở query param, `body` chỉ chứa filter. */
+    search(body: BranchSearchReq, pagination?: SearchPagination) {
+        return search<BaseListResStatus<Branch>>('/branch/search', body, pagination)
     },
 
     /** `[STAFF] GET /branch/{id}`. */

@@ -2,19 +2,15 @@ import { createContext } from 'react'
 
 import type { Branch } from '@/types/branch'
 
-/** Giá trị đại diện "Tất cả chi nhánh" — chỉ SUPER_ADMIN chọn được. */
-export const ALL_BRANCHES = 'ALL'
-
+/**
+ * Danh sách chi nhánh dùng chung cho các form cần chọn chi nhánh (ví dụ dropdown "Chi nhánh"
+ * khi tạo/sửa nhân viên) — KHÔNG phải bộ lọc chi nhánh toàn app. Dropdown chọn chi nhánh trên
+ * top bar đã bỏ theo yêu cầu user (2026-08-09); màn nào cần filter theo chi nhánh sẽ tự implement
+ * riêng khi tới lượt.
+ */
 export type BranchContextValue = {
     branches: Branch[]
     loading: boolean
-    /** `ALL_BRANCHES` hoặc id chi nhánh. */
-    selectedBranchId: string
-    setSelectedBranchId: (id: string) => void
-    /** `null` khi đang chọn "Tất cả chi nhánh". */
-    selectedBranch: Branch | null
-    /** `false` với ADMIN/STAFF — bộ chọn hiển thị read-only. */
-    canSwitchBranch: boolean
 }
 
 export const BranchContext = createContext<BranchContextValue | null>(null)

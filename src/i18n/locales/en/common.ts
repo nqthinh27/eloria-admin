@@ -19,5 +19,25 @@ export default {
     action: {
         retry: 'Retry',
         close: 'Close',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        export: 'Export data',
+        exportExcel: 'Export Excel',
+        exportPdf: 'Export PDF',
+        edit: 'Edit',
+        save: 'Save',
+        detail: 'Detail',
+    },
+    dataTable: {
+        empty: 'No data',
+        error: 'Could not load data. Please try again.',
+        searchPlaceholder: 'Search…',
+        showingRange: 'Showing {{from}}–{{to}} of {{total}} {{unit}}',
+        pageOf: 'Page {{page}} / {{pageCount}}',
+        prevPage: 'Previous page',
+        nextPage: 'Next page',
+    },
+    confirmDialog: {
+        auditNotice: 'This action will be recorded in the audit log.',
     },
 }

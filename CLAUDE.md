@@ -47,7 +47,7 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**
 
 - Prefix API: **`/v1.0/api`**. Auth: `bearerAuth` (JWT) áp dụng **global** cho mọi endpoint.
 - **Response đã được chuẩn hoá hoàn toàn**: *mọi* endpoint bọc `BaseResponse<T>` = `{code, message, data}`,
@@ -57,9 +57,22 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
 - Lỗi trả kèm **HTTP status tương ứng** (login sai ⇒ 401) với body
   `ErrorResponse` = `{code, message, logInfo, subKey}`, ví dụ thật: `subKey: "error.login.fail"`.
   `subKey` dạng `a.b.c` → map i18n, fallback `message`.
-- **API danh sách là `POST .../search`** với body `{page, size, sortBy, sortDir, keyword, status, ...}`.
-  Kết quả lồng 2 tầng: `data.data` mới là mảng, `data.total` là tổng;
-  `staff/search` + `branch/search` có thêm `data.activeTotal` / `data.inactiveTotal`.
+- **API danh sách là `POST .../search`.** ⚠️ **Đổi ngày 2026-08-09** (trước đó `page`/`size`/`sortBy`/
+  `sortDir` nằm trong body — **không còn đúng**): giờ **`page`/`size`/`sort` bắt buộc ở query param**,
+  body chỉ còn filter (`keyword`, `status`, và filter riêng từng module như `role`, `branchId`…).
+  - `page`: 1-based (`page=1` là trang đầu — đã xác nhận qua test thật, không phải 0-based dù mô tả
+    OpenAPI ghi `minimum: 0`).
+  - `size`: mặc định 10.
+  - `sort`: **mảng** query string dạng `field,ASC` / `field,DESC` (viết hoa), hỗ trợ nhiều tiêu chí
+    (`?sort=fullName,ASC&sort=createdDate,DESC`); mặc định `createdDate,DESC`.
+  - Ví dụ: `POST /staff/search?page=1&size=20&sort=fullName,ASC` với body `{"keyword":"an"}`.
+  - **Backend validate chặt field thừa trong body** — gửi kèm `page`/`size`/`sortBy`/`sortDir` trong
+    body (thói quen cũ) sẽ bị từ chối `code:7 "Dữ liệu truyền vào không hợp lệ"` vì các field đó
+    không còn khai trong `*SearchReqDTO`. Áp dụng nhất quán cho **cả 10 endpoint `/search`** hiện có
+    (staff, branch, audit-log, brand, category, color, size, product, sku, customer).
+  Kết quả response body **không đổi**: `data.data` là mảng, `data.total` là tổng;
+  `staff/search` + `branch/search` + `product/search` + `brand/search` + `category/search` +
+  `sku/search` có thêm `data.activeTotal` / `data.inactiveTotal`.
 - Cookie `refresh_token`: `path=/v1.0/api/refresh; HttpOnly; Max-Age=864000`, không `Secure`, không `SameSite`
   ⇒ **bắt buộc same-origin qua Vite dev proxy**. **Chỉ được set khi login gửi `rememberMe: true`.**
 - `SysUserDTO` mang `role` (`CUSTOMER | STAFF | ADMIN | SUPER_ADMIN`), `branchId` (null với SUPER_ADMIN),
@@ -67,7 +80,19 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
 - Quy ước dữ liệu: `status` **`1` = ACTIVE, `0` = INACTIVE**; ngày giờ ISO-8601 UTC (`2026-08-05T16:17:10Z`);
   id là UUID chuỗi. Địa chỉ hành chính chỉ **2 cấp**: Tỉnh/Thành → Phường/Xã (không có Quận/Huyện).
 - Validate của backend cần khớp sang zod ở FE: mật khẩu `^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{6,50}$`,
-  SĐT `^0\d{9}$`, username 6–50 ký tự.
+  SĐT `^0\d{9}$`, username 6–50 ký tự (pattern username thật cho phép **cả email lẫn chuỗi
+  `[_.@A-Za-z0-9-]+`**, 6–50 ký tự).
+- **`AdministrativeAddressResDTO` chỉ có `{id, name}`** — không có field `code` riêng. `provinceCode`/
+  `wardCode` dùng trong `Branch`/`CreateBranchReqDTO`/`BranchSearchReqDTO` và tham số query
+  `wards?provinceCode=` **chính là `id`** lấy từ response `/administrative-address/provinces`
+  (tên field phía các DTO khác gọi là `provinceCode`/`wardCode` nhưng giá trị truyền vào là `id`,
+  không suy ra được `code` nào khác).
+- **`UpdateStaffReqDTO` không có `role`** — đổi role phải qua `POST /staff/assign-role` riêng
+  (`AssignRoleReqDTO = {id, role}`), không gộp vào form sửa hồ sơ.
+- **`ResetStaffPasswordResDTO` chỉ có 1 field `temporaryPassword`**, mô tả trong api-docs ghi rõ
+  "chỉ hiển thị duy nhất lần này" — không có endpoint xem lại, UI phải tự lưu tạm trong state dialog.
+- **`UpdateStatusReqDTO` dùng chung cho staff và branch** = `{id, status}`, `status` giới hạn
+  `minimum: 0, maximum: 1`.
 
 ### Phân quyền — role phân cấp, đọc từ `summary` của api-docs
 
@@ -102,8 +127,27 @@ Cột **Role** là role tối thiểu, lấy từ tiền tố `[ROLE]` trong `su
 | Nhân viên (toàn bộ) | `ADMIN` | `POST /staff` · `/staff/search` · `/staff/assign-role` · `/staff/update-status` · `/staff/{id}/reset-password` · `GET|PUT|DELETE /staff/{id}` |
 | Audit log | `ADMIN` | `POST /audit-log/search` · `GET /audit-log/{id}` |
 
-**Chưa có** API: sản phẩm/SKU, giá, kho, POS, đơn hàng, đổi/trả, khuyến mại, khách hàng
-⇒ các phase đó vẫn chạy trên **lớp mock sau service layer** (PLAN Phase 6).
+### API mới phát hiện khi khảo sát lại 2026-08-08 — domain sản phẩm & khách hàng
+
+⚠️ Khác với khảo sát 2026-08-06 (lúc đó **chưa có**), backend giờ đã có API thật cho các domain sau.
+Các phase liên quan (8, 9) **cần đổi từ mock sang API thật khi tới lượt code**, không phải tự động —
+PLAN Phase 6 vẫn giữ nguyên lớp mock hiện có cho tới khi phase đó được chỉ định làm lại bằng API thật.
+
+| Nhóm | Role đọc / Role ghi | Endpoint |
+|---|---|---|
+| Thương hiệu (brand) | `STAFF` / `SUPER_ADMIN` | `POST /brand/search` · `GET /brand/{id}` / `POST /brand` · `PUT /brand/{id}` · `DELETE /brand/{id}` · `POST /brand/update-status` |
+| Danh mục (category) | `STAFF` / `SUPER_ADMIN` | `POST /category/search` · `GET /category/{id}` / `POST /category` · `PUT /category/{id}` · `DELETE /category/{id}` · `POST /category/update-status` |
+| Màu (color) | `STAFF` / `SUPER_ADMIN` | `POST /color/search` · `GET /color/{id}` / `POST /color` · `PUT /color/{id}` · `DELETE /color/{id}` — **không có `update-status`** cho color |
+| Size | `STAFF` / `SUPER_ADMIN` | `POST /size/search` · `GET /size/{id}` / `POST /size` · `PUT /size/{id}` · `DELETE /size/{id}` — **không có `update-status`** cho size |
+| Sản phẩm cha | `STAFF` / `SUPER_ADMIN` | `POST /product/search` · `GET /product/{id}` (kèm bảng SKU) / `POST /product` · `PUT /product/{id}` · `POST /product/{id}/images` · `POST /product/{id}/generate-sku` |
+| SKU | `STAFF` / `SUPER_ADMIN` | `POST /sku/search` · `GET /sku/{id}` · `GET /sku/by-ean/{ean}` (quét barcode) / `POST /sku/update-status` — **không có endpoint tạo/sửa/xoá SKU trực tiếp**, SKU chỉ sinh qua `product/{id}/generate-sku` |
+| Khách hàng | `STAFF` / `ADMIN` | `POST /customer/search` · `GET /customer/{id}` · `POST /customer` (tạo tại quầy, `STAFF`) / `PUT /customer/{id}` (`ADMIN`) · `GET /customer/duplicates` (tra trùng SĐT, `ADMIN`) |
+
+Pattern response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus*` (có `activeTotal`/
+`inactiveTotal` như staff/branch); `customer`/`color`/`size` chỉ dùng `BaseListRes` (`total` + `data[]`).
+
+**Vẫn chưa có** API: giá theo kênh riêng biệt, kho/tồn kho, POS, đơn hàng, đổi/trả, khuyến mại, ca
+làm việc (shift) ⇒ các phase đó (10–14) vẫn chạy trên **lớp mock sau service layer** (PLAN Phase 6).
 
 Ngoài bậc role, backend còn **tự giới hạn phạm vi dữ liệu** (ghi trong `description` từng endpoint):
 ADMIN chỉ thấy/tạo nhân viên chi nhánh mình và chỉ gán được role STAFF; điều chuyển chi nhánh chỉ SUPER_ADMIN.

@@ -34,14 +34,33 @@ export type BaseListResStatus<T> = BaseListRes<T> & {
     inactiveTotal: number
 }
 
-/** Body chung của mọi endpoint `POST .../search`. */
+/**
+ * Body chung của mọi endpoint `POST .../search`.
+ *
+ * ⚠️ Từ 2026-08-09: `page`/`size`/`sort` **không còn ở body** — xem `SearchPagination`.
+ * Body giờ chỉ còn filter; gửi kèm field paging cũ trong body bị backend từ chối
+ * (`code: 7` — field lạ, validate chặt).
+ */
 export type SearchReq = {
-    page?: number
-    size?: number
-    sortBy?: string
-    sortDir?: 'asc' | 'desc'
     keyword?: string
     status?: EntityStatus
+}
+
+/**
+ * Tham số phân trang/sắp xếp của mọi endpoint `POST .../search` — nằm ở **query param**,
+ * tách biệt hẳn khỏi body filter (`SearchReq`). Xác nhận qua api-docs + test thật 2026-08-09,
+ * áp dụng nhất quán cho cả 10 endpoint `/search` hiện có.
+ */
+export type SearchPagination = {
+    /** 1-based — `page=1` là trang đầu. */
+    page?: number
+    /** Mặc định 10 nếu bỏ trống. */
+    size?: number
+    /**
+     * `["field,ASC"]` / `["field,DESC"]` (viết hoa) — mảng vì hỗ trợ nhiều tiêu chí sắp xếp.
+     * Mặc định `["createdDate,DESC"]` nếu bỏ trống.
+     */
+    sort?: string[]
 }
 
 /** Trạng thái bản ghi: 1 = đang hoạt động, 0 = ngừng. */
