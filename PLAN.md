@@ -1214,6 +1214,47 @@ Tìm kiếm cũng không còn gọi API mỗi lần gõ.
 - Rule đã ghi vào [CONVENTIONS.md](CONVENTIONS.md) mục 5: *không duplicate trong 1 màn, không cache
   giữa các màn*.
 
+### Bổ sung theo yêu cầu user (2026-08-10) — bảng SKU
+
+**1. Bảng SKU chuyển sang infinite scroll.** Trước đây tải một lần `size=200`; giờ tải
+`SKU_PAGE_SIZE = 20`/lần, cuộn tới cuối khung bảng thì nối thêm trang sau (`IntersectionObserver`).
+Header hiện `đã tải/tổng` (vd `20/24 SKU`), cuối bảng có "Đang tải thêm…" / "Đã tải hết SKU".
+
+**2. Thêm nút xem mã vạch** mỗi dòng SKU → dialog hiện ảnh **EAN-13** (`GET /sku/{id}/barcode`,
+trả PNG thuần), kèm mã EAN dạng chữ và nút **In tem**.
+
+**3. Nút bật/tắt trạng thái đổi từ icon nguồn sang `Switch`** (thêm `npx shadcn add switch`).
+
+**Quyết định kỹ thuật:**
+
+- **`apiClient.getBlob()` mới** trong api-client: `GET /sku/{id}/barcode` trả **PNG thuần, không bọc
+  `BaseResponse`** nên `apiClient.get()` không dùng được (`unwrap` đọc `body.code` sẽ fail).
+  `getBlob` vẫn đi qua cùng instance axios ⇒ giữ `Authorization`, refresh single-flight, chuẩn hoá
+  lỗi. Khi lỗi, backend trả JSON nhưng `responseType: 'blob'` gói thành Blob ⇒ đã đọc ngược Blob
+  về JSON để không mất `subKey`/`message`.
+- **Object URL của ảnh barcode phải `URL.revokeObjectURL`** trong cleanup — mở/đóng dialog nhiều lần
+  không revoke sẽ rò bộ nhớ.
+- **Bật/tắt SKU cập nhật tại chỗ, KHÔNG `loadSkus()`**: nạp lại sẽ reset bảng về trang 1 và mất hết
+  các trang đã cuộn. `togglingSkuId` khoá switch trong lúc chờ để không bấm liên tiếp.
+- **`switch.tsx` của shadcn dùng `bg-background` cho núm** ⇒ đã đổi `bg-card`, cùng lý do đã ghi ở
+  CONVENTIONS mục 5 (`--background` là màu xám nền trang, núm sẽ chìm vào rãnh).
+
+⚠️ **Hai cái bẫy của infinite scroll đã mất thời gian mới ra — ghi lại để không lặp:**
+
+1. **Phần tử mốc (sentinel) cao `0px` thì `IntersectionObserver` KHÔNG BAO GIỜ báo giao nhau.**
+   Phải cho nó chiều cao thật (`h-px`).
+2. **Dùng `useRef` + `useEffect` để gắn observer là hỏng**: sentinel chỉ render trong nhánh
+   `skus.length > 0`, nên lúc effect chạy lần đầu `ref.current` vẫn `null` ⇒ observer không bao giờ
+   được gắn, bảng đứng im ở trang 1. Phải dùng **callback ref** — React gọi đúng lúc node vào/ra DOM.
+   Kèm theo: callback của observer giữ closure cũ nên mọi giá trị nó cần đọc (`hasMore`, các cờ
+   loading, hàm `loadMore`) phải để trong một ref được cập nhật mỗi lần render.
+
+**Kiểm chứng (Chrome headless, SP001 có 24 SKU):** mở tab hiện `20/24 SKU` + 1 request `page=1`;
+cuộn tới đáy → tự gọi `page=2` → **24 dòng**, cuộn tiếp **không** gọi thừa; bật/tắt switch đổi đúng
+trạng thái, có toast, bảng **giữ nguyên 24 dòng**; dialog barcode hiện ảnh thật (`naturalWidth 351`)
++ EAN `2019711618853`; không lỗi console. Đã sinh thêm SKU cho toàn bộ sản phẩm (mỗi SP 24 SKU,
+tổng **264**) để có dữ liệu test nhiều trang.
+
 **Giả định:** dữ liệu mẫu nằm trên backend dev local. Backend **không có API xoá sản phẩm** nên
 bản ghi tạo lúc test không xoá được — đã đổi thành sản phẩm mẫu hợp lệ (`SP009 — Áo len cổ lọ dệt kim`).
 Ảnh sản phẩm hiện **chưa có cái nào** (chưa upload thật, chỉ kiểm tra empty state + nút bấm), nên

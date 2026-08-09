@@ -35,8 +35,8 @@ export const productApi = {
     },
 
     /** `[STAFF] GET /product/{id}` — bản duy nhất có `categories` được populate. */
-    getById(id: string) {
-        return apiClient.get<Product>(`/product/${id}`)
+    getById(id: string, signal?: AbortSignal) {
+        return apiClient.get<Product>(`/product/${id}`, { signal })
     },
 
     /** `[SUPER_ADMIN] POST /product`. */
@@ -70,8 +70,8 @@ export const productApi = {
 
 export const skuApi = {
     /** `[STAFF] POST /sku/search` — lọc theo `productId` để lấy bảng SKU của 1 sản phẩm. */
-    search(body: SkuSearchReq, pagination?: SearchPagination) {
-        return search<BaseListResStatus<Sku>>('/sku/search', body, pagination)
+    search(body: SkuSearchReq, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListResStatus<Sku>>('/sku/search', body, pagination, { signal })
     },
 
     /** `[STAFF] GET /sku/{id}`. */
@@ -82,6 +82,19 @@ export const skuApi = {
     /** `[STAFF] GET /sku/by-ean/{ean}` — quét barcode. */
     getByEan(ean: string) {
         return apiClient.get<Sku>(`/sku/by-ean/${ean}`)
+    },
+
+    /**
+     * `[STAFF] GET /sku/{id}/barcode` — ảnh mã vạch **EAN-13 dạng PNG** để hiển thị/in tem.
+     * Trả `Blob`; caller tự tạo object URL và **phải** `URL.revokeObjectURL` khi đóng để không rò bộ nhớ.
+     */
+    getBarcode(id: string, signal?: AbortSignal) {
+        return apiClient.getBlob(`/sku/${id}/barcode`, { signal })
+    },
+
+    /** `[SUPER_ADMIN] DELETE /sku/{id}` — xoá mềm (backend set `status = -1`). */
+    remove(id: string) {
+        return apiClient.delete<null>(`/sku/${id}`)
     },
 
     /** `[SUPER_ADMIN] POST /sku/update-status` — chỉ nhận 0/1, xem ghi chú `Sku` trong types. */

@@ -98,13 +98,23 @@ export default {
                 size: 'SIZE',
                 ean: 'BARCODE (EAN)',
                 status: 'STATUS',
+                barcode: 'BARCODE',
                 actions: 'ACTIONS',
             },
             noEan: 'None',
+            loadingMore: 'Loading more…',
+            allLoaded: 'All SKUs loaded',
             actionActivate: 'Activate',
             actionDeactivate: 'Discontinue',
             sizeGroupRequired:
                 'This product has no size group, so sizes cannot be filtered. Edit the product and pick a size group first.',
+        },
+
+        barcode: {
+            title: 'SKU barcode',
+            view: 'View barcode',
+            print: 'Print label',
+            loadFailed: 'Could not load the barcode image',
         },
 
         images: {

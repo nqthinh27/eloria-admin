@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageIcon, Loader2, Pencil, Plus, Power, Upload } from 'lucide-react'
+import { Barcode, ImageIcon, Loader2, Pencil, Plus, Upload } from 'lucide-react'
 
 import { productApi, skuApi } from '@/api/product'
 import { toastSuccess, toastWarning } from '@/lib/toast'
@@ -13,8 +13,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GenerateSkuDialog } from './generate-sku-dialog'
+import { SkuBarcodeDialog } from './sku-barcode-dialog'
 
 /** Backend phục vụ ảnh qua `GET /image?imageUrl=` (`[ANONYMOUS]`). */
 function imageSrc(url: string) {
@@ -22,6 +24,8 @@ function imageSrc(url: string) {
 }
 
 const MAX_IMAGES = 10
+/** Số SKU mỗi lần tải — bảng SKU dùng infinite scroll, cuộn tới cuối thì nối thêm trang sau. */
+const SKU_PAGE_SIZE = 20
 
 type ProductDetailModalProps = {
     /** `null` = đóng. Là bản rút gọn từ danh sách; modal tự gọi chi tiết để có `categories`. */
@@ -60,46 +64,153 @@ export function ProductDetailModal({
     const [loadingDetail, setLoadingDetail] = useState(false)
     const [skus, setSkus] = useState<Sku[]>([])
     const [loadingSkus, setLoadingSkus] = useState(false)
+    /** Tổng SKU phía server — để biết còn trang nào chưa tải. */
+    const [skuTotal, setSkuTotal] = useState(0)
+    const [skuPage, setSkuPage] = useState(1)
+    const [loadingMoreSkus, setLoadingMoreSkus] = useState(false)
+    const [barcodeSku, setBarcodeSku] = useState<Sku | null>(null)
+    /** Id SKU đang đổi trạng thái — khoá switch để tránh bấm liên tiếp. */
+    const [togglingSkuId, setTogglingSkuId] = useState<string | null>(null)
+    /*
+     * Infinite scroll dùng **callback ref** thay vì `useRef` + `useEffect`.
+     *
+     * Lý do: phần tử mốc chỉ được render bên trong nhánh `skus.length > 0`, nên ở lần effect chạy
+     * đầu tiên `ref.current` vẫn là `null` và observer không bao giờ được gắn — bảng đứng im ở
+     * trang 1 (đã tái hiện). Callback ref được React gọi **đúng lúc** node vào/ra DOM, nên observer
+     * luôn bám được.
+     */
+    const observerRef = useRef<IntersectionObserver | null>(null)
+    /*
+     * Callback của observer giữ closure lúc tạo; đọc state trực tiếp sẽ thấy giá trị cũ.
+     * Dồn mọi thứ cần đọc lúc callback chạy vào một ref để luôn lấy giá trị mới nhất.
+     */
+    const scrollStateRef = useRef({
+        hasMore: false,
+        loading: false,
+        loadingMore: false,
+        loadMore: () => {},
+    })
     const [generateOpen, setGenerateOpen] = useState(false)
     const [uploading, setUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const productId = product?.id ?? null
 
-    const loadDetail = useCallback(async () => {
-        if (!productId) return
-        setLoadingDetail(true)
-        try {
-            setDetail(await productApi.getById(productId))
-        } catch {
-            setDetail(null)
-        } finally {
-            setLoadingDetail(false)
-        }
-    }, [productId])
+    const loadDetail = useCallback(
+        async (signal?: AbortSignal) => {
+            if (!productId) return
+            setLoadingDetail(true)
+            try {
+                const result = await productApi.getById(productId, signal)
+                if (signal?.aborted) return
+                setDetail(result)
+            } catch {
+                if (signal?.aborted) return
+                setDetail(null)
+            } finally {
+                if (!signal?.aborted) setLoadingDetail(false)
+            }
+        },
+        [productId],
+    )
 
-    const loadSkus = useCallback(async () => {
+    /**
+     * Nạp trang đầu của bảng SKU. Các trang sau do `loadMoreSkus()` nối thêm khi cuộn tới cuối
+     * (infinite scroll) — sản phẩm nhiều màu × size có thể sinh hàng trăm SKU, tải hết một lần
+     * vừa chậm vừa thừa.
+     */
+    const loadSkus = useCallback(
+        async (signal?: AbortSignal) => {
+            if (!productId) return
+            setLoadingSkus(true)
+            try {
+                const res = await skuApi.search(
+                    { productId },
+                    { page: 1, size: SKU_PAGE_SIZE },
+                    signal,
+                )
+                if (signal?.aborted) return
+                setSkus(res.data)
+                setSkuTotal(res.total)
+                setSkuPage(1)
+            } catch {
+                if (signal?.aborted) return
+                setSkus([])
+                setSkuTotal(0)
+            } finally {
+                if (!signal?.aborted) setLoadingSkus(false)
+            }
+        },
+        [productId],
+    )
+
+    const loadMoreSkus = useCallback(async () => {
         if (!productId) return
-        setLoadingSkus(true)
+        const nextPage = skuPage + 1
+        setLoadingMoreSkus(true)
         try {
-            const res = await skuApi.search({ productId }, { page: 1, size: 200 })
-            setSkus(res.data)
+            const res = await skuApi.search({ productId }, { page: nextPage, size: SKU_PAGE_SIZE })
+            // Lọc trùng id: tránh nhân đôi khi trang trước vừa bị đổi trạng thái/sắp xếp lại.
+            setSkus((prev) => {
+                const seen = new Set(prev.map((s) => s.id))
+                return [...prev, ...res.data.filter((s) => !seen.has(s.id))]
+            })
+            setSkuTotal(res.total)
+            setSkuPage(nextPage)
         } catch {
-            setSkus([])
+            // api-client đã toast lỗi; giữ nguyên danh sách đang có.
         } finally {
-            setLoadingSkus(false)
+            setLoadingMoreSkus(false)
         }
-    }, [productId])
+    }, [productId, skuPage])
 
     useEffect(() => {
         if (!productId) {
             setDetail(null)
             setSkus([])
+            setSkuTotal(0)
+            setSkuPage(1)
             return
         }
-        void loadDetail()
-        void loadSkus()
+        const controller = new AbortController()
+        void loadDetail(controller.signal)
+        void loadSkus(controller.signal)
+        return () => controller.abort()
     }, [productId, loadDetail, loadSkus])
+
+    const hasMoreSkus = skus.length < skuTotal
+
+    // Luôn giữ giá trị mới nhất cho callback của observer (xem ghi chú ở `scrollStateRef`).
+    scrollStateRef.current = {
+        hasMore: hasMoreSkus,
+        loading: loadingSkus,
+        loadingMore: loadingMoreSkus,
+        loadMore: () => void loadMoreSkus(),
+    }
+
+    /**
+     * Callback ref cho phần tử mốc cuối bảng: node xuất hiện thì gắn observer, biến mất thì ngắt.
+     * `root` là chính khung cuộn của bảng (`[data-sku-scroll]`), không phải viewport — bảng nằm
+     * trong modal có vùng cuộn riêng.
+     */
+    const sentinelRef = useCallback((node: HTMLDivElement | null) => {
+        observerRef.current?.disconnect()
+        if (!node) return
+
+        observerRef.current = new IntersectionObserver(
+            (entries) => {
+                if (!entries[0]?.isIntersecting) return
+                const st = scrollStateRef.current
+                if (!st.hasMore || st.loading || st.loadingMore) return
+                st.loadMore()
+            },
+            { root: node.closest('[data-sku-scroll]'), rootMargin: '120px' },
+        )
+        observerRef.current.observe(node)
+    }, [])
+
+    /* Ngắt observer khi modal đóng để không giữ node đã gỡ. */
+    useEffect(() => () => observerRef.current?.disconnect(), [])
 
     if (!product) return null
 
@@ -118,12 +229,29 @@ export function ProductDetailModal({
         onChanged()
     }
 
+    /**
+     * Bật/tắt trạng thái một SKU.
+     *
+     * Cập nhật **tại chỗ đúng dòng đó** thay vì `loadSkus()` — nạp lại sẽ reset bảng về trang 1 và
+     * mất hết các trang người dùng đã cuộn tải thêm (infinite scroll). `togglingSkuId` khoá switch
+     * trong lúc chờ để không bấm liên tiếp sinh nhiều request trái chiều.
+     */
     const handleToggleSku = async (sku: Sku) => {
+        if (togglingSkuId) return
         const next =
             sku.status === EntityStatus.ACTIVE ? EntityStatus.INACTIVE : EntityStatus.ACTIVE
-        await skuApi.updateStatus(sku.id, next)
-        toastSuccess('product.toast.skuStatusUpdated', { ns: 'product' })
-        await loadSkus()
+        setTogglingSkuId(sku.id)
+        try {
+            await skuApi.updateStatus(sku.id, next)
+            setSkus((prev) =>
+                prev.map((s) => (s.id === sku.id ? { ...s, status: next } : s)),
+            )
+            toastSuccess('product.toast.skuStatusUpdated', { ns: 'product' })
+        } catch {
+            // api-client đã toast lỗi; giữ nguyên trạng thái cũ trên UI.
+        } finally {
+            setTogglingSkuId(null)
+        }
     }
 
     const handleUpload = async (files: FileList | null) => {
@@ -244,7 +372,7 @@ export function ProductDetailModal({
                     <TabsContent value="sku" className="space-y-4 pt-4">
                         <div className="flex items-center justify-between">
                             <p className="text-muted-foreground text-sm">
-                                {skus.length} {t('product.sku.resultLabel')}
+                                {skus.length}/{skuTotal} {t('product.sku.resultLabel')}
                             </p>
                             {canWrite && (
                                 <Button size="sm" onClick={() => setGenerateOpen(true)}>
@@ -261,9 +389,11 @@ export function ProductDetailModal({
                                 {t('product.sku.empty')}
                             </p>
                         ) : (
-                            <div className="overflow-x-auto rounded-md border">
+                            <div
+                                data-sku-scroll
+                                className="max-h-[22rem] overflow-x-auto overflow-y-auto rounded-md border">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-muted/50 text-muted-foreground text-xs">
+                                    <thead className="bg-muted text-muted-foreground sticky top-0 z-10 text-xs">
                                         <tr>
                                             <th className="p-3 text-left">
                                                 {t('product.sku.column.skuCode')}
@@ -280,7 +410,9 @@ export function ProductDetailModal({
                                             <th className="p-3 text-left">
                                                 {t('product.sku.column.status')}
                                             </th>
-                                            {canWrite && <th className="p-3 text-left" />}
+                                            <th className="p-3 text-left">
+                                                {t('product.sku.column.barcode')}
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -293,41 +425,63 @@ export function ProductDetailModal({
                                                     {sku.ean ?? t('product.sku.noEan')}
                                                 </td>
                                                 <td className="p-3">
-                                                    {sku.status === EntityStatus.ACTIVE ? (
-                                                        <StatusBadge tone="success">
-                                                            {t('product.list.statusActive')}
-                                                        </StatusBadge>
-                                                    ) : (
-                                                        <StatusBadge tone="muted">
-                                                            {t('product.list.statusInactive')}
-                                                        </StatusBadge>
-                                                    )}
-                                                </td>
-                                                {canWrite && (
-                                                    <td className="p-3">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="size-8"
+                                                    {/* Switch thay badge + nut nguon - bat/tat ngay tai cho. */}
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={sku.status === EntityStatus.ACTIVE}
+                                                            disabled={
+                                                                !canWrite || togglingSkuId === sku.id
+                                                            }
                                                             aria-label={
                                                                 sku.status === EntityStatus.ACTIVE
                                                                     ? t('product.sku.actionDeactivate')
                                                                     : t('product.sku.actionActivate')
                                                             }
-                                                            title={
-                                                                sku.status === EntityStatus.ACTIVE
-                                                                    ? t('product.sku.actionDeactivate')
-                                                                    : t('product.sku.actionActivate')
+                                                            onCheckedChange={() =>
+                                                                void handleToggleSku(sku)
                                                             }
-                                                            onClick={() => void handleToggleSku(sku)}>
-                                                            <Power className="size-4" />
-                                                        </Button>
-                                                    </td>
-                                                )}
+                                                        />
+                                                        <span className="text-muted-foreground text-xs">
+                                                            {sku.status === EntityStatus.ACTIVE
+                                                                ? t('product.list.statusActive')
+                                                                : t('product.list.statusInactive')}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-8"
+                                                        aria-label={t('product.barcode.view')}
+                                                        title={t('product.barcode.view')}
+                                                        onClick={() => setBarcodeSku(sku)}>
+                                                        <Barcode className="size-4" />
+                                                    </Button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
+
+                                {/*
+                                  * Mốc cuộn: lọt vào tầm nhìn ⇒ tải trang SKU kế tiếp.
+                                  * PHẢI có chiều cao thật (`h-px`) — div cao 0px không bao giờ được
+                                  * IntersectionObserver báo giao nhau, infinite scroll sẽ chết câm.
+                                  */}
+                                <div ref={sentinelRef} className="h-px" />
+
+                                {loadingMoreSkus && (
+                                    <p className="text-muted-foreground flex items-center justify-center gap-2 py-3 text-xs">
+                                        <Loader2 className="size-3 animate-spin" />
+                                        {t('product.sku.loadingMore')}
+                                    </p>
+                                )}
+                                {!hasMoreSkus && skus.length > SKU_PAGE_SIZE && (
+                                    <p className="text-muted-foreground py-3 text-center text-xs">
+                                        {t('product.sku.allLoaded')}
+                                    </p>
+                                )}
                             </div>
                         )}
                     </TabsContent>
@@ -381,6 +535,11 @@ export function ProductDetailModal({
                         )}
                     </TabsContent>
                 </Tabs>
+
+                <SkuBarcodeDialog
+                    sku={barcodeSku}
+                    onOpenChange={(open) => !open && setBarcodeSku(null)}
+                />
 
                 <GenerateSkuDialog
                     open={generateOpen}

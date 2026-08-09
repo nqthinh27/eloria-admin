@@ -308,6 +308,41 @@ export const apiClient = {
 
     delete: <T>(url: string, config?: RequestConfig) =>
         unwrap<T>({ ...config, method: 'DELETE', url }),
+
+    /**
+     * Tải nội dung nhị phân (ảnh, file) — ví dụ `GET /sku/{id}/barcode` trả **PNG thuần**,
+     * KHÔNG bọc `BaseResponse` nên không dùng `get()` được (`unwrap` sẽ đọc `body.code` và fail).
+     *
+     * Vẫn đi qua cùng instance axios nên giữ nguyên `Authorization`, cookie, xử lý 401 + refresh
+     * single-flight, và chuẩn hoá lỗi về `ApiError` như mọi lời gọi khác (CONVENTIONS mục 4).
+     * Trả `Blob` để caller tự tạo object URL và **tự thu hồi** bằng `URL.revokeObjectURL`.
+     */
+    async getBlob(url: string, config?: RequestConfig): Promise<Blob> {
+        try {
+            const response = await http.request<Blob>({
+                ...config,
+                method: 'GET',
+                url,
+                responseType: 'blob',
+            })
+            return response.data
+        } catch (error) {
+            /*
+             * Khi lỗi, backend trả JSON `ErrorResponse` nhưng `responseType: 'blob'` khiến axios
+             * gói nó thành Blob ⇒ mất `subKey`/`message`. Đọc ngược Blob về JSON để thông báo lỗi
+             * vẫn đúng như các API khác.
+             */
+            if (error instanceof AxiosError && error.response?.data instanceof Blob) {
+                try {
+                    const text = await error.response.data.text()
+                    error.response.data = JSON.parse(text)
+                } catch {
+                    // Không phải JSON (ảnh hỏng, lỗi hạ tầng…) — để toApiError xử lý mặc định.
+                }
+            }
+            throw toApiError(error)
+        }
+    },
 }
 
 /**

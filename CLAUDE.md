@@ -229,6 +229,10 @@ backend + gọi API thật:**
   "để dành cho sau"), đừng nhầm với `status`.
 - `color/search` và `size/search` trả `BaseListRes` (không `activeTotal`); `product`/`category`/
   `brand`/`sku` trả `BaseListResStatus`.
+- **`GET /sku/{id}/barcode`** (`[STAFF]`) — trả **ảnh PNG EAN-13** (không bọc `BaseResponse`) để
+  hiển thị/in tem. FE gọi qua `apiClient.getBlob()`; `apiClient.get()` sẽ hỏng vì `unwrap` đọc
+  `body.code`. `DELETE /sku/{id}` (`[SUPER_ADMIN]`, xoá mềm) cũng đã có — **cập nhật 2026-08-10**,
+  trước đó trả 405 vì server chạy bản build cũ.
 - **Không có `DELETE /product/{id}`** (trả 405, không có ở cả source lẫn api-docs). Xoá danh mục/
   thương hiệu bị chặn khi còn ràng buộc: `error.category.hasChildren`, `error.brand.hasProducts`.
   `DELETE /color/{id}` và `DELETE /size/{id}` là **hard delete** (chặn nếu còn SKU tham chiếu).

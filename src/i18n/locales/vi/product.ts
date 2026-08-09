@@ -99,13 +99,24 @@ export default {
                 size: 'SIZE',
                 ean: 'BARCODE (EAN)',
                 status: 'TRẠNG THÁI',
+                barcode: 'MÃ VẠCH',
                 actions: 'THAO TÁC',
             },
             noEan: 'Chưa có',
+            loadingMore: 'Đang tải thêm…',
+            allLoaded: 'Đã tải hết SKU',
             actionActivate: 'Bật kinh doanh',
             actionDeactivate: 'Ngừng kinh doanh',
             sizeGroupRequired:
                 'Sản phẩm chưa chọn nhóm size nên không lọc được size. Sửa sản phẩm và chọn nhóm size trước.',
+        },
+
+        /** Dialog xem mã vạch EAN-13 — `GET /sku/{id}/barcode` trả ảnh PNG. */
+        barcode: {
+            title: 'Mã vạch SKU',
+            view: 'Xem mã vạch',
+            print: 'In tem',
+            loadFailed: 'Không tải được ảnh mã vạch',
         },
 
         images: {
