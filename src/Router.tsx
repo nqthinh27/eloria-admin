@@ -11,6 +11,9 @@ import Placeholder from './pages/Placeholder'
 import StaffListPage from './pages/staff/StaffListPage'
 import BranchListPage from './pages/staff/BranchListPage'
 import AuditLogPage from './pages/staff/AuditLogPage'
+import CustomerListPage from './pages/customer/CustomerListPage'
+import ProductListPage from './pages/product/ProductListPage'
+import CategoryListPage from './pages/product/CategoryListPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
@@ -54,18 +57,9 @@ export default function Router() {
                             path="returns"
                             element={<Placeholder titleKey="menu.returns" phase={13} />}
                         />
-                        <Route
-                            path="customers"
-                            element={<Placeholder titleKey="menu.customers" phase={8} />}
-                        />
-                        <Route
-                            path="products"
-                            element={<Placeholder titleKey="menu.products" phase={9} />}
-                        />
-                        <Route
-                            path="categories"
-                            element={<Placeholder titleKey="menu.categories" phase={9} />}
-                        />
+                        <Route path="customers" element={<CustomerListPage />} />
+                        <Route path="products" element={<ProductListPage />} />
+                        <Route path="categories" element={<CategoryListPage />} />
                         <Route
                             path="inventory"
                             element={<Placeholder titleKey="menu.inventory" phase={10} />}

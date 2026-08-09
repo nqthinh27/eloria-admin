@@ -26,7 +26,18 @@ const PAGE_SIZE = 10
 /** Màn "Nhân viên" — mục menu riêng trong nhóm HỆ THỐNG, theo `07-nhan-vien.png`. */
 export default function StaffListPage() {
     const { t } = useTranslation(['staff', 'common'])
-    const { branches } = useBranch()
+    /*
+     * Nạp lại danh sách chi nhánh khi vào màn — người dùng khác có thể vừa thêm/sửa chi nhánh,
+     * dùng lại dữ liệu provider nạp từ lúc đăng nhập sẽ thiếu lựa chọn trong bộ lọc
+     * (không cache giữa các màn — chốt với user 2026-08-09).
+     */
+    const { branches, refresh: refreshBranches } = useBranch()
+
+    useEffect(() => {
+        const controller = new AbortController()
+        void refreshBranches(controller.signal)
+        return () => controller.abort()
+    }, [refreshBranches])
 
     const [data, setData] = useState<Staff[]>([])
     const [total, setTotal] = useState(0)
@@ -44,7 +55,7 @@ export default function StaffListPage() {
     const [toggleStatusStaff, setToggleStatusStaff] = useState<Staff | null>(null)
     const [deleteStaff, setDeleteStaff] = useState<Staff | null>(null)
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (signal?: AbortSignal) => {
         setLoading(true)
         setError(false)
         try {
@@ -55,18 +66,22 @@ export default function StaffListPage() {
                     branchId: branchFilter === ALL_BRANCHES ? undefined : branchFilter,
                 },
                 { page, size: PAGE_SIZE },
+                signal,
             )
             setData(result.data)
             setTotal(result.total)
         } catch {
+            if (signal?.aborted) return
             setError(true)
         } finally {
-            setLoading(false)
+            if (!signal?.aborted) setLoading(false)
         }
     }, [page, keyword, roleFilter, branchFilter])
 
     useEffect(() => {
-        void load()
+        const controller = new AbortController()
+        void load(controller.signal)
+        return () => controller.abort()
     }, [load])
 
     const handleSearchChange = (value: string) => {

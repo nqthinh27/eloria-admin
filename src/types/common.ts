@@ -63,7 +63,18 @@ export type SearchPagination = {
     sort?: string[]
 }
 
-/** Trạng thái bản ghi: 1 = đang hoạt động, 0 = ngừng. */
+/**
+ * Trạng thái bản ghi: `1` = đang hoạt động, `0` = ngừng.
+ *
+ * Backend còn giá trị thứ ba **`-1` = DELETED (xoá mềm)** — rule chung mọi entity có `status`
+ * (CONVENTIONS mục 3.3). **Cố tình KHÔNG khai ở đây** vì:
+ * - Bản ghi `-1` bị backend ẩn khỏi mọi truy vấn ⇒ FE không bao giờ nhận được giá trị này.
+ * - `-1` **không đặt được** qua `update-status` (DTO chặn `@Min(0) @Max(1)`), chỉ qua
+ *   `DELETE /<module>/{id}` riêng — nên không có chỗ nào ở FE cần gửi đi.
+ *
+ * Khai thêm `DELETED: -1` sẽ mở đường cho việc gửi nhầm lên `update-status` (backend trả 400)
+ * và dụ người viết UI dựng bộ lọc/badge "Đã xoá" cho dữ liệu không bao giờ tồn tại ở FE.
+ */
 export const EntityStatus = {
     INACTIVE: 0,
     ACTIVE: 1,

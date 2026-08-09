@@ -10,8 +10,8 @@ import type { BaseListResStatus, EntityStatus, SearchPagination } from '@/types/
  */
 export const branchApi = {
     /** `[STAFF] POST /branch/search` — `page`/`size`/`sort` ở query param, `body` chỉ chứa filter. */
-    search(body: BranchSearchReq, pagination?: SearchPagination) {
-        return search<BaseListResStatus<Branch>>('/branch/search', body, pagination)
+    search(body: BranchSearchReq, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListResStatus<Branch>>('/branch/search', body, pagination, { signal })
     },
 
     /** `[STAFF] GET /branch/{id}`. */

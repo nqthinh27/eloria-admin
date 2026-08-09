@@ -77,7 +77,8 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
   ⇒ **bắt buộc same-origin qua Vite dev proxy**. **Chỉ được set khi login gửi `rememberMe: true`.**
 - `SysUserDTO` mang `role` (`CUSTOMER | STAFF | ADMIN | SUPER_ADMIN`), `branchId` (null với SUPER_ADMIN),
   `langKey` — nguồn để dựng menu theo role và khoá bộ chọn chi nhánh.
-- Quy ước dữ liệu: `status` **`1` = ACTIVE, `0` = INACTIVE**; ngày giờ ISO-8601 UTC (`2026-08-05T16:17:10Z`);
+- Quy ước dữ liệu: `status` **`1` = ACTIVE, `0` = INACTIVE, `-1` = DELETED (xoá mềm)** — xem mục
+  "Quy ước `status` 3 giá trị" bên dưới; ngày giờ ISO-8601 UTC (`2026-08-05T16:17:10Z`);
   id là UUID chuỗi. Địa chỉ hành chính chỉ **2 cấp**: Tỉnh/Thành → Phường/Xã (không có Quận/Huyện).
 - Validate của backend cần khớp sang zod ở FE: mật khẩu `^(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9]).{6,50}$`,
   SĐT `^0\d{9}$`, username 6–50 ký tự (pattern username thật cho phép **cả email lẫn chuỗi
@@ -93,6 +94,42 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
   "chỉ hiển thị duy nhất lần này" — không có endpoint xem lại, UI phải tự lưu tạm trong state dialog.
 - **`UpdateStatusReqDTO` dùng chung cho staff và branch** = `{id, status}`, `status` giới hạn
   `minimum: 0, maximum: 1`.
+
+### Quy ước `status` 3 giá trị — **rule chung toàn hệ thống** (chốt với user 2026-08-09)
+
+`EStatus` phía backend có **3** giá trị, áp dụng cho *mọi* entity có cột `status`:
+
+| Giá trị | Ý nghĩa | Ai đặt |
+|---|---|---|
+| `1` | ACTIVE — đang hoạt động | API `update-status` |
+| `0` | INACTIVE — ngừng hoạt động (vẫn tra cứu được) | API `update-status` |
+| **`-1`** | **DELETED — xoá mềm**, bản ghi bị **ẩn khỏi mọi truy vấn nghiệp vụ** | **API `DELETE` riêng** |
+
+**Hai cơ chế TÁCH BIỆT, không dùng chung API/phương thức** (đã kiểm chứng trên source: 5 service
+`BranchServiceImpl` · `BrandServiceImpl` · `CategoryServiceImpl` · `SkuServiceImpl` ·
+`StaffServiceImpl` đều chỉ set `EStatus.DELETED` **bên trong `delete(id)`**, không service nào set
+qua `updateStatus()`):
+
+- **Bật/tắt** ⇒ `POST /<module>/update-status` với `UpdateStatusReqDTO = {id, status}`.
+  DTO này bị chặn **`@Min(0) @Max(1)`** ⇒ **gửi `-1` luôn trả `400 error.input.invalid`**, đã test thật.
+- **Xoá mềm** ⇒ `DELETE /<module>/{id}` (không có body). Backend tự set `-1` và tự chặn ràng buộc
+  (còn con / còn tham chiếu). Có ở: `staff`, `branch`, `brand`, `category`, `sku`.
+  Riêng `color`/`size` là **hard delete** thật (`@Min(-1)` không khai ở 2 entity này).
+
+**Hệ quả bắt buộc cho FE:**
+
+1. **Không bao giờ gửi `status: -1`** lên bất kỳ endpoint `update-status` nào. Muốn xoá ⇒ gọi `DELETE`.
+2. **Không dựng UI cho trạng thái "Đã xoá"** trong bộ lọc/badge: bản ghi `-1` bị backend loại khỏi
+   mọi truy vấn (`search` thêm điều kiện `status != -1`, `getExisting()` cũng lọc) ⇒ FE **không bao
+   giờ nhận được** bản ghi `-1`. Type FE khai `EntityStatus` 0/1 là đủ cho dữ liệu nhận về.
+3. Entity có `@Min(-1)` (tức áp dụng xoá mềm): `SysUser`, `Branch`, `Brand`, `Category`,
+   `Product`, `Sku`.
+
+⚠️ **`DELETE /sku/{id}` (`[SUPER_ADMIN] Xóa mềm SKU`) đã có trong source nhưng CHƯA có trên server
+đang chạy** — gọi thật trả **405**, và endpoint này **không xuất hiện trong `/v3/api-docs/api`**.
+Nguyên nhân: `SkuResource.java`/`SkuServiceImpl.java` đang ở trạng thái **modified chưa commit**
+(sửa lúc 17:23 ngày 2026-08-09, sau khi server khởi động). ⇒ Backend cần **build/chạy lại** thì FE
+mới dùng được. Tương tự, **`DELETE /product/{id}` không tồn tại** ở cả source lẫn api-docs (405).
 
 ### Phân quyền — role phân cấp, đọc từ `summary` của api-docs
 
@@ -145,6 +182,56 @@ PLAN Phase 6 vẫn giữ nguyên lớp mock hiện có cho tới khi phase đó 
 
 Pattern response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus*` (có `activeTotal`/
 `inactiveTotal` như staff/branch); `customer`/`color`/`size` chỉ dùng `BaseListRes` (`total` + `data[]`).
+
+**Chi tiết domain khách hàng — xác minh khi code Phase 8 (2026-08-09), đã đối chiếu api-docs +
+source backend + gọi API thật:**
+
+- **`CustomerResDTO` = `{id, fullName, phoneNumber, email, dob, gender, branchId, membershipPoint,
+  status, createdDate, branchName}`.** ⚠️ **KHÔNG có `code`, `tier`, `orderCount`, `totalSpent`,
+  `lastPurchaseDate`** — dù mockup `10-khach-hang.png` vẽ 4 cột cuối. Hồ sơ khách map từ `SysUser`,
+  và backend **chưa có entity đơn hàng nào** (`domain/` chỉ có SysUser, Branch, Brand, Category,
+  Color, Product, RelProductCategory, SizeOption, Sku) ⇒ **không có nguồn để tính** các chỉ số đó.
+  Field `activated` có trong DTO Java nhưng **không xuất hiện trong JSON** ⇒ đừng khai ở FE.
+- `CreateCustomerReqDTO` bắt buộc `fullName` + `phoneNumber`; `email` bỏ trống ⇒ backend tự sinh
+  `{phoneNumber}@example.com`; **SUPER_ADMIN bắt buộc truyền `branchId`** (thiếu ⇒ `code:14`,
+  `subKey: error.branch.required`), STAFF/ADMIN bị ép về chi nhánh của mình.
+- **`UpdateCustomerReqDTO` chỉ có `{fullName, email, dob, gender}`** — **không** đổi được
+  `phoneNumber`/`branchId`/`status` (mapper backend `@Mapping(ignore)` các field này).
+- `CustomerSearchReqDTO` = `{keyword, status, branchId}`; **`branchId` chỉ có tác dụng với
+  SUPER_ADMIN**. STAFF/ADMIN luôn chỉ thấy khách chi nhánh mình (backend tự chặn).
+- `GET /customer/duplicates?phone=` là **`[ADMIN]`** (STAFF gọi ⇒ 403), trả
+  `{exists, viewable, customer}`: khách **ngoài chi nhánh** trả `exists:true, viewable:false,
+  customer:null` (không lộ hồ sơ). Tạo trùng SĐT ⇒ `code:3`, `subKey: error.phone.existed`.
+- **Không có endpoint xoá khách hàng, đổi trạng thái khách hàng, hay gộp (merge) hồ sơ trùng.**
+
+**Chi tiết domain sản phẩm — xác minh khi code Phase 9 (2026-08-09), đối chiếu api-docs + source
+backend + gọi API thật:**
+
+- **Phân quyền khác các domain khác: đọc `[STAFF]`, ghi `[SUPER_ADMIN]`** cho *toàn bộ*
+  product/sku/category/brand/color/size — **ADMIN gọi API ghi cũng 403** (đã test).
+- `ProductResDTO` = `{id, code, name, slug, price, shortDescription, description, gender, status,
+  brandId, brandName, material, metadata, sizeGroup, images[], categories[], createdDate, lastModifiedDate}`.
+  **Không có tồn kho, không có vòng đời SKU, không có ảnh đại diện riêng.**
+  ⚠️ **`categories` LUÔN rỗng `[]` ở `POST /product/search`**, chỉ được populate ở `GET /product/{id}`.
+  ⚠️ **`GET /product/{id}` KHÔNG trả kèm SKU** dù `summary` ghi "+ bảng SKU" — phải gọi
+  `POST /sku/search` với `{productId}`.
+- `material` là **enum fix cứng** `COTTON | LINEN | SILK | WOOL` — không có API danh mục chất liệu.
+  Cũng **không có** API nhà cung cấp / bộ sưu tập mùa.
+- `UpdateProductReqDTO` **bỏ `code`** (không sửa được mã); `CreateCategoryReqDTO` và
+  `UpdateCategoryReqDTO` thì **cùng bộ field** (danh mục sửa được `code`).
+- `POST /product/{id}/generate-sku` nhận `{colorIds[], sizeIds[]}`, **idempotent** (ô đã có SKU thì
+  bỏ qua), trả **toàn bộ** SKU hiện có của sản phẩm.
+- `POST /product/{id}/images` là **multipart** (field `files`, tối đa 10), **thay toàn bộ gallery**
+  theo thứ tự file truyền lên ⇒ api-client phải bỏ header `Content-Type` khi body là `FormData`.
+- `Sku.status` theo đúng **quy ước 3 giá trị chung** (xem mục "Quy ước `status` 3 giá trị"):
+  bật/tắt qua `sku/update-status` (0/1), xoá mềm qua `DELETE /sku/{id}` — **hai API tách biệt**.
+  Vòng đời New/Markdown/Ngừng KD trong mockup vẫn **chưa có** enum riêng (ghi chú `Sku.java`:
+  "để dành cho sau"), đừng nhầm với `status`.
+- `color/search` và `size/search` trả `BaseListRes` (không `activeTotal`); `product`/`category`/
+  `brand`/`sku` trả `BaseListResStatus`.
+- **Không có `DELETE /product/{id}`** (trả 405, không có ở cả source lẫn api-docs). Xoá danh mục/
+  thương hiệu bị chặn khi còn ràng buộc: `error.category.hasChildren`, `error.brand.hasProducts`.
+  `DELETE /color/{id}` và `DELETE /size/{id}` là **hard delete** (chặn nếu còn SKU tham chiếu).
 
 **Vẫn chưa có** API: giá theo kênh riêng biệt, kho/tồn kho, POS, đơn hàng, đổi/trả, khuyến mại, ca
 làm việc (shift) ⇒ các phase đó (10–14) vẫn chạy trên **lớp mock sau service layer** (PLAN Phase 6).
@@ -200,6 +287,10 @@ mobile chỉ cần "không vỡ", và **không làm dark theme** (CONVENTIONS m�
   **không có `tailwind.config.js`**. Design token màu khai báo tại đây, không hardcode hex trong component.
 - shadcn/ui style `new-york`, base color `neutral`, icon `lucide` (xem [components.json](components.json)).
   Thêm component mới bằng CLI shadcn, đừng viết tay component trùng chức năng.
+- ⚠️ **`bg-background` là màu XÁM nền trang (#F1F5F9), không phải trắng** — trắng là `bg-card`/
+  `bg-popover`. Bản shadcn gốc dùng `bg-background` cho `DialogContent`, `SheetContent` và
+  `Button variant="outline"` ⇒ các thành phần này **chìm vào nền, trông như trong suốt**.
+  Đã sửa cả 3 sang `bg-card` (2026-08-09). Chạy `npx shadcn add` thêm component mới thì phải rà lại.
 - Router chọn `BrowserRouter`/`HashRouter` theo env `VITE_USE_HASH_ROUTE` (xem [src/App.tsx](src/App.tsx)).
 - TS strict + `noUnusedLocals`/`noUnusedParameters` đang bật ⇒ biến thừa làm **build fail**, không chỉ cảnh báo lint.
 - `.env` bị gitignore; mẫu biến ở `.env.example`.

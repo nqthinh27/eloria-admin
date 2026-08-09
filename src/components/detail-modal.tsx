@@ -52,6 +52,13 @@ type DetailModalProps<TValues extends FieldValues> = {
     fields: DetailField<TValues>[]
     values: TValues
     onSave: (values: TValues) => Promise<void>
+    /**
+     * `false` ⇒ modal chỉ xem, ẩn hẳn nút "Sửa". Dùng khi role hiện tại không gọi được API cập nhật
+     * (ví dụ STAFF ở màn Khách hàng — `PUT /customer/{id}` là `[ADMIN]`): để nút "Sửa" sẽ dẫn tới
+     * form khoá toàn bộ field và một nút "Lưu" chắc chắn 403. Mặc định `true` — giữ nguyên hành vi
+     * các màn đã dùng từ Phase 7.
+     */
+    canEdit?: boolean
 }
 
 /**
@@ -68,6 +75,7 @@ export function DetailModal<TValues extends FieldValues>({
     fields,
     values,
     onSave,
+    canEdit = true,
 }: DetailModalProps<TValues>) {
     const { t } = useTranslation('common')
     const [isEditing, setIsEditing] = useState(false)
@@ -215,6 +223,7 @@ export function DetailModal<TValues extends FieldValues>({
                                         onClick={() => onOpenChange(false)}>
                                         {t('action.close')}
                                     </Button>
+                                    {canEdit && (
                                     <Button
                                         type="button"
                                         onClick={() => {
@@ -228,6 +237,7 @@ export function DetailModal<TValues extends FieldValues>({
                                         <Pencil className="size-4" />
                                         {t('action.edit')}
                                     </Button>
+                                    )}
                                 </>
                             )}
                         </DialogFooter>

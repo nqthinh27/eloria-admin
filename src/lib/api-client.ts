@@ -83,6 +83,15 @@ http.interceptors.request.use((config: InternalConfig) => {
     if (token) headers.set('Authorization', `Bearer ${token}`)
     headers.set('Accept-Language', getCurrentLanguage())
 
+    /*
+     * Upload multipart (ví dụ `POST /product/{id}/images`): phải BỎ `Content-Type` mặc định
+     * `application/json` khai ở instance, để axios tự đặt `multipart/form-data; boundary=…`.
+     * Giữ nguyên header JSON thì backend không parse được phần thân và trả 400/415.
+     */
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+        headers.delete('Content-Type')
+    }
+
     config.headers = headers
     return config
 })

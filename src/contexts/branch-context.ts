@@ -11,6 +11,11 @@ import type { Branch } from '@/types/branch'
 export type BranchContextValue = {
     branches: Branch[]
     loading: boolean
+    /**
+     * Nạp lại danh sách — dùng sau khi màn "Chi nhánh" thêm/sửa/xoá.
+     * Nhờ đó màn đó không phải tự gọi `branch/search` song song với provider (tránh gọi trùng API).
+     */
+    refresh: (signal?: AbortSignal) => Promise<void>
 }
 
 export const BranchContext = createContext<BranchContextValue | null>(null)

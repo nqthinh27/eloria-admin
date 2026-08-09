@@ -37,6 +37,13 @@ export default {
         prevPage: 'Previous page',
         nextPage: 'Next page',
     },
+    searchSelect: {
+        searchPlaceholder: 'Search…',
+        empty: 'No results found',
+        clearSearch: 'Clear search',
+        selectedCount: '{{count}} selected',
+        removeItem: 'Remove {{name}}',
+    },
     confirmDialog: {
         auditNotice: 'This action will be recorded in the audit log.',
     },

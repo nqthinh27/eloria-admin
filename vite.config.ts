@@ -26,5 +26,15 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    // `npm run preview` chạy bản build thật — cũng cần proxy y hệt dev, nếu không mọi lời gọi API
+    // đều 404 và không kiểm chứng được bản production trước khi deploy.
+    preview: {
+      proxy: {
+        "/v1.0": {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
+      },
+    },
   }
 })

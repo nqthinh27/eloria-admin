@@ -18,8 +18,8 @@ import type {
  */
 export const staffApi = {
     /** `[ADMIN] POST /staff/search` — `page`/`size`/`sort` ở query param, `body` chỉ chứa filter. */
-    search(body: StaffSearchReq, pagination?: SearchPagination) {
-        return search<BaseListResStatus<Staff>>('/staff/search', body, pagination)
+    search(body: StaffSearchReq, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListResStatus<Staff>>('/staff/search', body, pagination, { signal })
     },
 
     /** `[ADMIN] GET /staff/{id}`. */

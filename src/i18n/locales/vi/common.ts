@@ -38,6 +38,13 @@ export default {
         prevPage: 'Trang trước',
         nextPage: 'Trang sau',
     },
+    searchSelect: {
+        searchPlaceholder: 'Tìm kiếm…',
+        empty: 'Không tìm thấy kết quả',
+        clearSearch: 'Xoá từ khoá',
+        selectedCount: 'Đã chọn {{count}}',
+        removeItem: 'Bỏ chọn {{name}}',
+    },
     confirmDialog: {
         auditNotice: 'Hành động này sẽ được lưu vào nhật ký (audit log).',
     },

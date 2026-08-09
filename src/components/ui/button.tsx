@@ -13,8 +13,12 @@ const buttonVariants = cva(
           "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
         destructive:
           "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        // ⚠️ `bg-card` (trắng) thay `bg-background` của bản shadcn gốc: token repo có
+        // `--background` = xám nền trang (#F1F5F9) nên nút outline **chìm hẳn vào nền**, nhìn như
+        // trong suốt — ảnh hưởng nút "Xuất dữ liệu", phân trang, "Sửa" trên card chi nhánh…
+        // (user báo 2026-08-09). `SelectTrigger`/`Input` của shadcn vốn đã dùng `bg-card`.
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-card shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost:

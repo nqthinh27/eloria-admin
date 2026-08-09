@@ -1,162 +1,152 @@
-import { useMock } from '@/config/app'
 import { apiClient, search } from '@/lib/api-client'
-import { mockProductCategories, mockProducts, mockSkus } from '@/mocks/product'
-import { mockDelay, paginateMock } from '@/mocks/mock-utils'
-import type { BaseListRes, SearchPagination } from '@/types/common'
 import type {
+    BaseListRes,
+    BaseListResStatus,
+    EntityStatus,
+    SearchPagination,
+} from '@/types/common'
+import type {
+    Brand,
+    Category,
+    CategoryPayload,
+    CategorySearchReq,
+    Color,
+    CreateProductReq,
+    GenerateSkuReq,
     Product,
-    ProductCategory,
-    ProductCategoryPayload,
-    ProductCategorySearchReq,
-    ProductPayload,
     ProductSearchReq,
+    Size,
     Sku,
+    SkuSearchReq,
+    UpdateProductReq,
 } from '@/types/product'
 
-/** Service danh mục sản phẩm — CHƯA có API thật (PLAN Phase 6). */
-export const productCategoryApi = {
-    async search(
-        body: ProductCategorySearchReq,
-        pagination?: SearchPagination,
-    ): Promise<BaseListRes<ProductCategory>> {
-        if (useMock) {
-            await mockDelay()
-            return paginateMock(
-                mockProductCategories,
-                body,
-                (item, keyword) =>
-                    item.name.toLowerCase().includes(keyword) || item.code.toLowerCase().includes(keyword),
-                pagination,
-            )
-        }
-        return search<BaseListRes<ProductCategory>>('/product-category/search', body, pagination)
-    },
-
-    async create(payload: ProductCategoryPayload): Promise<ProductCategory> {
-        if (useMock) {
-            await mockDelay()
-            const parent = mockProductCategories.find((c) => c.id === payload.parentId)
-            const created: ProductCategory = {
-                id: `cat-mock-${Date.now()}`,
-                code: `CAT${String(mockProductCategories.length + 1).padStart(3, '0')}`,
-                name: payload.name,
-                parentId: payload.parentId ?? null,
-                parentName: parent?.name ?? null,
-                productCount: 0,
-                brandCount: 0,
-                collectionCount: 0,
-                status: 1,
-            }
-            mockProductCategories.unshift(created)
-            return created
-        }
-        return apiClient.post<ProductCategory>('/product-category', payload)
-    },
-
-    async update(id: string, payload: ProductCategoryPayload): Promise<ProductCategory> {
-        if (useMock) {
-            await mockDelay()
-            const found = mockProductCategories.find((c) => c.id === id)
-            if (!found) throw new Error(`Mock: không tìm thấy danh mục ${id}`)
-            found.name = payload.name
-            return found
-        }
-        return apiClient.put<ProductCategory>(`/product-category/${id}`, payload)
-    },
-
-    async remove(id: string): Promise<null> {
-        if (useMock) {
-            await mockDelay()
-            const index = mockProductCategories.findIndex((c) => c.id === id)
-            if (index >= 0) mockProductCategories.splice(index, 1)
-            return null
-        }
-        return apiClient.delete<null>(`/product-category/${id}`)
-    },
-}
-
-/** Service sản phẩm & SKU — CHƯA có API thật (PLAN Phase 6). */
+/**
+ * Service domain sản phẩm — **API thật** (backend bổ sung từ 2026-08-08, khảo sát lại 2026-08-09).
+ * Không còn nhánh mock: `src/mocks/product.ts` chỉ phục vụ Phase 6 và đã hết vai trò.
+ *
+ * Phân quyền: **đọc `[STAFF]`, ghi `[SUPER_ADMIN]`** cho toàn bộ nhóm này (khác staff/customer
+ * là `[ADMIN]`) — ADMIN gọi API ghi cũng nhận 403, đã kiểm chứng bằng tài khoản thật.
+ */
 export const productApi = {
-    async search(
-        body: ProductSearchReq,
-        pagination?: SearchPagination,
-    ): Promise<BaseListRes<Product>> {
-        if (useMock) {
-            await mockDelay()
-            return paginateMock(
-                mockProducts,
-                body,
-                (item, keyword) =>
-                    item.name.toLowerCase().includes(keyword) || item.code.toLowerCase().includes(keyword),
-                pagination,
-            )
-        }
-        return search<BaseListRes<Product>>('/product/search', body, pagination)
+    /** `[STAFF] POST /product/search` — ⚠️ `categories` trong kết quả luôn rỗng, xem `types/product.ts`. */
+    search(body: ProductSearchReq, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListResStatus<Product>>('/product/search', body, pagination, { signal })
     },
 
-    async getById(id: string): Promise<Product> {
-        if (useMock) {
-            await mockDelay()
-            const found = mockProducts.find((p) => p.id === id)
-            if (!found) throw new Error(`Mock: không tìm thấy sản phẩm ${id}`)
-            return found
-        }
+    /** `[STAFF] GET /product/{id}` — bản duy nhất có `categories` được populate. */
+    getById(id: string) {
         return apiClient.get<Product>(`/product/${id}`)
     },
 
-    async create(payload: ProductPayload): Promise<Product> {
-        if (useMock) {
-            await mockDelay()
-            const categoryNames = payload.categoryIds
-                .map((id) => mockProductCategories.find((c) => c.id === id)?.name)
-                .filter((name): name is string => Boolean(name))
-            const created: Product = {
-                id: `prd-mock-${Date.now()}`,
-                code: `SP${String(mockProducts.length + 1).padStart(3, '0')}`,
-                name: payload.name,
-                categoryIds: payload.categoryIds,
-                categoryNames,
-                brandName: payload.brandName ?? null,
-                basePrice: 0,
-                totalStock: 0,
-                imageUrl: null,
-                lifecycle: 'NEW',
-                status: 1,
-                createdDate: new Date().toISOString(),
-            }
-            mockProducts.unshift(created)
-            return created
-        }
+    /** `[SUPER_ADMIN] POST /product`. */
+    create(payload: CreateProductReq) {
         return apiClient.post<Product>('/product', payload)
     },
 
-    async update(id: string, payload: ProductPayload): Promise<Product> {
-        if (useMock) {
-            await mockDelay()
-            const found = mockProducts.find((p) => p.id === id)
-            if (!found) throw new Error(`Mock: không tìm thấy sản phẩm ${id}`)
-            Object.assign(found, payload)
-            return found
-        }
+    /** `[SUPER_ADMIN] PUT /product/{id}` — không đổi được `code`. */
+    update(id: string, payload: UpdateProductReq) {
         return apiClient.put<Product>(`/product/${id}`, payload)
     },
 
-    async remove(id: string): Promise<null> {
-        if (useMock) {
-            await mockDelay()
-            const index = mockProducts.findIndex((p) => p.id === id)
-            if (index >= 0) mockProducts.splice(index, 1)
-            return null
-        }
-        return apiClient.delete<null>(`/product/${id}`)
+    /**
+     * `[SUPER_ADMIN] POST /product/{id}/generate-sku` — sinh ma trận màu × size.
+     * Idempotent: ô đã có SKU thì bỏ qua, trả về **toàn bộ** SKU hiện có của sản phẩm.
+     */
+    generateSku(id: string, payload: GenerateSkuReq) {
+        return apiClient.post<Sku[]>(`/product/${id}/generate-sku`, payload)
     },
 
-    /** SKU thuộc 1 sản phẩm — ma trận màu × size (`11-san-pham.png`). */
-    async listSkus(productId: string): Promise<Sku[]> {
-        if (useMock) {
-            await mockDelay()
-            return mockSkus.filter((s) => s.productId === productId)
-        }
-        return apiClient.get<Sku[]>(`/product/${productId}/sku`)
+    /**
+     * `[SUPER_ADMIN] POST /product/{id}/images` — multipart, thay **toàn bộ** gallery
+     * (tối đa 10 ảnh) theo đúng thứ tự file truyền lên.
+     */
+    uploadImages(id: string, files: File[]) {
+        const form = new FormData()
+        files.forEach((file) => form.append('files', file))
+        return apiClient.post<Product>(`/product/${id}/images`, form)
+    },
+}
+
+export const skuApi = {
+    /** `[STAFF] POST /sku/search` — lọc theo `productId` để lấy bảng SKU của 1 sản phẩm. */
+    search(body: SkuSearchReq, pagination?: SearchPagination) {
+        return search<BaseListResStatus<Sku>>('/sku/search', body, pagination)
+    },
+
+    /** `[STAFF] GET /sku/{id}`. */
+    getById(id: string) {
+        return apiClient.get<Sku>(`/sku/${id}`)
+    },
+
+    /** `[STAFF] GET /sku/by-ean/{ean}` — quét barcode. */
+    getByEan(ean: string) {
+        return apiClient.get<Sku>(`/sku/by-ean/${ean}`)
+    },
+
+    /** `[SUPER_ADMIN] POST /sku/update-status` — chỉ nhận 0/1, xem ghi chú `Sku` trong types. */
+    updateStatus(id: string, status: EntityStatus) {
+        return apiClient.post<null>('/sku/update-status', { id, status })
+    },
+}
+
+export const categoryApi = {
+    /** `[STAFF] POST /category/search`. */
+    search(body: CategorySearchReq, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListResStatus<Category>>('/category/search', body, pagination, { signal })
+    },
+
+    /** `[STAFF] GET /category/{id}`. */
+    getById(id: string) {
+        return apiClient.get<Category>(`/category/${id}`)
+    },
+
+    /** `[SUPER_ADMIN] POST /category`. */
+    create(payload: CategoryPayload) {
+        return apiClient.post<Category>('/category', payload)
+    },
+
+    /** `[SUPER_ADMIN] PUT /category/{id}`. */
+    update(id: string, payload: CategoryPayload) {
+        return apiClient.put<Category>(`/category/${id}`, payload)
+    },
+
+    /** `[SUPER_ADMIN] POST /category/update-status`. */
+    updateStatus(id: string, status: EntityStatus) {
+        return apiClient.post<null>('/category/update-status', { id, status })
+    },
+
+    /** `[SUPER_ADMIN] DELETE /category/{id}` — xoá mềm, chặn nếu còn danh mục con hoặc sản phẩm gán vào. */
+    remove(id: string) {
+        return apiClient.delete<null>(`/category/${id}`)
+    },
+}
+
+/**
+ * Danh mục nền dùng để dựng form sản phẩm (chọn thương hiệu, sinh ma trận SKU).
+ * Chưa có màn CRUD riêng cho brand/color/size — ngoài phạm vi Phase 9 (mockup không vẽ, menu không có mục).
+ */
+export const brandApi = {
+    /** `[STAFF] POST /brand/search`. */
+    search(body: { keyword?: string; status?: EntityStatus }, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListResStatus<Brand>>('/brand/search', body, pagination, { signal })
+    },
+}
+
+export const colorApi = {
+    /** `[STAFF] POST /color/search` — `BaseListRes` (không có `activeTotal`). */
+    search(body: { keyword?: string; status?: EntityStatus }, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListRes<Color>>('/color/search', body, pagination, { signal })
+    },
+}
+
+export const sizeApi = {
+    /** `[STAFF] POST /size/search` — `sizeGroup` lọc theo nhóm size (`Áo`, `Quần`…). */
+    search(
+        body: { keyword?: string; status?: EntityStatus; sizeGroup?: string },
+        pagination?: SearchPagination,
+        signal?: AbortSignal,
+    ) {
+        return search<BaseListRes<Size>>('/size/search', body, pagination, { signal })
     },
 }

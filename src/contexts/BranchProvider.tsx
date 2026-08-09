@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { branchApi } from '@/api/branch'
 import { useAuth } from '@/hooks/use-auth'
@@ -16,33 +16,52 @@ import { BranchContext } from './branch-context'
 export function BranchProvider({ children }: { children: ReactNode }) {
     const { status } = useAuth()
     const [branches, setBranches] = useState<Branch[]>([])
-    const [loading, setLoading] = useState(true)
+    // Mặc định `false`: provider không tự nạp, nên chưa gọi `refresh()` thì không có gì đang tải.
+    const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        if (status !== 'authenticated') return
-
-        let alive = true
+    const fetchBranches = useCallback(async (signal?: AbortSignal) => {
         setLoading(true)
+        try {
+            // Lấy đủ danh sách cho dropdown; số chi nhánh của một chuỗi bán lẻ đủ nhỏ.
+            const result = await branchApi.search(
+                {},
+                { page: 1, size: 200, sort: ['name,ASC'] },
+                signal,
+            )
+            setBranches(result.data)
+        } catch {
+            // Request bị huỷ không phải lỗi thật.
+            if (signal?.aborted) return
+            // api-client đã toast lỗi; dropdown để rỗng chứ không làm vỡ form.
+            setBranches([])
+        } finally {
+            if (!signal?.aborted) setLoading(false)
+        }
+    }, [])
 
-        void (async () => {
-            try {
-                // Lấy đủ danh sách cho dropdown; số chi nhánh của một chuỗi bán lẻ đủ nhỏ.
-                const result = await branchApi.search({}, { page: 1, size: 200, sort: ['name,ASC'] })
-                if (alive) setBranches(result.data)
-            } catch {
-                // api-client đã toast lỗi; dropdown để rỗng chứ không làm vỡ form.
-                if (alive) setBranches([])
-            } finally {
-                if (alive) setLoading(false)
-            }
-        })()
-
-        return () => {
-            alive = false
+    /*
+     * ⚠️ Provider **KHÔNG tự nạp** khi đăng nhập.
+     *
+     * Trước đây provider nạp sẵn một lần rồi giữ mãi — dữ liệu thành cũ khi người dùng khác
+     * thêm/sửa chi nhánh (đã tái hiện: admin khác thêm chi nhánh, quay lại màn vẫn thấy số cũ).
+     * Nhưng nếu vừa để provider tự nạp vừa cho màn gọi `refresh()` thì `branch/search` bị gọi
+     * **2 lần trong cùng một màn** — đúng thứ cần tránh.
+     *
+     * Chốt: provider chỉ giữ state + hàm nạp; **màn nào cần thì tự gọi `refresh()` khi vào màn**.
+     * Nhờ đó mỗi màn gọi đúng 1 lần và luôn là dữ liệu mới nhất.
+     */
+    useEffect(() => {
+        // Đăng xuất thì dọn state để phiên sau không thấy dữ liệu của phiên trước.
+        if (status !== 'authenticated') {
+            setBranches([])
+            setLoading(false)
         }
     }, [status])
 
-    const value = useMemo(() => ({ branches, loading }), [branches, loading])
+    const value = useMemo(
+        () => ({ branches, loading, refresh: fetchBranches }),
+        [branches, loading, fetchBranches],
+    )
 
     return <BranchContext value={value}>{children}</BranchContext>
 }

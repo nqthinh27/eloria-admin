@@ -64,6 +64,34 @@ export default {
             hasActiveStaff: 'Chi nhánh vẫn còn nhân viên đang hoạt động, không thể ngừng hoạt động.',
         },
 
+        // Domain sản phẩm (Phase 9) — key trích từ source backend, không tự bịa.
+        category: {
+            notExisted: 'Danh mục không tồn tại.',
+            codeExisted: 'Mã danh mục đã tồn tại.',
+            hasChildren: 'Danh mục vẫn còn danh mục con, không thể xoá.',
+            parentInvalid: 'Danh mục cha không hợp lệ (không được chọn chính nó hoặc danh mục con của nó).',
+        },
+        brand: {
+            notExisted: 'Thương hiệu không tồn tại.',
+            codeExisted: 'Mã thương hiệu đã tồn tại.',
+            hasProducts: 'Thương hiệu vẫn còn sản phẩm tham chiếu, không thể xoá.',
+        },
+        color: {
+            notExisted: 'Màu không tồn tại.',
+            codeExisted: 'Mã màu đã tồn tại.',
+        },
+        size: {
+            notExisted: 'Size không tồn tại.',
+            codeExisted: 'Mã size đã tồn tại.',
+        },
+        product: {
+            notExisted: 'Sản phẩm không tồn tại.',
+            codeExisted: 'Mã sản phẩm đã tồn tại.',
+        },
+        sku: {
+            notExisted: 'SKU không tồn tại.',
+        },
+
         // Địa chỉ hành chính
         address: {
             provinceInvalid: 'Tỉnh/Thành không hợp lệ.',

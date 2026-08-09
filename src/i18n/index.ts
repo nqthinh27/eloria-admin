@@ -7,11 +7,15 @@ import viErrors from './locales/vi/errors'
 import viAuth from './locales/vi/auth'
 import viMenu from './locales/vi/menu'
 import viStaff from './locales/vi/staff'
+import viCustomer from './locales/vi/customer'
+import viProduct from './locales/vi/product'
 import enCommon from './locales/en/common'
 import enErrors from './locales/en/errors'
 import enAuth from './locales/en/auth'
 import enMenu from './locales/en/menu'
 import enStaff from './locales/en/staff'
+import enCustomer from './locales/en/customer'
+import enProduct from './locales/en/product'
 
 export const SUPPORTED_LANGUAGES = ['vi', 'en'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
@@ -22,8 +26,24 @@ export const DEFAULT_LANGUAGE: SupportedLanguage = 'vi'
 export const LANGUAGE_STORAGE_KEY = 'eloria-lang'
 
 const resources = {
-    vi: { common: viCommon, errors: viErrors, auth: viAuth, menu: viMenu, staff: viStaff },
-    en: { common: enCommon, errors: enErrors, auth: enAuth, menu: enMenu, staff: enStaff },
+    vi: {
+        common: viCommon,
+        errors: viErrors,
+        auth: viAuth,
+        menu: viMenu,
+        staff: viStaff,
+        customer: viCustomer,
+        product: viProduct,
+    },
+    en: {
+        common: enCommon,
+        errors: enErrors,
+        auth: enAuth,
+        menu: enMenu,
+        staff: enStaff,
+        customer: enCustomer,
+        product: enProduct,
+    },
 }
 
 /*
@@ -43,7 +63,7 @@ i18n
         resources,
         fallbackLng: DEFAULT_LANGUAGE,
         supportedLngs: SUPPORTED_LANGUAGES,
-        ns: ['common', 'errors', 'auth', 'menu', 'staff'],
+        ns: ['common', 'errors', 'auth', 'menu', 'staff', 'customer', 'product'],
         defaultNS: 'common',
         /*
          * CHỈ đọc lựa chọn đã lưu, KHÔNG dò `navigator.language`.

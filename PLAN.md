@@ -4,7 +4,7 @@
 > agent **chỉ thực hiện đúng phase được chỉ định**, không tự làm lấn sang phase khác.
 > Đọc [CONVENTIONS.md](CONVENTIONS.md) trước khi bắt đầu bất kỳ phase nào.
 
-Trạng thái: **Phase 0 · 1 · 2 · 3 · 4 · 5 · 6 · 7 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08). Các phase còn lại chưa bắt đầu.
+Trạng thái: **Phase 0 · 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 · 9 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09). Các phase còn lại chưa bắt đầu.
 
 ---
 
@@ -86,8 +86,8 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **5** | ✅ Bộ component & pattern dùng chung | 3 | `04`, `07`, `11` |
 | **6** | ✅ Lớp mock data & service contract (chỉ cho module **chưa có API**) | 1, 5 | — |
 | **7** | ✅ Nhân viên & Chi nhánh + Audit log (**API thật**) | 4, 5 | `07`, `08`, `09` |
-| **8** | Khách hàng (CRM) | 5, 6 | `10` |
-| **9** | Sản phẩm & Danh mục SP | 5, 6 | `11`, `12` |
+| **8** | ✅ Khách hàng (CRM) (**API thật**) | 5, 6 | `10` |
+| **9** | ✅ Sản phẩm & Danh mục SP (**API thật**) | 5, 6 | `11`, `12` |
 | **10** | Kho hàng: tồn kho · phiếu nhập · kiểm kê | 5, 6, 9 | `13`, `14`, `15` |
 | **11** | POS: mở ca · bán hàng | 5, 6, 9, 10 | `02`, `03` |
 | **12** | Đơn hàng & chi tiết đơn | 5, 6 | `04`, `05` |
@@ -896,7 +896,7 @@ gửi cho tới khi bấm "Lưu" thật; bấm "Lưu" thật sau khi sửa gửi
 
 ---
 
-## Phase 8 — Khách hàng (CRM)
+## Phase 8 — Khách hàng (CRM) ✅ **ĐÃ XONG (2026-08-09)**
 
 **Thiết kế:** `10-khach-hang.png`.
 
@@ -904,9 +904,92 @@ gửi cho tới khi bấm "Lưu" thật; bấm "Lưu" thật sau khi sửa gửi
 - Trang chi tiết: thông tin, lịch sử mua toàn kênh, size hay mua, sản phẩm ưa thích *(chưa có mockup)*.
 - Cảnh báo **trùng hồ sơ theo SĐT** + hành động "gộp hồ sơ" (confirm dialog).
 
+**Chạy trên API thật** (không mock) — đã đọc lại `/v3/api-docs/api` trước khi code theo CONVENTIONS mục 1.
+
+### ⚠️ Lệch so với mockup — 4 cột không có nguồn dữ liệu (đã chốt với user)
+
+Mockup `10-khach-hang.png` có 6 cột: KHÁCH HÀNG · LIÊN HỆ · **PHÂN HẠNG** · **SỐ ĐƠN** ·
+**TỔNG CHI TIÊU** · **LẦN CUỐI MUA**. Kiểm chứng **3 lớp** (api-docs · source
+`CustomerResDTO.java` + `CustomerMapper.java` · gọi API thật) đều xác nhận backend **không có**
+4 field in đậm: hồ sơ khách map từ `SysUser`, và thư mục `domain/` của backend **chưa có entity
+đơn hàng/hoá đơn nào** (chỉ `SysUser`, `Branch`, `Brand`, `Category`, `Color`, `Product`,
+`RelProductCategory`, `SizeOption`) ⇒ không có nguồn để tính. `grep` toàn backend cho
+`tier|totalSpent|orderCount|lastPurchase` chỉ ra 1 kết quả không liên quan trong
+`SecurityConfiguration.java`.
+
+**User đã chốt: bám DTO thật, thay tập cột** (giữ nguyên bố cục/style/wording tiêu đề mockup):
+KHÁCH HÀNG (tên + SĐT) · LIÊN HỆ (email) · CHI NHÁNH · ĐIỂM TÍCH LUỸ (`membershipPoint`) ·
+TRẠNG THÁI · NGÀY TẠO · THAO TÁC. **Khi Phase 12 có API đơn hàng thì bổ sung lại 4 cột kia**
+cho khớp mockup.
+
+**Chưa làm (do backend chưa có API, không phải bỏ sót):**
+- "Gộp hồ sơ" trùng SĐT — có API **tra trùng** (`GET /customer/duplicates`) nên đã làm phần
+  *cảnh báo*, nhưng **không có endpoint merge** ⇒ chưa dựng confirm dialog gộp.
+- Trang chi tiết với lịch sử mua toàn kênh / size hay mua / sản phẩm ưa thích — phụ thuộc API
+  đơn hàng (Phase 12). Hiện chỉ có modal chi tiết hồ sơ.
+- Không có API xoá / đổi trạng thái khách hàng ⇒ không dựng nút tương ứng.
+
+**Ghi chú dữ liệu:** `CustomerResDTO` phía Java có field `activated` nhưng **không xuất hiện
+trong JSON thật** ⇒ không khai trong type FE. `customer/search` trả `BaseListRes` (chỉ
+`total` + `data[]`), **không** có `activeTotal`/`inactiveTotal` như `staff`/`branch`.
+
+**Kết quả:** lint 0 lỗi (5 warning `react-refresh` cũ trong `components/ui`), build sạch.
+Đã tạo **8 khách hàng mẫu qua API thật** (7 tên/SĐT/email lấy nguyên văn từ mockup + 1 sinh ra
+lúc test luồng thêm mới), rải trên các chi nhánh có sẵn để test được RBAC scoping.
+
+Test bằng Chrome headless thật (`puppeteer-core`) với **cả 3 tài khoản**:
+`superadmin` thấy 7–8 khách + bộ lọc chi nhánh · `adminbranch`/`staffone` chỉ thấy **1** khách
+đúng chi nhánh mình, **không** có bộ lọc chi nhánh · modal chi tiết mở đúng dữ liệu ·
+`STAFF` **không** thấy nút "Sửa" trong modal · SUPER_ADMIN sửa được: đúng **1** `PUT /customer/{id}`
+khi bấm "Lưu", có toast, danh sách tự nạp lại · thêm mới gửi payload sạch
+(`{fullName, phoneNumber, branchId}`) · cảnh báo trùng SĐT hiện đúng 2 biến thể · không lỗi console.
+
+**File chính:**
+- `src/types/customer.ts` — **viết lại** theo DTO thật (bỏ `code`/`tier`/`orderCount`/`totalSpent`/
+  `lastPurchaseDate` tự đặt ở Phase 6; thêm `membershipPoint`/`branchId`/`branchName`),
+  tách `CreateCustomerReq`/`UpdateCustomerReq`/`CustomerDuplicate`.
+- `src/api/customer.ts` — **bỏ hẳn nhánh mock**, gọi API thật; `checkDuplicate()` bật
+  `skipErrorToast` (STAFF gọi sẽ 403 — đường đi bình thường, không phải lỗi cần toast).
+- `src/pages/customer/CustomerListPage.tsx` + `components/{customer-columns,customer-form-dialog,customer-detail-modal}.tsx`.
+- `src/i18n/locales/{vi,en}/customer.ts` — namespace mới, đăng ký trong `src/i18n/index.ts`.
+- `src/Router.tsx` — `/customers` trỏ `CustomerListPage` thay `Placeholder`.
+- **Đã xoá `src/mocks/customer.ts`** — lớp mock Phase 6 hết vai trò khi module có API thật; để lại
+  sẽ fail build vì import type `ECustomerTier`/`CustomerPayload` đã bị gỡ (`tsconfig.app.json`
+  type-check toàn bộ `src/`, không theo import graph).
+
+**Quyết định kỹ thuật:**
+
+- **`DetailModal` nhận thêm prop `canEdit` (mặc định `true`).** `PUT /customer/{id}` là `[ADMIN]`
+  nên STAFF không sửa được, nhưng modal chung luôn render nút "Sửa" ⇒ STAFF bấm vào sẽ rơi vào
+  chế độ sửa với **toàn bộ field khoá** và nút "Lưu" chắc chắn 403. Thêm cờ để ẩn hẳn nút "Sửa";
+  mặc định `true` nên màn Nhân viên (Phase 7) giữ nguyên hành vi. *(Phát hiện khi test bằng
+  trình duyệt thật, build sạch không lộ ra.)*
+- **Bộ lọc chi nhánh chỉ hiện với SUPER_ADMIN.** `CustomerSearchReqDTO.branchId` được api-docs ghi
+  rõ "chỉ có tác dụng với SUPER_ADMIN"; STAFF/ADMIN bị backend ép về chi nhánh mình nên hiện bộ lọc
+  cho họ chỉ gây hiểu nhầm là lọc được. Khác màn Nhân viên (ở đó ADMIN vẫn thấy bộ lọc).
+- **`branchId` trong form dùng `z.string({ error })` chứ không chỉ `.min(1)`.** Chưa chọn gì thì giá
+  trị là `undefined` ⇒ zod v4 bắn lỗi **kiểu** mặc định bằng tiếng Anh
+  ("Invalid input: expected string, received undefined") lọt thẳng ra UI, vi phạm quy tắc "không
+  hardcode chuỗi/đủ i18n". Phải đặt `error` cho chính schema mới dịch được. *(Cũng phát hiện bằng
+  test trình duyệt.)*
+- **Tra trùng SĐT debounce 400ms + `AbortController`** — gọi khi SĐT khớp `^0\d{9}$`, chỉ ở chế độ
+  thêm mới và chỉ với ADMIN+. Xử lý đủ **2 biến thể** backend trả: cùng chi nhánh
+  (`viewable: true` → hiện tên + chi nhánh khách đã có) và khác chi nhánh
+  (`exists: true, viewable: false, customer: null` → chỉ báo "đã được sử dụng", không lộ hồ sơ).
+- **Form sửa khoá `phoneNumber` + `branchId`**: `UpdateCustomerReqDTO` không có 2 field này
+  (mapper backend `@Mapping(ignore)`), hiển thị nhưng disabled thay vì ẩn — đúng pattern
+  `username`/`role` của màn Nhân viên.
+- **Nút "Xuất dữ liệu" chỉ hiện toast "sắp có"** — chưa có API export phía backend (đúng phạm vi
+  PLAN Phase 5).
+
+**Giả định:** dữ liệu mẫu tạo trên backend dev local; `membershipPoint` của mọi khách đang là `0`
+(backend mặc định, chưa có nghiệp vụ cộng điểm) nên cột ĐIỂM TÍCH LUỸ hiện toàn `0` — đúng dữ liệu
+thật, không phải lỗi hiển thị. Backend **không có endpoint xoá khách hàng** nên bản ghi tạo lúc
+test không xoá được, đã đổi tên thành khách mẫu hợp lệ (`Lê Thanh Hà`).
+
 ---
 
-## Phase 9 — Sản phẩm & Danh mục SP
+## Phase 9 — Sản phẩm & Danh mục SP ✅ **ĐÃ XONG (2026-08-09)**
 
 **Thiết kế:** `11-san-pham.png`, `12-danh-muc-sp.png`.
 
@@ -916,6 +999,226 @@ gửi cho tới khi bấm "Lưu" thật; bấm "Lưu" thật sau khi sửa gửi
 - Quản lý ảnh theo color-way, chọn ảnh đại diện.
 - Badge vòng đời SKU: New → Active → Markdown → Ngừng KD.
 - Import/Export Excel có **preview lỗi trước khi xác nhận**.
+
+**Chạy trên API thật** — đã đọc lại `/v3/api-docs/api` + source backend trước khi code (CONVENTIONS mục 1).
+
+### Phân quyền khác các phase trước
+
+Toàn bộ nhóm sản phẩm: **đọc `[STAFF]`, ghi `[SUPER_ADMIN]`**. Khác staff/customer (`[ADMIN]`) —
+**ADMIN gọi API ghi cũng nhận 403**, đã kiểm chứng bằng tài khoản thật. UI vì thế chỉ hiện nút
+thêm/sửa/xoá với SUPER_ADMIN (`hasRole(user, SUPER_ADMIN)`), đúng quyết định Phase 4
+(STAFF/ADMIN thấy 2 màn này ở **chế độ xem**).
+
+### ⚠️ Lệch so với mockup — thiếu nguồn dữ liệu (đã chốt với user)
+
+| Mockup | Thực tế backend | Xử lý |
+|---|---|---|
+| Card "**Tồn: 143**" | Chưa có API kho (Phase 10) | Bỏ dòng tồn khỏi card |
+| Badge **New / Markdown / Ngừng KD** | `Sku.status` chỉ 0/1; ghi chú trong `Sku.java`: vòng đời "chưa có enum riêng, để dành cho sau" | Chỉ hiện Active / Ngừng kinh doanh |
+| Card có tag danh mục ("Áo sơ mi +1") | `POST /product/search` trả `categories` **luôn rỗng** (chỉ `GET /product/{id}` populate) | Tag danh mục chỉ hiện trong modal chi tiết |
+| Cột **SỐ SẢN PHẨM · THƯƠNG HIỆU · BỘ SƯU TẬP** ở màn Danh mục | `CategoryResDTO` không có số đếm nào; không có API bộ sưu tập | Thay bằng THỨ TỰ · TRẠNG THÁI |
+| Nút **Import Excel / Export** | Không có API | **User đã chốt: dời sang các phase cuối** |
+| CRUD chất liệu / nhà cung cấp / bộ sưu tập mùa | `material` là **enum fix cứng** `COTTON\|LINEN\|SILK\|WOOL`; không có API 3 nhóm này | **User đã chốt: FE fix cứng enum giống BE**, không dựng CRUD |
+
+**Về `status` của SKU — user chốt lại 2026-08-09:** `-1` là **trạng thái xoá mềm, rule chung toàn
+hệ thống**, và **không dùng chung API/phương thức với `status` 0/1**. Đã kiểm chứng trên source và
+ghi thành mục riêng ở [CONVENTIONS.md](CONVENTIONS.md) mục 3.3 + [CLAUDE.md](CLAUDE.md):
+
+- Bật/tắt ⇒ `POST /<module>/update-status` (chặn `@Min(0) @Max(1)`, gửi `-1` trả `400`).
+- Xoá mềm ⇒ `DELETE /<module>/{id}` riêng; 5 service (`staff`/`branch`/`brand`/`category`/`sku`)
+  đều chỉ set `EStatus.DELETED` **bên trong `delete(id)`**, không service nào set qua `updateStatus()`.
+- Bản ghi `-1` bị ẩn khỏi mọi truy vấn ⇒ FE không nhận được, **không dựng bộ lọc/badge "Đã xoá"**.
+
+⚠️ **Đính chính báo cáo trước đó:** tôi từng kết luận "không có endpoint xoá SKU" — **sai**.
+`DELETE /sku/{id}` **đã có trong source** (`SkuResource.java`, `[SUPER_ADMIN] Xóa mềm SKU`), nhưng
+gọi thật vẫn trả **405** và không xuất hiện trong api-docs, vì `SkuResource.java`/`SkuServiceImpl.java`
+đang **modified chưa commit** (sửa 17:23 ngày 2026-08-09, sau khi server đang chạy khởi động).
+⇒ **Backend cần build/chạy lại**; sau đó FE có thể bổ sung nút xoá SKU trong modal chi tiết
+(hiện chỉ có bật/tắt). `DELETE /product/{id}` thì **thật sự không tồn tại** ở cả source lẫn api-docs.
+
+**Chưa làm (ngoài phạm vi / thiếu API):** 3 màn CRUD Thương hiệu · Màu · Size (có API đủ nhưng
+**mockup không vẽ và menu không có mục** — cần user chốt trước khi thêm route mới); "chọn ảnh đại
+diện" riêng (API chỉ nhận cả gallery theo thứ tự, ảnh đầu mặc định là đại diện); quản lý ảnh
+**theo color-way** (ảnh gắn ở cấp sản phẩm, không gắn theo màu); **không có API xoá sản phẩm**
+(`DELETE /product/{id}` trả 405).
+
+**Kết quả:** lint 0 lỗi (5 warning `react-refresh` cũ), build sạch. Đã tạo **dữ liệu mẫu đầy đủ
+qua API thật**: 4 thương hiệu · 6 màu · 8 size (2 nhóm Áo/Quần) · 13 danh mục (cây 2 cấp) ·
+9 sản phẩm (8 tên/mã/giá **lấy nguyên văn từ mockup** + 1 sinh lúc test) · **100 SKU**.
+
+Test bằng Chrome headless thật (`puppeteer-core`):
+`superadmin` thấy đủ nút thêm/sửa/xoá · `staffone` **không** thấy nút nào (chỉ xem) ·
+modal chi tiết 3 tab chạy đúng (Thông tin hiện `categories` thật, Bảng SKU nạp 12 SKU qua
+`/sku/search`, tab Ảnh có empty state) · bật/tắt trạng thái SKU gửi đúng `POST /sku/update-status`
+kèm toast · **tạo sản phẩm mới → sinh ma trận 2×2 → 4 SKU xuất hiện** đúng luồng ·
+tạo danh mục con gửi đúng `parentId`/`sortOrder` · bộ lọc cấp (gốc/con) lọc đúng ·
+xoá danh mục còn con bị chặn và **hiện đúng câu tiếng Việt** `error.category.hasChildren` ·
+không lỗi console.
+
+**File chính:**
+- `src/types/product.ts` — **viết lại** theo DTO thật (bỏ `ESkuLifecycle`/`totalStock`/`basePrice`/
+  `productCount`… tự đặt ở Phase 6), thêm `EMaterial`, `CategoryRef`, tách `Create*`/`Update*`.
+- `src/api/product.ts` — **bỏ hẳn nhánh mock**; 6 service: `productApi` · `skuApi` · `categoryApi` ·
+  `brandApi` · `colorApi` · `sizeApi`.
+- `src/pages/product/ProductListPage.tsx` (card grid) + `CategoryListPage.tsx` (bảng) +
+  `components/{product-form-dialog,product-detail-modal,generate-sku-dialog,category-form-dialog}.tsx`.
+- `src/i18n/locales/{vi,en}/product.ts` (namespace mới) + **bổ sung 14 key lỗi** domain sản phẩm
+  vào `errors.ts` cả 2 ngôn ngữ (trích từ source backend, không tự bịa).
+- `src/lib/api-client.ts` — xử lý `FormData` (xem quyết định kỹ thuật).
+- `src/Router.tsx` — `/products`, `/categories` trỏ màn thật; **đã xoá `src/mocks/product.ts`**.
+
+**Quyết định kỹ thuật:**
+
+- **`api-client` phải xoá header `Content-Type` khi body là `FormData`.** Instance axios khai cứng
+  `application/json`, upload ảnh (`POST /product/{id}/images`, multipart) sẽ không có `boundary`
+  ⇒ backend không parse được. Đã thêm nhánh `config.data instanceof FormData ⇒ headers.delete`.
+  Đây là **lần đầu repo có upload multipart**, các phase sau dùng lại được.
+- **`GET /product/{id}` KHÔNG trả kèm SKU** dù `summary` api-docs ghi "+ bảng SKU" (kiểm chứng bằng
+  dữ liệu thật) ⇒ modal chi tiết gọi riêng `POST /sku/search?productId=`.
+- **Modal chi tiết sản phẩm không dùng `DetailModal` chung** (khác Nhân viên/Khách hàng): màn này
+  cần 3 tab với bảng SKU và lưới ảnh, không phải form field phẳng — sửa sản phẩm đi qua
+  `ProductFormDialog` riêng.
+- **Lọc theo cấp (gốc/con) ở màn Danh mục làm phía client.** `CategorySearchReqDTO` chỉ có
+  `parentId` (lọc theo **một** cha cụ thể), không có tham số "chỉ lấy gốc"/"chỉ lấy con".
+- **Dialog sinh SKU không tự loại cặp đã tồn tại** — API idempotent ("ô đã có SKU thì bỏ qua"),
+  bấm lại cùng lựa chọn không tạo trùng, nên để backend quyết định thay vì tự tính ở FE.
+- **Size trong dialog sinh SKU lọc theo `sizeGroup` của sản phẩm**; sản phẩm chưa chọn nhóm size
+  thì hiện cảnh báo và khoá nút, thay vì đưa ra toàn bộ size của mọi nhóm.
+
+### Bổ sung sau review của user (2026-08-09) — droplist danh mục có ô tìm kiếm
+
+User góp ý: danh mục sẽ nhiều dần, cần **search ngay trong droplist** (lọc ở tầng FE).
+Đã dựng component dùng chung **`src/components/search-select.tsx`** và áp cho **cả 3 chỗ**:
+bộ lọc "Tất cả danh mục" (màn Sản phẩm) · picker chọn danh mục trong form sản phẩm ·
+dropdown "Danh mục cha" (form danh mục).
+
+**Quyết định kỹ thuật:**
+
+- **Không thêm dependency mới.** Dựng bằng `Popover` + `Input` đã có sẵn, thay vì cài `cmdk`
+  để dùng shadcn `Command`/Combobox (CONVENTIONS mục 8 — hỏi trước khi thêm dep; user đã chọn
+  phương án không thêm dep).
+- **Tìm kiếm bỏ dấu tiếng Việt**: chuẩn hoá `NFD` + strip `[̀-ͯ]` + `đ→d`, nên gõ
+  `ao so mi` ra "Áo sơ mi", gõ `dam` ra "Váy đầm"/"Đầm công sở". Khớp cả **tên lẫn mã** danh mục.
+- **Ô search chỉ hiện khi > 8 lựa chọn** (`searchThreshold`) — danh sách ngắn (thương hiệu, giới
+  tính, chất liệu) giữ nguyên `Select` thường, thêm ô search chỉ gây vướng.
+- **Chọn nhiều thay danh sách checkbox cuộn dọc** ở form sản phẩm: nút hiện "Đã chọn N", bên dưới
+  là **chip có nút ✕** để bỏ nhanh mà không cần mở lại dropdown. Form gọn hơn hẳn.
+- Component **generic, dùng lại được** cho brand/color/size ở các phase sau; danh sách lớn tới mức
+  phải phân trang thì cần search phía server, **không** dùng component này.
+
+**Kiểm chứng:** đã thêm 10 danh mục (tổng **23**, vượt ngưỡng hiện search) và test Chrome headless:
+gõ `dam` (không dấu) ở bộ lọc ra đúng 3 danh mục có dấu → chọn xong lọc còn 1 sản phẩm ·
+gõ `ao` ở form ra 8 kết quả, chọn 2 → nút hiện "Đã chọn 2" + 2 chip · gõ `quan` ở dropdown danh mục
+cha ra đủ 8 danh mục quần · tạo sản phẩm mới gửi đúng `categoryIds` 2 phần tử và modal chi tiết
+hiển thị đúng 2 danh mục đã lưu · không lỗi console. Lint 0 lỗi, build sạch.
+
+**File thêm/đổi:** `src/components/search-select.tsx` (mới) · `ProductListPage.tsx` ·
+`product-form-dialog.tsx` · `category-form-dialog.tsx` · `src/i18n/locales/{vi,en}/common.ts`
+(namespace `searchSelect`).
+
+### Fix bug sau review của user (2026-08-09) — dropdown trong suốt + vị trí nút hành động
+
+**1. Overlay/nút trong suốt, nhìn xuyên thấy nội dung phía sau.**
+
+Nguyên nhân thật (đơn giản hơn nhiều so với chẩn đoán ban đầu của tôi): **token `--background` của
+repo là màu XÁM nền trang** (`#F1F5F9`), còn trắng là `--card`/`--popover`. Bản shadcn gốc dùng
+`bg-background` cho `DialogContent`, `SheetContent` và `Button variant="outline"` ⇒ các thành phần
+này mang **đúng màu nền phía sau**, nên tuy vẫn "đục" về mặt kỹ thuật nhưng mắt nhìn thành **trong
+suốt / chìm hẳn vào nền**.
+
+Ảnh hưởng: modal (mọi form thêm/sửa), sheet (sidebar mobile), và **mọi nút outline** — nút
+"Xuất dữ liệu", nút phân trang "Trang trước/sau", nút "Sửa" trên card chi nhánh, trigger của
+`SearchSelect`.
+
+**Cách sửa:** đổi `bg-background` → `bg-card` ở đúng **3 chỗ**: `dialog.tsx`, `sheet.tsx`,
+`button.tsx` (variant `outline`). Sửa ở `button.tsx` là sửa một lần cho toàn bộ nút outline, không
+phải vá từng màn.
+
+⚠️ **Ghi nhận sai lầm để không lặp lại:** ban đầu tôi kết luận nhầm là do
+`tailwindcss-animate@1.0.7` (plugin Tailwind v3) chạy trên Tailwind v4 làm `--tw-enter-opacity`
+kẹt ở `0`. Biến đó **thật sự** bằng 0, nhưng **không phải nguyên nhân** — đã kiểm chứng bằng cách
+gỡ hẳn bản vá đó, lỗi vẫn y nguyên; và tắt toàn bộ `animation` cũng không hết. Bản vá CSS 29 dòng
+`!important` khi đó **đã được gỡ sạch**, `index.css` trở về nguyên trạng.
+
+**Bài học về cách nghiệm thu:** tôi đã báo "đã fix" 2 lần dựa trên **computed style**
+(`opacity: 1`, `backgroundColor: oklch(1 0 0)`) — các giá trị này luôn "đúng" nên che mất lỗi thật.
+Chỉ khi **đọc màu pixel** của ảnh chụp mới thấy sự thật. Với lỗi hiển thị, **phải nghiệm thu bằng
+pixel**, không tin computed style.
+
+**2. Nút hành động (Thêm · Xuất · Nhập…) chuyển xuống cùng hàng với bộ lọc.**
+
+Trước đó nút nằm ở `PageHeader` (hàng tiêu đề). Theo yêu cầu user, chuyển sang slot `actions` của
+`DataTableToolbar` — ô tìm kiếm + filter bên trái, cụm nút bên phải **cùng một hàng ngang**;
+`PageHeader` chỉ còn tiêu đề + mô tả. Áp cho màn **Sản phẩm**, **Danh mục SP**, và **Khách hàng**
+(nút "Xuất dữ liệu"). Màn Nhân viên vốn đã đúng pattern này từ Phase 7.
+**Đã ghi thành rule ở [CONVENTIONS.md](CONVENTIONS.md) mục 5** để mọi màn danh sách sau này theo đúng.
+
+**Kiểm chứng (bằng pixel, không phải computed style):** dải ngang giữa dialog chỉ còn **một màu
+`(255,255,255)`** — không còn chữ của bảng phía sau lọt qua; trigger `SearchSelect` `(255,255,255)`
+trùng khớp `SelectTrigger` bên cạnh và khác rõ nền trang `(241,245,249)`; quét lại 5 màn không còn
+nút nào mang màu nền trang. Nút "Thêm sản phẩm" cùng toạ độ `y` với ô tìm kiếm (`y=168`).
+Lint 0 lỗi, build sạch, 6 màn regression không vỡ.
+
+### Tối ưu số lượng API sau review của user (2026-08-09)
+
+User phát hiện màn Danh mục gọi **2 API cho cùng một bảng** (`size=10` cho bảng + `size=200` cho
+dropdown "danh mục cha"). Rà lại toàn app: **`/products` 15 request**, `/categories` 9, `/branch` 7
+mỗi lần mở màn.
+
+**Yêu cầu đã được user làm rõ:** chỉ cần **không duplicate trong CÙNG một màn**, *không* phải hạn
+chế gọi lại API giữa các màn. Lý do user đưa ra (và đúng): **không thể biết lúc nào admin khác
+thêm chi nhánh/danh mục** — cache giữa các màn sẽ hiển thị dữ liệu cũ. ⇒ **Hạn chế dùng cache.**
+
+| # | Nguyên nhân | Cách sửa |
+|---|---|---|
+| 1 | `CategoryListPage` gọi 2 API cho cùng bảng dữ liệu | Nạp **1 lần** toàn cây rồi lọc + phân trang phía client |
+| 2 | `BranchListPage` tự gọi `branch/search` trong khi `BranchProvider` cũng nạp | `BranchProvider` **không tự nạp** nữa; màn nào cần thì gọi `refresh()` khi vào màn |
+| 3 | Effect nạp dữ liệu không huỷ request khi unmount ⇒ StrictMode làm nhân đôi request khi dev | Thêm `AbortController` cho **mọi** effect gọi API |
+
+**Kết quả — mỗi endpoint đúng 1 lần/màn:**
+`/products` **15 → 8** · `/categories` **9 → 4** · `/branch` **7 → 4** · `/staff`, `/customers` **7 → 5**.
+Không còn endpoint nghiệp vụ nào lặp lại. (`GET /account/me` 2 lần là **đúng thiết kế**: lần đầu
+401 ⇒ api-client tự `/refresh` rồi retry — single-flight của Phase 2.)
+
+⚠️ **Đã thử và GỠ BỎ hướng cache** (`src/api/catalog-cache.ts`): ban đầu tôi thêm cache in-memory
+TTL 5 phút cho danh mục nền, giảm được request khi qua lại giữa các màn — nhưng **sai yêu cầu** và
+tạo rủi ro dữ liệu cũ. Đã xoá hẳn file này; vào màn là nạp lại.
+
+**Bug dữ liệu cũ đã tái hiện được và sửa xong:** `BranchProvider` trước đây nạp một lần lúc đăng
+nhập rồi giữ mãi. Test thật: tạo chi nhánh mới qua API (mô phỏng admin khác) → quay lại màn Chi
+nhánh vẫn hiển thị **6** thay vì 7. Sau khi sửa: hiển thị đúng **7**.
+
+**Lợi ích phụ:** bộ lọc cấp (gốc/con) ở màn Danh mục trước đây chỉ lọc trong **10 dòng của trang
+hiện tại** nên tổng số sai; giờ lọc trên toàn cây — chọn "Danh mục gốc" ra đúng **3/3**.
+Tìm kiếm cũng không còn gọi API mỗi lần gõ.
+
+**Quyết định kỹ thuật:**
+
+- **`BranchProvider` cố ý không tự nạp khi đăng nhập.** Nếu vừa để provider tự nạp vừa cho màn gọi
+  `refresh()` thì `branch/search` bị gọi **2 lần** — đúng thứ cần tránh. Provider chỉ giữ state +
+  hàm nạp; màn nào cần thì gọi. `loading` mặc định `false` vì không có gì tự tải.
+- **`<StrictMode>` GIỮ BẬT** (user chốt sau khi cân nhắc). Từng tắt tạm để soi tab Network, nhưng
+  đo lại thì thấy: **không cần tắt khi build production** — React tự loại bỏ toàn bộ hành vi
+  StrictMode ở bản production. Kiểm chứng bằng số liệu: mở `/products` trên `vite preview` (bản
+  build) và `vite dev` đều **8 request như nhau**.
+  Quan trọng hơn: việc dev nhân đôi request **là triệu chứng của effect chưa idempotent**, không
+  phải lỗi của StrictMode. Sau khi thêm `AbortController` cho mọi effect gọi API thì **dev cũng
+  hết nhân đôi** — dev khớp production. Đúng tinh thần: sửa effect, đừng tắt StrictMode để giấu
+  triệu chứng.
+- **Thêm `AbortSignal` cho toàn bộ `*Api.search()`** (tham số thứ 3) và `AbortController` trong mọi
+  `useEffect` gọi API (5 màn danh sách + `BranchProvider`). Ngoài việc hết nhân đôi, còn tránh
+  set state trên component đã unmount và bỏ được response cũ ghi đè kết quả mới khi đổi filter nhanh.
+- **`vite.config.ts` bổ sung `preview.proxy`**: trước đó chỉ khai proxy cho `server` (dev) nên
+  `npx vite preview` không gọi được API (mọi request 404) — không kiểm chứng được bản production
+  trước khi deploy. Giờ `npm run build && npx vite preview` chạy được với backend thật.
+- Rule đã ghi vào [CONVENTIONS.md](CONVENTIONS.md) mục 5: *không duplicate trong 1 màn, không cache
+  giữa các màn*.
+
+**Giả định:** dữ liệu mẫu nằm trên backend dev local. Backend **không có API xoá sản phẩm** nên
+bản ghi tạo lúc test không xoá được — đã đổi thành sản phẩm mẫu hợp lệ (`SP009 — Áo len cổ lọ dệt kim`).
+Ảnh sản phẩm hiện **chưa có cái nào** (chưa upload thật, chỉ kiểm tra empty state + nút bấm), nên
+luồng upload multipart mới chỉ được kiểm chứng ở mức code/không lỗi console — **nên upload thử 1 ảnh
+tay** để chốt hoàn toàn.
 
 ---
 

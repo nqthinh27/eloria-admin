@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Lock, MapPin, MoreHorizontal, Pencil, Plus, Trash2, Unlock } from 'lucide-react'
 
 import { branchApi } from '@/api/branch'
+import { useBranch } from '@/hooks/use-branch'
 import { toastSuccess } from '@/lib/toast'
 import { EntityStatus, ERole } from '@/types/common'
 import type { Branch } from '@/types/branch'
@@ -26,26 +27,25 @@ import { BranchFormDialog } from './components/branch-form-dialog'
 export default function BranchListPage() {
     const { t } = useTranslation(['staff', 'common'])
 
-    const [branches, setBranches] = useState<Branch[]>([])
-    const [loading, setLoading] = useState(true)
+    /*
+     * Lấy danh sách từ `BranchProvider` (nguồn duy nhất, tránh gọi `branch/search` 2 lần trong
+     * cùng màn) NHƯNG **luôn nạp lại khi vào màn** — người dùng khác có thể vừa thêm/sửa chi nhánh,
+     * dùng lại dữ liệu provider đã nạp từ lúc đăng nhập sẽ hiển thị **dữ liệu cũ**
+     * (đã tái hiện được: admin khác thêm chi nhánh, quay lại màn vẫn thấy số cũ — user cảnh báo
+     * 2026-08-09). Nạp lại 1 lần/1 lần vào màn, không phải mỗi lần render.
+     */
+    const { branches, loading, refresh: load } = useBranch()
+
+    useEffect(() => {
+        const controller = new AbortController()
+        void load(controller.signal)
+        return () => controller.abort()
+    }, [load])
+
     const [keyword, setKeyword] = useState('')
     const [formBranch, setFormBranch] = useState<Branch | null | 'new'>(null)
     const [deleteBranch, setDeleteBranch] = useState<Branch | null>(null)
     const [toggleStatusBranch, setToggleStatusBranch] = useState<Branch | null>(null)
-
-    const load = useCallback(async () => {
-        setLoading(true)
-        try {
-            const result = await branchApi.search({}, { page: 1, size: 200, sort: ['name,ASC'] })
-            setBranches(result.data)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        void load()
-    }, [load])
 
     const filtered = branches.filter((b) =>
         b.name.toLowerCase().includes(keyword.trim().toLowerCase()),

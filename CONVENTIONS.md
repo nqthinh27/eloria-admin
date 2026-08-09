@@ -103,6 +103,24 @@ Quy tắc bắt buộc:
 - `logInfo` **chỉ dùng để log/debug**, **tuyệt đối không hiển thị cho người dùng cuối**.
 - Khi thêm `subKey` mới, phải bổ sung key vào **tất cả** file ngôn ngữ đang hỗ trợ.
 
+### 3.3 Quy ước `status` — 3 giá trị, **hai cơ chế tách biệt**
+
+Rule chung cho **mọi** entity có cột `status` (chốt với user 2026-08-09):
+
+| Giá trị | Ý nghĩa | Đặt qua |
+|---|---|---|
+| `1` | ACTIVE | `POST /<module>/update-status` |
+| `0` | INACTIVE | `POST /<module>/update-status` |
+| **`-1`** | **DELETED (xoá mềm)** | **`DELETE /<module>/{id}`** — API riêng |
+
+- **Bật/tắt và xoá là hai đường khác nhau, KHÔNG dùng chung API/phương thức.**
+  `UpdateStatusReqDTO` bị backend chặn `@Min(0) @Max(1)` ⇒ gửi `status: -1` luôn trả
+  `400 error.input.invalid`. Muốn xoá **phải** gọi `DELETE`, để backend tự set `-1`.
+- Bản ghi `-1` bị **ẩn khỏi mọi truy vấn nghiệp vụ** ⇒ FE **không bao giờ nhận được**.
+  Vì vậy **không dựng bộ lọc/badge "Đã xoá"** trên UI, và type FE chỉ cần mô tả 0/1 cho dữ liệu nhận về.
+- Chi tiết (entity nào áp dụng, module nào hard-delete) xem [CLAUDE.md](CLAUDE.md) mục
+  "Quy ước `status` 3 giá trị".
+
 ---
 
 ## 4. Hàm gọi API dùng chung (bắt buộc)
@@ -149,6 +167,49 @@ Quy tắc bắt buộc:
   chuyển theme, cho tới khi có yêu cầu mới. Vẫn **bắt buộc dùng token màu** trong
   [src/index.css](src/index.css) thay vì hardcode hex, để sau này bật dark không phải sửa từng component.
 - Trạng thái màn hình phải đầy đủ: **loading (skeleton) / empty / error / success**.
+- **Không gọi trùng API trong CÙNG một màn** — nhưng **KHÔNG cache giữa các màn** (chốt với user
+  2026-08-09). Vào màn nào thì gọi đủ API của màn đó để luôn có dữ liệu mới nhất: người dùng khác
+  có thể vừa thêm/sửa chi nhánh, danh mục, sản phẩm… mà FE không có cách nào biết, cache sẽ hiển
+  thị dữ liệu cũ. Cụ thể:
+  - **Mỗi endpoint chỉ được gọi đúng 1 lần cho một lần vào màn.** Đừng vừa gọi `size=10` cho bảng
+    vừa gọi `size=200` cho dropdown của cùng một tài nguyên — nạp một lần rồi lọc/phân trang phía
+    client (áp dụng khi danh sách nhỏ, vài chục bản ghi).
+  - `BranchProvider` **cố ý không tự nạp** khi đăng nhập; nó chỉ giữ state + hàm `refresh()`.
+    Màn nào cần danh sách chi nhánh thì gọi `refresh()` trong `useEffect` khi vào màn — nhờ vậy
+    vừa đúng 1 request/màn, vừa luôn là dữ liệu mới.
+  - **Mọi `useEffect` gọi API phải truyền `AbortSignal` và huỷ trong cleanup:**
+    ```ts
+    useEffect(() => {
+        const controller = new AbortController()
+        void load(controller.signal)
+        return () => controller.abort()
+    }, [load])
+    ```
+    Trong `catch`/`finally` nhớ `if (signal?.aborted) return` để request bị huỷ không bị hiểu nhầm
+    thành lỗi và không set state trên component đã unmount. Các hàm `*Api.search()` đều nhận
+    `signal` ở tham số thứ 3.
+  - Đo bằng tab Network: mở một màn, **không được** thấy endpoint nào lặp lại 2 lần.
+    (`GET /account/me` 2 lần lúc mở app là bình thường: lần đầu 401 ⇒ api-client tự `/refresh`
+    rồi retry — cơ chế single-flight của Phase 2.)
+- **`<StrictMode>` được BẬT** và **không cần tắt khi build production** — React tự loại bỏ nó ở bản
+  production (đã đo: `vite preview` và `vite dev` cho **cùng 8 request** ở màn Sản phẩm).
+  Nếu thấy request nhân đôi khi dev ⇒ đó là **effect chưa idempotent** (thiếu `AbortController`/
+  cleanup), **hãy sửa effect** chứ đừng tắt StrictMode để giấu triệu chứng.
+  Muốn đo số request thật của người dùng cuối: `npm run build && npx vite preview`
+  (proxy `/v1.0` đã được cấu hình cho cả `preview` trong `vite.config.ts`).
+- ⚠️ **`bg-background` KHÔNG phải màu trắng** trong repo này — nó là **màu xám nền trang**
+  (`#F1F5F9`). Màu trắng là **`bg-card`** / `bg-popover`. Component nổi trên nền trang (modal,
+  sheet, nút outline, card…) mà dùng `bg-background` sẽ **chìm hẳn vào nền, nhìn như trong suốt**.
+  Bản shadcn gốc dùng `bg-background` cho `DialogContent`/`SheetContent`/`Button variant="outline"`
+  ⇒ **đã sửa thành `bg-card`**; khi `npx shadcn add` thêm component mới, phải kiểm tra lại điểm này.
+- **Nút hành động của màn danh sách (Thêm · Xuất · Nhập…) đặt CÙNG HÀNG với bộ lọc**, không đặt ở
+  hàng tiêu đề. Dùng slot `actions` của [`DataTableToolbar`](src/components/data-table/data-table-toolbar.tsx):
+  ô tìm kiếm + các `Select`/`SearchSelect` bên trái, cụm nút bên phải cùng một hàng ngang.
+  `PageHeader` chỉ còn tiêu đề + mô tả phụ. (Chốt với user 2026-08-09 — áp dụng cho **mọi** màn danh sách.)
+- **Droplist danh sách dài dùng [`SearchSelect`](src/components/search-select.tsx)** (Popover + Input,
+  không thêm dependency): có ô tìm kiếm **bỏ dấu tiếng Việt**, khớp cả tên lẫn mã, hỗ trợ chọn 1 và
+  chọn nhiều (hiện chip có nút ✕). Ô search tự hiện khi > 8 lựa chọn. Danh sách ngắn (< 8) cứ dùng
+  `Select` thường. Danh sách lớn tới mức phải phân trang thì **search phía server**, không dùng component này.
 - **Đa ngôn ngữ: VI + EN** ngay từ đầu. Mọi text hiển thị cho người dùng đi qua i18n,
   **không hardcode chuỗi** trong JSX. Mặc định `vi`; thêm key mới phải bổ sung **cả `vi` và `en`**.
   Bộ chuyển ngôn ngữ đặt ở **top bar, bên trái chuông thông báo** — đây là **phần bổ sung ngoài mockup**

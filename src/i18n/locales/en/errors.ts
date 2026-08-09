@@ -53,6 +53,35 @@ export default {
             hasActiveStaff: 'This branch still has active employees and cannot be deactivated.',
         },
 
+        // Product domain (Phase 9) — keys taken from the backend source, not invented.
+        category: {
+            notExisted: 'Category does not exist.',
+            codeExisted: 'Category code already exists.',
+            hasChildren: 'This category still has child categories and cannot be deleted.',
+            parentInvalid:
+                'Invalid parent category (it cannot be the category itself or one of its descendants).',
+        },
+        brand: {
+            notExisted: 'Brand does not exist.',
+            codeExisted: 'Brand code already exists.',
+            hasProducts: 'This brand still has products referencing it and cannot be deleted.',
+        },
+        color: {
+            notExisted: 'Color does not exist.',
+            codeExisted: 'Color code already exists.',
+        },
+        size: {
+            notExisted: 'Size does not exist.',
+            codeExisted: 'Size code already exists.',
+        },
+        product: {
+            notExisted: 'Product does not exist.',
+            codeExisted: 'Product code already exists.',
+        },
+        sku: {
+            notExisted: 'SKU does not exist.',
+        },
+
         address: {
             provinceInvalid: 'Invalid province/city.',
             wardInvalid: 'Invalid ward.',
