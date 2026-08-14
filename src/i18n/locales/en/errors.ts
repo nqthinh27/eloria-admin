@@ -80,7 +80,46 @@ export default {
         },
         sku: {
             notExisted: 'SKU does not exist.',
+            notActive: 'This SKU is not available for sale.',
+            codeTooLong: 'The generated SKU code exceeds 50 characters. Shorten the product/color/size codes.',
+            noEan: 'This SKU has no valid barcode (EAN) to print.',
         },
+
+        // Warehouse & stock domain (Phase 10) — keys taken from `Constants.SUBKEY`.
+        warehouseLedger: {
+            notExisted: 'Warehouse slip does not exist.',
+            invalidStatus: 'This action is not allowed for the current slip status.',
+            lineRequired: 'The slip must have at least one line.',
+            transferBranchRequired: 'A transfer slip requires a destination branch.',
+            transferSameBranch: 'Source and destination branches must be different.',
+            cannotApproveOwn: 'You cannot approve a slip you created yourself.',
+        },
+        stock: {
+            insufficient: 'Not enough available stock to issue/transfer.',
+            countNoDiff: 'The stock count shows no difference from system stock.',
+        },
+
+        // Sales & orders domain (Phase 11) — keys taken from `docs/api/ban-hang-p6.md`.
+        order: {
+            notExisted: 'Order does not exist.',
+            invalidStatus: 'This action is not valid for the current order status.',
+            lineRequired: 'The order must have at least one line item.',
+            notEditable: 'Orders can only be edited while still pending.',
+            alreadyClosed: 'This order is already completed or cancelled.',
+            /** Single-payment model (2026-08-15): a PAID order cannot be charged again. */
+            alreadyPaid: 'This order has already been paid.',
+            /**
+             * ⚠️ The backend no longer emits this key as of 2026-08-15 (single-payment model —
+             * the server always charges exactly `totalAmount`). Kept for old data/logs.
+             */
+            paymentExceedsTotal: 'The amount collected exceeds the outstanding balance.',
+        },
+        /**
+         * Two concurrent actions on the same order (e.g. pack vs cancel, or two payments).
+         * The backend uses optimistic locking — the later action is rejected to avoid overwrites.
+         */
+        concurrentModification:
+            'This order was just updated by someone else. Please reload and try again.',
 
         address: {
             provinceInvalid: 'Invalid province/city.',

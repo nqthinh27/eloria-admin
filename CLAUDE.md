@@ -47,7 +47,46 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**
+
+> **Khảo sát lại 2026-08-11 (lần 1):** backend hiện có **76 path**. **Domain đơn hàng đã xuất hiện
+> đầy đủ** (13 endpoint `/order/*` + `POST /websocket`) — xem mục "Domain Đơn hàng" bên dưới;
+> `SkuResDTO` có thêm `unitPrice`.
+
+> ### ⚠️ **BREAKING — backend update 2026-08-11 (lần 2), DB đã xoá & tạo lại**
+>
+> Đã fetch lại api-docs + **kiểm thử API thật 21/21 PASS**. Ba thay đổi phá vỡ:
+>
+> 1. **`sku.id` giờ là MÃ SKU, không phải UUID** — ví dụ thật: **`SP001-BK-AO-L`**
+>    (`{productCode}-{colorCode}-{sizeCode}`). ⚠️ Lưu ý phần cuối là **`sizeOption.code`**
+>    (`AO-L`), *không phải* `label` (`L`) ⇒ mã có dạng `SP001-BK-AO-L` chứ không phải `SP001-BK-L`.
+>    **`sku.id === sku.skuCode`** ⇒ FE có thể hiển thị thẳng `id` cho người dùng, không cần cột
+>    `skuCode` riêng. Mã dùng được làm **path param** (`GET /sku/SP001-BK-AO-L`) và mọi
+>    `skuId` trong body/response (order lines, stock-item, warehouse-ledger lines, stock-count,
+>    stock-disposal) đều là **chuỗi mã này**.
+> 2. **3 field đã bị xoá khỏi response**: `SkuResDTO.weightGram` · `SysUserDTO.coverUrl`
+>    (`/account/me`) · `StaffResDTO.employeeId`. Đã xác nhận biến mất khỏi cả api-docs lẫn JSON thật.
+> 3. **`stock_item.minStock` luôn có số (mặc định `0`)**, không còn `null` — kiểm chứng: 20/20 dòng
+>    tồn đều có `minStock: 0`. ⇒ Bỏ mọi nhánh xử lý `minStock === null` ở FE.
+>
+> **Thay đổi khác (không phá vỡ):**
+> - **`BranchResDTO.code`** — field mới (mã CN, vd `HK`), nhận ở `POST/PUT /branch`.
+>   Dùng làm **prefix mã đơn**: `HK-20260811-233611-0001`. Chi nhánh **không có `code`** thì
+>   backend fallback về **viết tắt tên** (`Chi nhánh Trung tâm` → `CNTT-2026...`) — đã đo thật cả 2 case.
+> - **`BranchResDTO.staffCount`** — field mới *(không có trong mô tả của user, phát hiện khi diff)*,
+>   trả số nhân viên của chi nhánh; dùng được cho màn Chi nhánh thay vì tự đếm.
+> - **`CustomerResDTO.activated`** giờ **CÓ trong JSON** (tài liệu cũ ghi "không xuất hiện" —
+>   **không còn đúng**). Khách tạo tại quầy có `activated: false` (chưa đăng nhập storefront được).
+>   ⚠️ **`activated` khác `status`**: `status` là khoá/mở bản ghi, `activated` là đã kích hoạt
+>   tài khoản hay chưa — màn Khách hàng phải phân biệt, đừng gộp.
+>
+> ⚠️ **DB đã bị xoá và tạo lại** ⇒ **mọi id cũ (product/brand/color/size/branch/customer…) đã đổi
+> hết**. Không hardcode/cache id trong code hay test; luôn lấy từ API.
+>
+> Các cảnh báo đã ghi trước đó **vẫn đúng** sau khi kiểm chứng lại: `categories` rỗng ở
+> `product/search` · `lines` null ở `warehouse-ledger/search` · `stock-item/alerts` rỗng
+> (nay vì `minStock` mặc định 0 nên chỉ cảnh báo khi `available <= 0`) · chặn tự duyệt phiếu ·
+> cap `size` 200.
 
 - Prefix API: **`/v1.0/api`**. Auth: `bearerAuth` (JWT) áp dụng **global** cho mọi endpoint.
 - **Response đã được chuẩn hoá hoàn toàn**: *mọi* endpoint bọc `BaseResponse<T>` = `{code, message, data}`,
@@ -66,6 +105,12 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
   - `sort`: **mảng** query string dạng `field,ASC` / `field,DESC` (viết hoa), hỗ trợ nhiều tiêu chí
     (`?sort=fullName,ASC&sort=createdDate,DESC`); mặc định `createdDate,DESC`.
   - Ví dụ: `POST /staff/search?page=1&size=20&sort=fullName,ASC` với body `{"keyword":"an"}`.
+  - ⚠️ **`size` bị cap cứng ở 200 và IM LẶNG** *(đo thật 2026-08-11)*: gửi `size=201/300/500/1000`
+    đều trả **đúng 200 dòng**, **không lỗi, không cảnh báo, `total` vẫn báo số thật**. ⇒ Xin
+    `size` lớn hơn 200 là **vô nghĩa** và tạo ảo giác đã nạp đủ. Chỗ nào nạp "toàn bộ" danh mục nền
+    để dựng dropdown **bắt buộc phải so `data.length` với `total`** và cảnh báo khi lệch, hoặc
+    chuyển sang tìm kiếm phía server. Đã có case thật: `/sku/search` có **264** SKU nên dropdown
+    chọn SKU chỉ thấy 200.
   - **Backend validate chặt field thừa trong body** — gửi kèm `page`/`size`/`sortBy`/`sortDir` trong
     body (thói quen cũ) sẽ bị từ chối `code:7 "Dữ liệu truyền vào không hợp lệ"` vì các field đó
     không còn khai trong `*SearchReqDTO`. Áp dụng nhất quán cho **cả 10 endpoint `/search`** hiện có
@@ -187,12 +232,19 @@ Pattern response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus*` 
 source backend + gọi API thật:**
 
 - **`CustomerResDTO` = `{id, fullName, phoneNumber, email, dob, gender, branchId, membershipPoint,
-  status, createdDate, branchName}`.** ⚠️ **KHÔNG có `code`, `tier`, `orderCount`, `totalSpent`,
-  `lastPurchaseDate`** — dù mockup `10-khach-hang.png` vẽ 4 cột cuối. Hồ sơ khách map từ `SysUser`,
-  và backend **chưa có entity đơn hàng nào** (`domain/` chỉ có SysUser, Branch, Brand, Category,
-  Color, Product, RelProductCategory, SizeOption, Sku) ⇒ **không có nguồn để tính** các chỉ số đó.
-  Field `activated` có trong DTO Java nhưng **không xuất hiện trong JSON** ⇒ đừng khai ở FE.
-- `CreateCustomerReqDTO` bắt buộc `fullName` + `phoneNumber`; `email` bỏ trống ⇒ backend tự sinh
+  status, activated, createdDate, branchName}`** *(cập nhật 2026-08-11: thêm `activated`)*.
+  ⚠️ **KHÔNG có `code`, `tier`, `orderCount`, `totalSpent`, `lastPurchaseDate`** — dù mockup
+  `10-khach-hang.png` vẽ 4 cột cuối. Hồ sơ khách map từ `SysUser`. *(Backend nay ĐÃ có domain đơn
+  hàng ⇒ về lý thuyết tính được các chỉ số này, nhưng **`CustomerResDTO` vẫn chưa trả** — muốn có
+  phải xin backend bổ sung.)*
+- ⚠️ **`activated` giờ CÓ trong JSON** *(2026-08-11 — trước đây ghi "không xuất hiện", không còn
+  đúng)*. Khách tạo tại quầy có **`activated: false`** ⇒ chưa đăng nhập storefront được cho tới khi
+  tự kích hoạt. **`activated` KHÁC `status`**: `status` = khoá/mở bản ghi (do admin đặt),
+  `activated` = đã kích hoạt tài khoản hay chưa (do khách tự làm). Màn Khách hàng **phải phân biệt
+  hai thứ này**, đừng gộp thành một badge.
+- `CreateCustomerReqDTO` bắt buộc `fullName` + `phoneNumber`; **`dob` là `date-time`** — gửi
+  `"1995-04-12"` (date thuần) bị **từ chối `400 error.input.invalid`**, phải gửi
+  `"1995-04-12T00:00:00Z"`; `email` bỏ trống ⇒ backend tự sinh
   `{phoneNumber}@example.com`; **SUPER_ADMIN bắt buộc truyền `branchId`** (thiếu ⇒ `code:14`,
   `subKey: error.branch.required`), STAFF/ADMIN bị ép về chi nhánh của mình.
 - **`UpdateCustomerReqDTO` chỉ có `{fullName, email, dob, gender}`** — **không** đổi được
@@ -227,6 +279,14 @@ backend + gọi API thật:**
   bật/tắt qua `sku/update-status` (0/1), xoá mềm qua `DELETE /sku/{id}` — **hai API tách biệt**.
   Vòng đời New/Markdown/Ngừng KD trong mockup vẫn **chưa có** enum riêng (ghi chú `Sku.java`:
   "để dành cho sau"), đừng nhầm với `status`.
+- ⚠️ **`SkuResDTO` = `{id, skuCode, ean, status, productId, productName, unitPrice, colorId,
+  colorName, sizeId, sizeLabel, createdDate}`** — **`weightGram` đã bị xoá (2026-08-11)**, và
+  **`id` nay là MÃ SKU trùng `skuCode`** (xem BREAKING ở đầu file). `ean` vẫn là field riêng cho
+  barcode, **không** đổi theo.
+- ⚠️ **`SkuResDTO` có thêm `unitPrice`** — field **mới, xuất hiện cùng domain đơn hàng (2026-08-11)**,
+  khảo sát 2026-08-09 chưa có. Hiện **luôn `null`** trên dữ liệu thật: không API nào đặt được giá
+  theo SKU (`CreateProductReqDTO` và `GenerateSkuReqDTO` đều không nhận field này) ⇒ chỗ nào cần
+  giá bán phải **fallback về `Product.price`**, đừng hiển thị thẳng `unitPrice`.
 - `color/search` và `size/search` trả `BaseListRes` (không `activeTotal`); `product`/`category`/
   `brand`/`sku` trả `BaseListResStatus`.
 - **`GET /sku/{id}/barcode`** (`[STAFF]`) — trả **ảnh PNG EAN-13** (không bọc `BaseResponse`) để
@@ -237,8 +297,198 @@ backend + gọi API thật:**
   thương hiệu bị chặn khi còn ràng buộc: `error.category.hasChildren`, `error.brand.hasProducts`.
   `DELETE /color/{id}` và `DELETE /size/{id}` là **hard delete** (chặn nếu còn SKU tham chiếu).
 
-**Vẫn chưa có** API: giá theo kênh riêng biệt, kho/tồn kho, POS, đơn hàng, đổi/trả, khuyến mại, ca
-làm việc (shift) ⇒ các phase đó (10–14) vẫn chạy trên **lớp mock sau service layer** (PLAN Phase 6).
+### Domain Kho & Tồn kho — khảo sát api-docs + test API thật khi code Phase 10 (**2026-08-10**)
+
+Backend **đã có API kho thật** (khác hoàn toàn khảo sát 2026-08-09 ghi "chưa có").
+
+| Nhóm | Role | Endpoint |
+|---|---|---|
+| Tồn kho | `STAFF` | `POST /stock-item/search` · `GET /stock-item/alerts?branchId=` |
+| Phiếu kho | `STAFF` | `POST /warehouse-ledger/search` · `GET /warehouse-ledger/{id}` · `POST /warehouse-ledger` · `POST /warehouse-ledger/{id}/submit` |
+| Duyệt phiếu | `ADMIN` | `POST /warehouse-ledger/{id}/approve` · `POST /warehouse-ledger/{id}/reject` |
+| Kiểm kê | `STAFF` | `POST /stock-count` |
+| Xuất huỷ | `ADMIN` | `POST /stock-disposal` |
+
+⚠️ **Đường dẫn thật là `/stock-count` và `/stock-disposal` ở gốc**, KHÔNG phải
+`/stock-operation/stock-count` như tên class `StockOperationResource` gợi ý — đọc api-docs, đừng suy
+từ tên file Java.
+
+- **Một entity `WarehouseLedger` gánh cả nhập/xuất/chuyển** (`type` = `IN | OUT | TRANSFER`), không
+  có entity "phiếu nhập" riêng. `TRANSFER` bắt buộc `toBranchId` khác chi nhánh nguồn.
+- Vòng đời: `DRAFT → WAITING_APPROVAL → ACCEPTED | REJECTED`. **Chỉ `ACCEPTED` mới ghi tồn thật**
+  (IN cộng, OUT trừ, TRANSFER trừ nguồn + cộng đích) — đã kiểm chứng: duyệt xong tồn tăng đúng số.
+- ⚠️ **`lines` trả `null` ở `POST /warehouse-ledger/search`**, chỉ populate ở `GET /{id}`
+  (giống hệt `categories` rỗng ở `product/search`). Mọi chỗ đọc `lines` từ danh sách phải phòng null.
+  Hệ quả: **không dựng được cột "Tổng SL" ở bảng danh sách** nếu không muốn N+1 request.
+- ⚠️ **Backend chặn tự duyệt phiếu do chính mình tạo** — `createdBy` là **username** (không phải id),
+  lỗi `error.warehouseLedger.cannotApproveOwn` HTTP **403**. FE phải khoá nút trước, đừng để bấm rồi mới lỗi.
+- `WarehouseLedgerLineReqDTO` là **danh sách dòng phẳng** `{skuId, quantity}` — **không có khái niệm
+  ma trận size × màu** như mockup `14` mô tả. `quantity` luôn dương, chiều tăng/giảm do `type` quyết định.
+- `StockItemResDTO` = `{id, skuId, skuCode, productName, colorName, sizeLabel, branchId, branchName,
+  total, available, minStock}` *(⚠️ **`reserved` đã bị xoá 2026-08-14** — xem mục "Mô hình tồn kho").
+  **`available` nay luôn bằng `total`**, không còn phép trừ nào.
+  **`skuId` nay là MÃ SKU** (`SP001-BK-AO-L`), dùng cả ở filter `body.skuId` — đã test.
+- ⚠️ **`minStock` KHÔNG còn nullable — luôn có số, mặc định `0`** *(đổi 2026-08-11; trước đây luôn
+  `null`)*. Kiểm chứng: 20/20 dòng tồn đều `minStock: 0`. **Vẫn chưa có API nào để đặt ngưỡng** ⇒
+  `GET /stock-item/alerts` (điều kiện `available <= min_stock`) giờ chỉ nổ khi **`available <= 0`**,
+  tức trùng nghĩa "hết hàng" chứ chưa phải cảnh báo tồn thấp thật sự. `alertType` vẫn chỉ có
+  `"LOW_STOCK"`. ⇒ FE **bỏ nhánh xử lý `minStock === null`**, nhưng vẫn chưa dựng được cảnh báo
+  tồn thấp đúng nghĩa cho tới khi có API đặt ngưỡng.
+- `POST /stock-count` nhận `{branchId, description, lines:[{skuId, countedQuantity}]}`, tự so với tồn
+  hệ thống, trả **mảng 1–2 phiếu điều chỉnh DRAFT**. Không chênh lệch ⇒ lỗi `error.stock.countNoDiff`.
+- subKey lỗi (từ `Constants.SUBKEY`): `error.warehouseLedger.{notExisted, invalidStatus, lineRequired,
+  transferBranchRequired, transferSameBranch, cannotApproveOwn}` · `error.stock.{insufficient, countNoDiff}`.
+
+### Domain Đơn hàng — **MỚI, khảo sát lại `/v3/api-docs/api` ngày 2026-08-11**
+
+⚠️ **Đảo ngược kết luận 2026-08-10** ("chưa có entity/resource nào, mới chỉ khai enum"). Backend
+**đã có domain đơn hàng đầy đủ** — 13 endpoint `/order/*` + `POST /websocket`. Đây là thứ **Phase 11
+đang chờ**; PLAN mục B7 (trạng thái đơn lệch 3 nơi) nay **đã có lời giải từ backend**.
+
+| Nhóm | Role | Endpoint |
+|---|---|---|
+| Giỏ & tạo đơn | `STAFF` | `POST /order/cart/preview` (tính tiền, không ghi DB) · `POST /order` (→PENDING, **giữ tồn**) |
+| Đọc | `STAFF` | `POST /order/search` · `GET /order/{id}` · `GET /order/{id}/invoice` (JSON để FE tự in) |
+| Sửa/huỷ | `STAFF` | `PUT /order/{id}` (chỉ khi còn PENDING) · `POST /order/{id}/cancel` (hoàn tồn) · `POST /order/{id}/note` |
+| Chuyển trạng thái | `STAFF` | `/confirm` (PENDING→CONFIRMED) · `/pack` (CONFIRMED→PACKED, **trừ tồn thật**) · `/ship` (PACKED→SHIPPING) · `/complete` (SHIPPING + đã thu → COMPLETED) |
+| Thanh toán | `STAFF` | `POST /order/{id}/payment` — ⚠️ **thu ĐÚNG 1 LẦN cho toàn bộ tiền** (đổi 2026-08-15, xem mục "Mô hình thanh toán") |
+
+- **`EOrderStatus` thực tế có 8 giá trị**, không phải 4 như ghi nhận cũ:
+  `PENDING | CONFIRMED | PACKED | SHIPPING | SHIPPED | COMPLETED | CANCELLED | REJECTED`
+  ⇒ **B7 đã được backend chốt**, FE bám đúng 8 giá trị này, không tự map sang 5 trạng thái của mockup `04`.
+- **`channel` ĐÃ CÓ**: `ONLINE | POS | OTHER` (khảo sát cũ ghi "BE không có `channel`" — **không còn đúng**),
+  khớp 3 tab của mockup `04`. `paymentStatus` = `UNPAID | PAID | REFUNDED`;
+  `paymentMethod` = `CASH | CARD | QR | VOUCHER | POINT | STORE_CREDIT | COD`; `type` = `PURCHASE | REFUND`.
+- ⚠️ **Động tồn — ĐÃ ĐỔI KIẾN TRÚC 2026-08-14, xem mục "Mô hình tồn kho" bên dưới.**
+  Ghi chép cũ ("`POST /order` giữ tồn qua `reserved`, `/pack` mới trừ thật") **KHÔNG CÒN ĐÚNG**.
+- `CartPreviewLineResDTO` trả sẵn `available` + `insufficient` theo từng dòng ⇒ **màn POS không cần
+  tự tra tồn**, cứ gọi preview là biết dòng nào thiếu hàng.
+- `OrderSearchReqDTO` = `{keyword, status, orderStatus, paymentStatus, channel, branchId, fromDate, toDate}`
+  — lưu ý **`orderStatus`** (vòng đời, chuỗi) tách khỏi **`status`** (0/1 bản ghi), đúng pattern
+  `ledgerStatus` của phiếu kho.
+- `OrderResDTO.shiftId` đã có sẵn field nhưng **chưa có API ca làm việc** ⇒ Phase 15 vẫn chờ.
+
+#### Cập nhật 2026-08-14 (backend rà soát & fix Phase 6) — đã kiểm thử lại toàn bộ
+
+- ⚠️ **`OrderResDTO` BỎ field `createdBy`** (breaking, đã xác nhận trên api-docs + JSON thật).
+  Dùng **`staffId`** để biết ai tạo đơn. Riêng **`OrderPaymentResDTO` VẪN GIỮ `createdBy`**
+  (username người thu tiền) — hai DTO khác nhau, đừng nhầm.
+- **Mã lỗi mới: `error.concurrentModification` (HTTP 409)** — 2 thao tác đồng thời trên cùng đơn
+  (pack × cancel, 2 lần thu tiền). Backend dùng optimistic lock `@Version` trên `order_sale`.
+  FE gặp mã này nên **tải lại đơn rồi thử lại**, không phải lỗi người dùng.
+  ⚠️ Xem cảnh báo về 500 ở mục dưới.
+- **`PUT /order/{id}` nay đối soát lại `paymentStatus`**: sửa đơn làm tổng tiền **tăng** ⇒ về
+  `UNPAID` (thu tiếp phần thiếu); **giảm** xuống ≤ số đã thu ⇒ `PAID`. Đã đo thật cả 2 chiều.
+- **`POST /order/{id}/cancel`** ⇒ `paymentStatus = REFUNDED` nếu đơn đã thu. ⚠️ Từ 2026-08-15
+  backend **tự sinh bản ghi hoàn tiền** — xem mục "Mô hình thanh toán" bên dưới.
+- **`POST /order/{id}/note` bị chặn trên đơn `CANCELLED`** (`error.order.alreadyClosed`) — để
+  không ghi đè mất lý do huỷ (backend lưu lý do vào chính `description`).
+- **`customerId` khi tạo đơn nay được validate**: id không tồn tại / không phải role CUSTOMER ⇒
+  `error.user.notExisted`; khách khác chi nhánh ⇒ **403 `error.forbidden`**.
+- **Xoá nhân viên bị chặn khi còn đơn chưa đóng** — `error.staff.referenced` (HTTP 400).
+  Đơn đã COMPLETED/CANCELLED thì không chặn ⇒ huỷ/hoàn tất đơn xong mới xoá được.
+- **Prefix mã đơn khi chi nhánh không có `code`** nay lấy 5 ký tự đầu viết tắt tên
+  (`Chi nhánh Trung tâm` → `CNTT-…`), trước đây bị cắt còn 2 ký tự với tên nhiều từ.
+- Tài liệu chi tiết module bán hàng: **`35.1.eloria-backend/docs/api/ban-hang-p6.md`** — có bảng
+  subKey đầy đủ, quy tắc tồn/giá/thanh toán. Đọc file này trước khi code Phase 11.
+
+##### ⚠️ Vấn đề backend còn tồn tại (đo thật 2026-08-14)
+
+**Race nặng trên cùng MỘT đơn trả `500 error.other` thay vì `409`.** Optimistic lock `@Version`
+**chặn đúng** (không bao giờ thu vượt tiền — đo 4/4 vòng), nhưng khi ≥3 request chồng nhau lên
+cùng một đơn, MySQL sinh **InnoDB deadlock** (đã đọc `SHOW ENGINE INNODB STATUS`: 2 transaction
+cùng `UPDATE order_sale … WHERE id=? AND version=0`). Spring gói thành `CannotAcquireLockException`,
+**không phải** `ObjectOptimisticLockingFailureException` ⇒ không khớp handler 409 ⇒ rơi vào handler
+`Exception` chung. Đo thật: 24 request đồng thời → **4× 200 · 4× 409 · 16× 500**.
+
+⇒ **FE không được coi 500 ở luồng thanh toán là lỗi hệ thống tuyệt đối** — nhân viên thấy "lỗi hệ
+thống" rồi bấm thu lại trong khi giao dịch có thể đã thành công. Phải **tải lại đơn để biết trạng
+thái thật**. Backend nên bắt thêm `CannotAcquireLockException`/`DeadlockLoserDataAccessException`.
+
+*(Lưu ý: đây là race trên **cùng một đơn** — hiếm trong vận hành thật. Race **tranh tồn giữa nhiều
+đơn khác nhau** đã được kiểm chứng sạch: 6 đơn đồng thời → 2 thành công · 4 `error.stock.insufficient`
+· 0 lỗi 500, tồn về 0 không âm.)*
+
+### Mô hình thanh toán — **ĐỔI 2026-08-15: THU ĐÚNG 1 LẦN, 1 HÌNH THỨC, TOÀN BỘ TIỀN**
+
+> User chốt: bỏ hoàn toàn "thanh toán hỗn hợp / thu nhiều lần" của bản trước.
+> Đã **kiểm thử API thật 23/23 PASS**.
+
+**`POST /order/{id}/payment`:**
+
+- **Body chỉ cần `{ "method": "QR" }`** (`CASH`/`CARD`/`COD`/… — **chuyển khoản dùng `QR`**).
+  ⚠️ **Ngừng gửi `amount`** — backend luôn thu đúng `totalAmount`. `amount` vẫn còn trong DTO nhưng
+  **bị bỏ qua hoàn toàn**: đo thật gửi `amount: 1` trên đơn 1.300.000 ⇒ vẫn ghi nhận đủ 1.300.000,
+  **không báo lỗi**. Gửi gấp 99 lần cũng vậy.
+- **Thu lần 2 trên đơn đã `PAID` ⇒ `error.order.alreadyPaid` (HTTP 400)** — mã lỗi **mới**.
+  ⇒ FE phải **disable nút "Thu tiền" khi `paymentStatus === 'PAID'`**, đừng để bấm rồi mới báo lỗi.
+- Thu tiền trên đơn `CANCELLED` ⇒ `error.order.alreadyClosed` (không đổi).
+- ⚠️ **`error.order.paymentExceedsTotal` KHÔNG còn phát sinh** — backend tự lấy đúng số tiền nên
+  không thể thu vượt. Key i18n giữ lại chỉ để đọc dữ liệu/log cũ.
+
+**Hoàn tiền — không có endpoint riêng, không có nút "Hoàn tiền":**
+
+- Huỷ đơn đã thu (`POST /order/{id}/cancel`) ⇒ backend **tự sinh bản ghi hoàn tiền** và đặt
+  `paymentStatus = REFUNDED`. FE **chỉ hiển thị**, không phải gọi gì thêm.
+- Đo thật: trước huỷ `paid=1.300.000, payments=1` → sau huỷ `paymentStatus=REFUNDED, paid=0,
+  payments=2`; dòng hoàn có `description = "Hoàn tiền hủy đơn"`, cùng `method` với dòng thu.
+
+**Cấu trúc `OrderResDTO.payments` (và trong invoice):**
+
+- **Tối đa 2 phần tử** — DB có unique `ux_order_payment__order_status (order_id, status)` ⇒ mỗi đơn
+  nhiều nhất **1 dòng `PAID` + 1 dòng `REFUNDED`**. Không còn danh sách nhiều dòng thu.
+  ⇒ FE render đơn giản: một dòng *"Đã thanh toán (QR)"* và nếu có, một dòng *"Đã hoàn tiền"*.
+- ⚠️ **`OrderPaymentResDTO.status` thực tế chỉ dùng 2 giá trị `PAID | REFUNDED`**, dù api-docs vẫn
+  khai enum 3 giá trị `UNPAID | PAID | REFUNDED` (dùng chung enum với `order_sale.payment_status`).
+  **Đừng dựng UI cho `UNPAID` ở cấp dòng payment** — dòng payment chỉ tồn tại khi đã thu.
+- **`paidAmount` là số THỰC THU**: `= totalAmount` khi đã trả, **về `0` sau khi hoàn tiền**.
+  ⇒ Đừng dùng `paidAmount > 0` để suy ra "đơn từng được thanh toán" — đơn đã hoàn tiền cũng `0`.
+  Muốn biết đã từng thu thì đọc `payments[]` hoặc `paymentStatus === 'REFUNDED'`.
+- Vòng đời `order_sale.payment_status`: **`UNPAID → PAID → REFUNDED`**. **Không còn `PARTIAL`.**
+
+**Race 2 lần thu đồng thời** (đo thật): 1 request thành công, request kia trả
+**`409 error.dataIntegrity.violation`** (unique constraint chặn) — *không phải* `alreadyPaid`.
+Dữ liệu vẫn đúng: 1 dòng `PAID`, không thu vượt. FE nên xử lý cả hai mã lỗi như nhau: tải lại đơn.
+
+### Mô hình tồn kho — **ĐỔI KIẾN TRÚC 2026-08-14: BỎ HẲN CƠ CHẾ GIỮ CHỖ**
+
+> User chốt: **không đặt chỗ khi thêm vào giỏ** (khác đặt vé xem phim), **hết hàng thì báo lúc đặt
+> đơn** (giống Shopee). Backend đã **xoá cột `stock_item.reserved` khỏi DB**, không chỉ khỏi API.
+
+- ⚠️ **`reserved` BIẾN MẤT khỏi `StockItemResDTO` và `StockAlertResDTO`** — đã xác nhận trên
+  api-docs, JSON thật, **và cả schema DB** (`SHOW COLUMNS FROM stock_item` không còn cột này).
+  FE phải bỏ mọi tham chiếu `reserved`.
+- **`available` giờ LUÔN BẰNG `total`.** Không còn phép trừ `total - reserved`. Đo thật: mọi dòng
+  tồn đều `available === total`. Cột "Đang giữ" ở màn Tồn kho **không còn nguồn dữ liệu** ⇒ phải gỡ.
+- ⚠️ **`POST /order` TRỪ TỒN THẬT NGAY LẬP TỨC** *(khác mô tả "chỉ báo hết hàng khi thanh toán")*.
+  Đo thật: `total 58 → 53` ngay khi tạo đơn ở trạng thái `PENDING`.
+  **`/pack` KHÔNG trừ lần hai** (đã kiểm chứng: `confirm 57 → pack 57`) — không có trừ kép.
+- **Thiếu hàng ⇒ `error.stock.insufficient` (HTTP 400) NGAY tại `POST /order`**, đơn không được tạo
+  và **tồn không bị hụt** (rollback sạch — đã đo). Đây là điểm chặn **duy nhất và sớm nhất**.
+- **`/cancel` hoàn đủ tồn ở MỌI giai đoạn** (PENDING lẫn đã PACKED) — vì tồn đã trừ ngay từ đầu.
+  Đo thật cả 2 case: `60 → 58 → 60`.
+- `cart/preview` **vẫn** trả `available` + `insufficient` từng dòng để cảnh báo sớm trên UI, nhưng
+  **preview không giữ chỗ** ⇒ giữa lúc preview và lúc bấm đặt đơn, tồn có thể đã bị đơn khác lấy mất.
+  ⇒ **Màn POS phải xử lý `error.stock.insufficient` tại bước tạo đơn**, không được tin preview là chắc chắn.
+- **Race tranh tồn đã kiểm chứng an toàn**: 6 đơn đồng thời cùng lấy nửa tồn → đúng 2 đơn thành công,
+  4 đơn `error.stock.insufficient`, tồn về `0` **không âm**, không có lỗi 500 nào.
+
+**Hệ quả tốt kèm theo:** bug *"phiếu kho điều chỉnh không duyệt được khi có tồn đang giữ"* (báo cáo
+2026-08-14, do CHECK constraint `reserved <= total` mâu thuẫn với `decreaseTotalForAdjustment`)
+**đã tự hết** — constraint nay rút gọn còn `CHECK (total >= 0)`. Kiểm chứng: kiểm kê giảm mạnh
+`58 → 1` duyệt thành công.
+
+⚠️ **Hệ quả cần cân nhắc ở Phase 11:** vì tồn bị trừ **ngay khi tạo đơn**, một đơn `PENDING` bị bỏ
+quên sẽ **giam tồn vô thời hạn** — backend không có cơ chế tự huỷ/hết hạn đơn. Cần hỏi user cách xử lý.
+
+📖 **Nguồn tham chiếu đầy đủ**: `35.1.eloria-backend/docs/api/ban-hang-p6.md` — backend đã cập nhật
+tài liệu theo mô hình mới (§3 "Quy tắc tồn kho — mô hình KHÔNG giữ chỗ"). Đã đối chiếu: **khớp
+hoàn toàn với kết quả đo thật của FE**.
+- **`POST /websocket`** (`SendWsBodyDTO`) xuất hiện lần đầu — chưa rõ mục đích, **cần hỏi user/backend**
+  trước khi dùng; không tự ý nối realtime.
+
+**Vẫn chưa có** API: đổi/trả (`type: REFUND` mới chỉ là enum trên `OrderResDTO`, không có endpoint
+riêng), khuyến mại, ca làm việc (shift), giá theo kênh ⇒ Phase 13/14/15 vẫn chờ backend.
 
 Ngoài bậc role, backend còn **tự giới hạn phạm vi dữ liệu** (ghi trong `description` từng endpoint):
 ADMIN chỉ thấy/tạo nhân viên chi nhánh mình và chỉ gán được role STAFF; điều chuyển chi nhánh chỉ SUPER_ADMIN.
@@ -254,8 +504,13 @@ và FE **không hiển thị checkbox "Ghi nhớ đăng nhập"**.
 | Username | Password | Role |
 |---|---|---|
 | `superadmin` | `Admin@123` | `SUPER_ADMIN` |
-| `adminbranch` | `Admin@123` | `ADMIN` |
-| `staffone` | `Admin@123` | `STAFF` |
+| `adminbranch` | `Admin@123` | `ADMIN` — thuộc *Chi nhánh Trung tâm* |
+| `staffone` | `Admin@123` | `STAFF` — thuộc *Chi nhánh Trung tâm* |
+| `hkadmin` | `Admin@123` | `ADMIN` — thuộc *HN - Hoàn Kiếm* *(tạo 2026-08-11 khi seed)* |
+
+⚠️ **Cần ít nhất 2 ADMIN khác chi nhánh để test luồng duyệt phiếu kho**: backend chặn tự duyệt phiếu
+do chính mình tạo, **và** ADMIN chỉ thấy phiếu của chi nhánh mình ⇒ phiếu của chi nhánh Hoàn Kiếm
+chỉ `hkadmin` (hoặc SUPER_ADMIN, nếu không phải người tạo) mới duyệt được.
 
 - Chỉ dùng cho backend local (`http://localhost:8080`). **Không** hardcode các tài khoản này vào code,
   không dùng làm giá trị mặc định của form đăng nhập, không đưa lên môi trường ngoài dev.

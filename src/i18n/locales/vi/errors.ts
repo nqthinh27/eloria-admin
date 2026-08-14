@@ -90,7 +90,46 @@ export default {
         },
         sku: {
             notExisted: 'SKU không tồn tại.',
+            notActive: 'SKU không ở trạng thái được phép bán.',
+            codeTooLong: 'Mã SKU sinh ra vượt quá 50 ký tự. Hãy rút gọn mã sản phẩm/màu/size.',
+            noEan: 'SKU chưa có mã vạch (EAN) hợp lệ để in tem.',
         },
+
+        // Domain kho & tồn kho (Phase 10) — key trích từ `Constants.SUBKEY`, không tự bịa.
+        warehouseLedger: {
+            notExisted: 'Phiếu kho không tồn tại.',
+            invalidStatus: 'Thao tác không hợp lệ với trạng thái phiếu hiện tại.',
+            lineRequired: 'Phiếu phải có ít nhất 1 dòng hàng.',
+            transferBranchRequired: 'Phiếu chuyển kho cần chọn chi nhánh đích.',
+            transferSameBranch: 'Chi nhánh nguồn và chi nhánh đích không được trùng nhau.',
+            cannotApproveOwn: 'Không thể tự duyệt phiếu do chính mình tạo.',
+        },
+        stock: {
+            insufficient: 'Không đủ tồn khả dụng để xuất/chuyển.',
+            countNoDiff: 'Kiểm kê không có chênh lệch nào so với tồn hệ thống.',
+        },
+
+        // Domain bán hàng & đơn hàng (Phase 11) — key trích từ `docs/api/ban-hang-p6.md`.
+        order: {
+            notExisted: 'Đơn hàng không tồn tại.',
+            invalidStatus: 'Thao tác không hợp lệ với trạng thái đơn hiện tại.',
+            lineRequired: 'Đơn hàng phải có ít nhất 1 dòng hàng.',
+            notEditable: 'Chỉ sửa được đơn khi còn ở trạng thái Chờ xác nhận.',
+            alreadyClosed: 'Đơn đã hoàn tất hoặc đã huỷ, không thao tác được nữa.',
+            /** Mô hình thu-1-lần (2026-08-15): đơn đã `PAID` thì không thu lại được. */
+            alreadyPaid: 'Đơn đã thanh toán.',
+            /**
+             * ⚠️ **Backend KHÔNG còn phát ra key này** từ 2026-08-15 (mô hình thu 1 lần, backend tự
+             * lấy đúng `totalAmount` nên không thể thu vượt). Giữ lại phòng dữ liệu/log cũ.
+             */
+            paymentExceedsTotal: 'Số tiền thu vượt quá phần còn phải thu.',
+        },
+        /**
+         * 2 thao tác đồng thời trên cùng một đơn (vd vừa đóng gói vừa huỷ, hoặc thu tiền 2 lần).
+         * Backend dùng optimistic lock — thao tác sau bị từ chối để không ghi đè lên nhau.
+         */
+        concurrentModification:
+            'Đơn vừa được người khác cập nhật. Vui lòng tải lại và thử lại.',
 
         // Địa chỉ hành chính
         address: {
@@ -111,6 +150,11 @@ export default {
         dataIntegrity: {
             violation: 'Dữ liệu đang được sử dụng ở nơi khác, không thể thực hiện thao tác.',
         },
+        /**
+         * ⚠️ Key **do FE tự đặt**, backend KHÔNG phát ra key này (đã đối chiếu `Constants.SUBKEY`
+         * 2026-08-14). Backend dùng `error.concurrentModification` (xem nhóm đơn hàng ở trên).
+         * Giữ lại làm fallback chung cho lỗi 409 không rõ nguồn.
+         */
         concurrencyFailure: 'Dữ liệu vừa được người khác thay đổi. Vui lòng tải lại và thử lại.',
         other: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
     },

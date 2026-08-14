@@ -1,5 +1,22 @@
 import type { SearchReq } from '@/types/common'
 
+/**
+ * ⚠️ **FILE NÀY LÀ TYPE ĐOÁN TỪ PHASE 6 — SAI SO VỚI API THẬT. PHẢI VIẾT LẠI Ở PHASE 11.**
+ *
+ * Backend đã có domain đơn hàng đầy đủ (13 endpoint `/order/*`). Đối chiếu cho thấy lệch nặng:
+ *
+ * | Ở đây (đoán) | API thật |
+ * |---|---|
+ * | `EOrderChannel.IN_STORE` | **`POS`** (`ONLINE \| POS \| OTHER`) |
+ * | `EOrderStatus` 5 giá trị (`PENDING_PAYMENT`, `PROCESSING`…) | **8 giá trị** `PENDING \| CONFIRMED \| PACKED \| SHIPPING \| SHIPPED \| COMPLETED \| CANCELLED \| REJECTED` |
+ * | `Order.code` | **`orderCode`** |
+ * | không có | `paymentStatus`, `paidAmount`, `payments[]`, `staffId`, `shiftId`, `type` |
+ *
+ * Khi làm Phase 11: **viết lại từ `/v3/api-docs/api`**, không sửa vá file này.
+ * Xem CLAUDE.md mục "Domain Đơn hàng" + "Mô hình thanh toán" + "Mô hình tồn kho",
+ * và tài liệu backend `35.1.eloria-backend/docs/api/ban-hang-p6.md`.
+ */
+
 /** Kênh bán theo `04-don-hang.png`: "Online" / "Tại quầy". */
 export const EOrderChannel = {
     ONLINE: 'ONLINE',

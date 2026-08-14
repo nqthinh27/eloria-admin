@@ -39,11 +39,23 @@ export function ConfirmDialog({
     const { t } = useTranslation('common')
     const [loading, setLoading] = useState(false)
 
+    /**
+     * ⚠️ **Phải nuốt lỗi ở đây**, đừng để promise reject thoát ra ngoài.
+     *
+     * Trước đây hàm này chỉ có `try/finally`: khi `onConfirm` ném (API lỗi — ví dụ duyệt phiếu sai
+     * trạng thái, hay kiểm kê không có chênh lệch `error.stock.countNoDiff`), lỗi trở thành
+     * **unhandled rejection** ở console *và* `onOpenChange(false)` không bao giờ chạy nên dialog
+     * **kẹt mở**. Toast lỗi đã được api-client bắn ra một lần rồi, nên ở đây chỉ cần:
+     * **giữ dialog mở** để người dùng đọc lỗi rồi thử lại hoặc tự đóng — đúng pattern mà
+     * `LedgerFormDialog` đang làm.
+     */
     async function handleConfirm() {
         setLoading(true)
         try {
             await onConfirm()
             onOpenChange(false)
+        } catch {
+            // api-client đã toast lỗi; giữ dialog mở để người dùng thử lại hoặc huỷ.
         } finally {
             setLoading(false)
         }

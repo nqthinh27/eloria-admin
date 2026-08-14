@@ -103,13 +103,26 @@ export type GenerateSkuReq = {
  * "để dành cho sau") — đừng nhầm với `status`.
  */
 export type Sku = {
+    /**
+     * ⚠️ **MÃ SKU, KHÔNG phải UUID** *(breaking 2026-08-11)* — ví dụ `SP001-BK-AO-L`
+     * (`{productCode}-{colorCode}-{sizeCode}`; phần cuối là `code` của size, không phải `label`).
+     * **Luôn bằng `skuCode`** ⇒ hiển thị thẳng cho người dùng được, không cần cột `skuCode` riêng.
+     * Dùng làm path param (`GET /sku/SP001-BK-AO-L`) — nhớ `encodeURIComponent`.
+     */
     id: string
+    /** Bằng đúng `id` — giữ lại vì backend vẫn trả, nhưng không cần hiển thị cả hai. */
     skuCode: string
+    /** Mã vạch EAN-13 — **field riêng, không đổi theo `id`**. */
     ean: string | null
-    weightGram: number | null
     status: EntityStatus
     productId: string
     productName: string | null
+    /**
+     * Giá riêng của biến thể — **field mới, backend bổ sung cùng domain đơn hàng (2026-08-11)**.
+     * Hiện **luôn `null`** với dữ liệu đang có (không có API nào đặt giá theo SKU; `POST /product`
+     * và `generate-sku` đều không nhận field này) ⇒ nơi cần giá phải fallback về `Product.price`.
+     */
+    unitPrice: number | null
     colorId: string | null
     colorName: string | null
     sizeId: string | null

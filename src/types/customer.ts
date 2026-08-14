@@ -9,8 +9,8 @@ import type { EGender, EntityStatus, SearchReq } from '@/types/common'
  * `SysUser`, và backend **chưa có entity đơn hàng nào** ⇒ không có nguồn dữ liệu để tính các
  * chỉ số đó. Xem PLAN Phase 8 phần "Lệch so với mockup".
  *
- * `activated` có trong DTO phía Java nhưng **không xuất hiện trong JSON thật** (bị bỏ khi
- * serialize) ⇒ không khai ở đây để tránh field ma.
+ * **Cập nhật 2026-08-11:** `activated` **đã xuất hiện trong JSON thật** — ghi chú cũ ("không
+ * xuất hiện, đừng khai") **không còn đúng**, đã khai lại bên dưới.
  */
 export type Customer = {
     id: string
@@ -23,6 +23,13 @@ export type Customer = {
     /** Điểm tích luỹ, backend mặc định 0. */
     membershipPoint: number | null
     status: EntityStatus
+    /**
+     * ⚠️ **Khác `status`** — đừng gộp hai thứ này:
+     * `status` = admin khoá/mở bản ghi · `activated` = khách đã tự kích hoạt tài khoản chưa.
+     * Khách tạo tại quầy luôn `activated: false` ⇒ **chưa đăng nhập storefront được**
+     * cho tới khi tự kích hoạt (luồng kích hoạt làm ở storefront, không thuộc web quản trị).
+     */
+    activated: boolean
     createdDate: string
     /** Backend enrich thêm ở service, không thuộc mapping cơ bản. */
     branchName: string | null

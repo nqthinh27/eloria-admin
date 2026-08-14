@@ -11,7 +11,7 @@ export type Staff = {
     status: EntityStatus
     activated: boolean
     branchId: string | null
-    employeeId: string | null
+    // `employeeId` đã bị backend xoá khỏi response (breaking 2026-08-11) — đừng khai lại.
     dob: string | null
     gender: EGender | null
     imageUrl: string | null

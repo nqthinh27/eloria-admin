@@ -106,7 +106,7 @@ export type SysUser = {
     email: string
     langKey: string | null
     imageUrl: string | null
-    coverUrl: string | null
+    // `coverUrl` đã bị backend xoá khỏi response (breaking 2026-08-11) — đừng khai lại.
     description: string | null
     role: ERole
     /** `null` với SUPER_ADMIN (không thuộc chi nhánh nào). */
