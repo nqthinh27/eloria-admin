@@ -2081,11 +2081,15 @@ mockup**, không rút gọn.
 
 ⇒ **Ba hướng, cần user chốt:**
 
-1. **Xin backend làm `/report/*` rồi mới code Phase 12** *(đúng plan gốc)* — sạch nhất, nhưng phải chờ.
-   ✅ Backend **đã có sẵn kế hoạch này**: `35.1.eloria-backend/PLAN.md:298` — *"Phase 7 — Dashboard &
+1. ✅ **USER CHỐT 2026-08-29: chờ backend làm `/report/*` rồi mới code Phase 12** *(đúng plan gốc)*.
+   Backend **đã có sẵn kế hoạch này**: `35.1.eloria-backend/PLAN.md:298` — *"Phase 7 — Dashboard &
    Báo cáo"*, là **phase duy nhất chưa ✅** của backend, đã liệt kê đúng các endpoint cần:
    `GET /dashboard/summary` · `POST /report/sales` · `POST /report/inventory` · `POST /report/profit` ·
    `GET /report/branch-comparison` · `POST /report/{type}/export`.
+   📄 **Yêu cầu chi tiết đã soạn sẵn cho backend**:
+   [`docs/handoff/phase-12-report-api-request.md`](docs/handoff/phase-12-report-api-request.md)
+   — shape response đề xuất, 2 câu hỏi cần backend chốt (doanh thu tính theo `completedDate` hay
+   `createdDate`; có làm "mục tiêu doanh thu" không), và danh sách thiếu của cả Phase 13/14/15.
 2. **Làm Phase 12 rút gọn ngay**: chỉ dựng các khối đếm được bằng `total` (đơn hàng, tồn kho, khách),
    **tạm ẩn** biểu đồ doanh thu + so sánh chi nhánh + mục tiêu + % so hôm qua. Mockup sẽ **không
    khớp**, phải chấp nhận.
