@@ -4,7 +4,7 @@
 > agent **chỉ thực hiện đúng phase được chỉ định**, không tự làm lấn sang phase khác.
 > Đọc [CONVENTIONS.md](CONVENTIONS.md) trước khi bắt đầu bất kỳ phase nào.
 
-Trạng thái: **Phase 0 → 11 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · **11: 2026-08-18**). Các phase còn lại chưa bắt đầu.
+Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**) (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · **11: 2026-08-18**). Các phase còn lại chưa bắt đầu.
 
 > ## ✅ **PHASE 11 ĐÃ XONG (2026-08-18)** — Bán hàng & Đơn hàng
 >
@@ -31,12 +31,51 @@ Trạng thái: **Phase 0 → 11 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08
 > và **BE7** (`categoryId` không roll-up danh mục cha) — user chốt **xử lý tạm phía client**,
 > backend không đổi. Xem mục C.
 >
-> ## ▶️ **PHASE TIẾP THEO: 12 — Dashboard & Báo cáo doanh thu**
+> ## ✅ **PHASE 12 ĐÃ XONG (2026-08-29)** — Dashboard & Báo cáo doanh thu
 >
-> Phụ thuộc cứng Phase 11 (đã xong) ⇒ **đã có đơn hàng thật để dựng số liệu**.
-> Trước khi code cần khảo sát lại api-docs xem backend đã có endpoint thống kê chưa —
-> hiện **chưa thấy** endpoint báo cáo nào, nhiều khả năng phải tự tổng hợp từ `/order/search`
-> hoặc xin backend bổ sung.
+> Backend **đã làm xong Phase 7 ngay trong ngày**: api-docs lên **88 path** (+5), có đủ 5 endpoint
+> báo cáo mà phase này chờ. *(Ghi chép buổi sáng cùng ngày "vẫn 83 path, Phase 12 bị chặn" đã
+> không còn đúng — đã sửa lại ở CLAUDE.md.)* Nguồn: `docs/api/fe-handoff-phase7.md`.
+>
+> **MỘT trang `/` duy nhất**, đã kiểm thử đủ **3 role** (`staffone`/`adminbranch`/`superadmin`).
+> Bố cục bám đúng thứ tự khối của mockup `01`: 4 thẻ KPI · biểu đồ vùng doanh thu theo ngày
+> (`/report/sales?groupBy=DAY`) · tình trạng kho · khối số liệu phụ + pipeline trạng thái đơn ·
+> doanh thu theo tháng × chi nhánh · **đơn hàng gần đây** (`/order/search`) · **top sản phẩm**
+> (có cột tỷ lệ tổng).
+>
+> ⚠️ **Không có khối "Báo cáo" (4 tab chi tiết)** — user chốt **bỏ hẳn** khỏi màn này, và 4 tab
+> (`SalesTab`/`ProfitTab`/`InventoryTab`/`BranchTab` + `report-table.tsx`) **đã xoá khỏi repo**
+> cùng các key i18n tương ứng, để không còn code chết.
+> ⇒ **3 endpoint `/report/profit`, `/report/inventory`, `/report/branch-comparison` hiện KHÔNG
+> được màn nào gọi**, nhưng `api/report.ts` + `types/report.ts` **vẫn giữ đủ cả 5** (đã kiểm thử
+> thật, có tài liệu) để dựng lại màn Báo cáo riêng khi cần — đừng xoá lớp service/type.
+>
+> **Bộ chọn kỳ ở đầu trang dùng chung cho mọi khối** — đổi kỳ một lần, không có cảnh mỗi khối một
+> kỳ rồi so số bị lệch.
+>
+> **Quyết định đã chốt với user (2026-08-29):**
+> - **B9 giữ nguyên**: Dashboard + Báo cáo là **ADMIN+**. Backend *có* hỗ trợ STAFF gọi
+>   `/dashboard/summary` (`scope: STAFF_SELF`) nhưng **FE cố ý không dùng** — STAFF vào thẳng `/pos`.
+> - **Lệch mockup**: giữ thẻ theo thiết kế nhưng hiện **`—` + tooltip** cho phần backend chưa có API
+>   (Khách mới · Hàng chờ duyệt · Tình trạng kho: tổng SKU/hết hàng/chậm luân chuyển >60 ngày ·
+>   % so hôm qua · mục tiêu doanh thu). Không bịa số, không để ô trống không giải thích.
+>
+> **Lệch mockup có chủ đích (ghi chú tại chỗ trong code):**
+> - **Cột "Danh mục"** ở bảng top sản phẩm: `TopProductRow` **không có danh mục**, và tra thêm qua
+>   `/product/search` cũng vô ích vì `categories` **luôn rỗng** ở API danh sách ⇒ hiện `—` + tooltip.
+> - **Cột "Tỷ lệ tổng"**: backend không trả, FE **tự tính** = doanh thu dòng ÷ tổng 5 dòng đang hiện.
+>   ⚠️ Đây là **tỷ trọng trong nhóm top 5**, *không phải* trên toàn doanh thu — nhãn đã nói rõ.
+> - **Biểu đồ tháng × chi nhánh**: backend **không gom nhóm 2 chiều** (`groupBy` chỉ nhận một giá
+>   trị) ⇒ gọi **1 request/chi nhánh** với `groupBy: MONTH` + `branchId` rồi ghép ở FE. An toàn vì
+>   chỉ SUPER_ADMIN thấy khối này và hiện chỉ có 3 chi nhánh. **Chuỗi lớn lên phải xin backend gom
+>   nhóm 2 chiều** (BE14), không tăng số request.
+> - **Nút "Xuất dữ liệu" chưa dựng** — backend ghi rõ `POST /report/{type}/export` là "đợt sau",
+>   hiện chỉ trả JSON. Dựng nút bây giờ là nút chết.
+> - **Đơn hàng gần đây cố ý KHÔNG lọc theo kỳ**: "gần đây" = mới nhất tính đến bây giờ; lọc theo kỳ
+>   thì chọn "Tháng trước" sẽ ra đơn cũ mà tiêu đề vẫn ghi "gần đây".
+>
+> **Phát sinh cho backend:** **BE11** (`orderCount` lệch tài liệu) · **BE12** (múi giờ) ·
+> **BE13** (export) · **BE14** (gom nhóm 2 chiều) — xem mục "Việc chờ backend". Đều **không chặn** gì.
 >
 > Phase 13/14/15 (đổi trả · khuyến mại · ca làm việc) **vẫn chờ backend**.
 
@@ -117,6 +156,14 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | **BE5** | **Không set được `channel` khi tạo đơn** (phát hiện 2026-08-18). | ✅ **ĐÃ XONG (2026-08-18)** — backend thêm `channel` vào `CreateOrderReqDTO`, `create()` lấy theo request (bỏ trống ⇒ `ONLINE`, tương thích ngược), `update()` cho sửa khi đơn còn `PENDING`. Đo thật đủ 4 case + lọc 3 kênh. **FE đã gửi `channel: 'POS'`** ở dialog thanh toán ⇒ tab "Tại quầy" có dữ liệu thật. |
 | **BE6** | **`keyword` của `stock-item/search` và `sku/search` chỉ khớp MÃ SKU, không khớp tên sản phẩm** (đo thật: `"jeans"` → 0 dòng, `"SP003"` → 8). Riêng `product/search` khớp tên nhưng **phân biệt dấu** (`"Quần"` → 0). | ⏳ **Phát hiện khi code Phase 11 (2026-08-18)**. FE tạm **lọc phía client** ở màn POS (nạp tồn rồi lọc theo tên/mã/màu/size) + cảnh báo khi tập nạp bị cắt. Nên xin backend cho `keyword` khớp cả `productName` và bỏ dấu. |
 | **BE8** | **Chuẩn hoá `code`/SKU (uppercase + bỏ khoảng trắng)** — `CustomStringUtil.normalizeCode()`, áp cho `code` lúc create/update của Brand · Color · Size · Product · Category. | ✅ **ĐÃ XONG (2026-08-18)** — đo thật `"br 001 "` → `BR001`, `"  br 001  x "` → `BR001X`, code toàn khoảng trắng bị chặn `error.input.invalid`, và mã chỉ khác hoa/thường bị bắt trùng đúng (`error.brand.codeExisted`). Toàn bộ 98 bản ghi hiện có (brand/category/color/size/product/sku) **đã chuẩn 100%**. **FE đã mirror luật này** ở `lib/validation.ts#normalizeCode`, áp vào ô mã của form Danh mục + Sản phẩm để người dùng thấy đúng thứ sẽ được lưu. |
+| **BE9** | **API báo cáo/dashboard cho Phase 12** — 5 endpoint (`/dashboard/summary`, `/report/sales`, `/report/inventory`, `/report/profit`, `/report/branch-comparison`). | ✅ **ĐÃ XONG (2026-08-29)** — backend làm ngay trong ngày, api-docs lên **88 path**. FE đã đo thật đủ 5 endpoint × 3 role, khớp tài liệu (trừ BE11). **Phase 12 đã code xong.** |
+| **BE11** | **`orderCount` lệch tài liệu** — handoff §B2 ghi "nhóm PRODUCT ⇒ `orderCount = null`" nhưng API thật **vẫn trả số** (đo: `1`, `11`). Chỉ `shippingTotal` mới `null` thật. | ⏳ Backend nên sửa **tài liệu** cho khớp code (hoặc ngược lại). **Không chặn** — FE khai nullable, phòng cả hai nhánh nên sửa kiểu nào cũng chạy. |
+| **BE12** | **Múi giờ báo cáo** — backend gom nhóm **và đếm ô trần độ dài** theo **giờ VN** nhưng nhận tham số **UTC**, không có tham số timezone. Máy người dùng lệch múi giờ sẽ lấy sai biên ngày **và có thể bị chặn oan** `error.report.rangeTooLong` do thừa 1 ô. | ⏳ Chờ backend. **Không chặn** vận hành thật (máy ở VN đều đúng — đo thật `TZ=Asia/Saigon`: FE sinh `T16:59:59Z`, backend quy về `23:59:59` giờ VN, khớp biên). Nên xin backend nhận `timezone` hoặc nhận thẳng `yyyy-MM-dd` theo giờ VN. |
+| **BE16** | 🐞 **`/report/profit` trả SAI dữ liệu trong im lặng** khi `groupBy = CHANNEL｜STAFF` — rơi vào nhánh `else` gom theo ngày nhưng vẫn dán nhãn `groupBy: "CHANNEL"`. | ✅ **ĐÃ XONG (2026-08-30)** — backend chặn bằng `400 error.input.invalid` (*"Báo cáo lãi gộp chỉ hỗ trợ nhóm theo DAY/MONTH/YEAR/BRANCH/PRODUCT"*). Đo thật: `CHANNEL`/`STAFF` đều trả 400. |
+| **BE15** | **`groupBy: YEAR`** cho `/report/sales` + `/report/profit`. | ✅ **ĐÃ XONG (2026-08-30)** — `EReportGroupBy` nay 7 giá trị, `key` dạng `yyyy` cắt theo giờ VN. **Kèm theo:** backend làm luôn phần chặn kỳ quá dài (`error.report.rangeTooLong`, DAY 31 / MONTH 24 / YEAR 10 ô). FE đã mở khoá lựa chọn "Theo năm", đo thật 3/3 đơn vị PASS ở đúng mốc trần. |
+| **BE14** | **Gom nhóm 2 chiều cho `/report/sales`** — `groupBy` chỉ nhận **một** giá trị nên biểu đồ "doanh thu theo tháng × chi nhánh" của mockup `01` phải gọi **1 request/chi nhánh** rồi ghép ở FE. | ⏳ Chờ backend. **Không chặn** (hiện 3 chi nhánh). Chuỗi mở rộng lên hàng chục chi nhánh thì phải xin `groupBy` 2 chiều hoặc endpoint riêng — **không** tăng số request. |
+| **BE13** | **Export Excel/PDF báo cáo** (`POST /report/{type}/export`) — backend ghi "đợt sau", hiện chỉ trả JSON. | ⏳ Chờ backend. FE **chưa dựng nút** "Xuất dữ liệu" của mockup `01` vì sẽ là nút chết. |
+| **BE10** | **`costPrice` trả về cho cả STAFF** — backend không lọc field theo role, STAFF `GET /product/{id}` vẫn đọc được giá vốn (đo thật 2026-08-29). FE đang giấu bằng gate `canWrite` ở UI ⇒ **che giao diện, không phải bảo mật**. | ⏳ Cần hỏi user: nếu giá vốn là số liệu nhạy cảm thật thì xin backend lọc field theo role. Không chặn việc gì. |
 | **BE7** | **`product/search?categoryId=` không roll-up lên danh mục cha** — lọc theo `AO` trả 0 dù có sản phẩm thuộc danh mục con `AO-SM`; lọc theo đúng danh mục lá thì trả đủ. | ⏳ **Phát hiện khi code Phase 11 (2026-08-18)**. FE tạm chỉ hiện **danh mục lá** ở hàng pill POS để không có pill bấm vào ra rỗng. |
 
 ---
@@ -132,7 +179,7 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | `react-hook-form` + `zod` | Form + validate + lỗi inline theo field | 5 |
 | `@tanstack/react-table` | DataTable (sort/filter/paging) | 5 |
 | `date-fns` | Format ngày tiếng Việt | 5 |
-| `recharts` | Biểu đồ dashboard | ~~15~~ → **12** *(replan 2026-08-10)* |
+| `recharts` | Biểu đồ dashboard | ~~15~~ → **12** *(đã cài 2026-08-29, `^3.10.1`)* |
 
 Cài **đúng phase cần**, không cài trước hàng loạt.
 
@@ -157,7 +204,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **9** | ✅ Sản phẩm & Danh mục SP (**API thật**) | 5, 6 | `11`, `12` |
 | **10** | ✅ Kho hàng: tồn kho · phiếu nhập/xuất/chuyển · kiểm kê (**API thật**) | 5, 6, 9 | `13`, `14`, `15` |
 | **11** | ✅ **Bán hàng + Đơn hàng** (POS không mở ca · danh sách & chi tiết đơn) | 5, 6, 9, 10 | `03`, `04`, `05` |
-| **12** | ⛔ **Dashboard & Báo cáo doanh thu** — *chờ backend* | 5, 11 | `01` |
+| **12** | ✅ **Dashboard & Báo cáo doanh thu** (**API thật**) | 5, 11 | `01` |
 | **13** | ⛔ Đổi / Trả — *chờ backend* | 5, 6, 11 | `06` |
 | **14** | ⛔ Khuyến mại — *chờ backend* | 5, 6, 9 | `16` |
 | **15** | ⛔ **Ca làm việc (mở ca / chốt ca)** — tách khỏi phase 11, *chờ backend* | 11 | `02` |

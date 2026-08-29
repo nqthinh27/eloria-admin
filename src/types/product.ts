@@ -41,6 +41,15 @@ export type Product = {
     name: string
     slug: string
     price: number
+    /**
+     * Giá vốn — **field mới, backend bổ sung ở Phase 7 đợt 1 (2026-08-29)**, làm cơ sở cho báo cáo
+     * lãi gộp sẽ ra ở đợt sau. `null` khi chưa nhập (toàn bộ dữ liệu hiện có đang `null`).
+     *
+     * ⚠️ **Số liệu nội bộ** — backend tự chụp (snapshot) vào đơn lúc tạo, **không** lộ ra
+     * đơn/hoá đơn. FE chỉ hiển thị & cho sửa với **SUPER_ADMIN**, tuyệt đối không đưa sang
+     * màn bán hàng/đơn hàng.
+     */
+    costPrice: number | null
     shortDescription: string | null
     description: string | null
     gender: EGender | null
@@ -71,6 +80,14 @@ export type CreateProductReq = {
     code: string
     name: string
     price: number
+    /**
+     * Giá vốn — tuỳ chọn, phải `>= 0` nếu gửi (backend `@DecimalMin(0)`, gửi số âm ⇒ 400).
+     *
+     * ⚠️ **Khi sửa (`PUT`): bỏ trống / gửi `undefined` ⇒ backend GIỮ NGUYÊN giá trị cũ**,
+     * không xoá về `null` (hành vi partial-update chung của product) ⇒ **không có cách nào
+     * xoá giá vốn đã nhập** qua API, chỉ đổi sang số khác.
+     */
+    costPrice?: number
     shortDescription?: string
     description?: string
     gender?: EGender

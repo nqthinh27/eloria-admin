@@ -48,11 +48,32 @@ function SelectTrigger({
   )
 }
 
+/**
+ * ⚠️ **Mặc định `position="popper"` + `side="bottom"`, KHÁC bản shadcn gốc** (sửa 2026-08-30).
+ *
+ * Bản gốc dùng `position="item-aligned"` — chế độ này của Radix đặt panel **chồng lên chính
+ * trigger** (căn sao cho item đang chọn nằm đúng vị trí ô hiển thị) ⇒ mở dropdown là **che mất ô
+ * đang xem**, và với danh sách dài thì panel trào cả lên trên. User chốt: danh sách phải **luôn
+ * xổ xuống dưới** ô hiển thị.
+ *
+ * `side="bottom"` cho panel nằm ngay dưới trigger; `align="start"` để mép trái thẳng hàng với
+ * trigger (bản gốc `center` làm panel lệch sang hai bên khi rộng hơn trigger).
+ *
+ * ⚠️ **KHÔNG thêm `sideOffset`**: ở chế độ popper class `data-[side=bottom]:translate-y-1` bên dưới
+ * đã tạo sẵn khoảng cách 4px. Thêm `sideOffset={4}` nữa thành **8px**, lệch với `Popover`/
+ * `DropdownMenu` (đều 4px) — hai kiểu dropdown cạnh nhau sẽ so le.
+ *
+ * ⚠️ **`hideWhenDetached` KHÔNG bật** và **không đặt `avoidCollisions={false}`**: khi trigger nằm
+ * sát đáy màn hình mà bên dưới không đủ chỗ, Radix vẫn được phép lật lên trên — thà lật còn hơn
+ * cắt cụt danh sách không cuộn tới được. `max-h-(--radix-select-content-available-height)` đã có
+ * sẵn nên panel tự co lại theo chỗ trống.
+ */
 function SelectContent({
   className,
   children,
-  position = "item-aligned",
-  align = "center",
+  position = "popper",
+  side = "bottom",
+  align = "start",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
@@ -66,6 +87,7 @@ function SelectContent({
           className
         )}
         position={position}
+        side={side}
         align={align}
         {...props}
       >
@@ -73,8 +95,14 @@ function SelectContent({
         <SelectPrimitive.Viewport
           className={cn(
             "p-1",
+            /*
+             * ⚠️ Bản shadcn gốc đặt `h-[var(--radix-select-trigger-height)]` ở đây — ép viewport
+             * cao **đúng bằng 1 dòng trigger** nên danh sách bị cắt cụt còn một dòng. Đổi sang
+             * `min-w` theo trigger + để chiều cao tự nhiên (panel đã có
+             * `max-h-(--radix-select-content-available-height)` ở ngoài để tự cuộn).
+             */
             position === "popper" &&
-              "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
+              "w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1"
           )}
         >
           {children}

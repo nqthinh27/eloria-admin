@@ -47,7 +47,16 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**, **2026-08-29**
+
+> **Khảo sát lại 2026-08-29 (lần 2 — backend đã làm xong Phase 7):** backend lên **88 path**
+> (+5). ⚠️ **Ghi chép buổi sáng cùng ngày ("vẫn 83 path, Phase 12 bị chặn") KHÔNG CÒN ĐÚNG** —
+> backend đã bổ sung **đủ 5 endpoint báo cáo/dashboard** ngay trong ngày:
+> `GET /dashboard/summary` · `POST /report/sales` · `POST /report/profit` ·
+> `POST /report/inventory` · `GET /report/branch-comparison`.
+> Nguồn: `docs/api/fe-handoff-phase7.md`. Xem mục "Domain Dashboard & Báo cáo" bên dưới.
+> ⇒ **Phase 12 đã hết bị chặn và đã code xong.**
+
 
 > **Khảo sát lại 2026-08-21:** backend hiện có **83 path** (+7 so với 2026-08-11). Mới: domain
 > **tài khoản ngân hàng & VietQR** (8 endpoint `/bank-account/*`) và **giảm giá 2 tầng**
@@ -374,6 +383,147 @@ backend + gọi API thật:**
 - **Không có `DELETE /product/{id}`** (trả 405, không có ở cả source lẫn api-docs). Xoá danh mục/
   thương hiệu bị chặn khi còn ràng buộc: `error.category.hasChildren`, `error.brand.hasProducts`.
   `DELETE /color/{id}` và `DELETE /size/{id}` là **hard delete** (chặn nếu còn SKU tham chiếu).
+
+### Domain Dashboard & Báo cáo — **MỚI 2026-08-29** (88 path), kiểm thử thật khi code Phase 12
+
+> Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-phase7.md`. FE đã **đo thật đủ 5 endpoint,
+> 3 role, và các case biên** — khớp tài liệu, trừ **1 điểm lệch** ghi ở cuối mục.
+
+| Nhóm | Role tối thiểu | Endpoint |
+|---|---|---|
+| Dashboard | `STAFF` | `GET /dashboard/summary?fromDate&toDate[&branchId]` |
+| BC bán hàng | `STAFF` | `POST /report/sales` |
+| BC lãi gộp | `ADMIN` | `POST /report/profit` |
+| BC xuất-nhập-tồn | `ADMIN` | `POST /report/inventory` |
+| So sánh chi nhánh | `SUPER_ADMIN` | `GET /report/branch-comparison?fromDate&toDate` |
+
+**Quy tắc số liệu (backend chốt — FE chỉ hiển thị, KHÔNG tự tính lại):**
+
+- **Doanh thu chỉ tính đơn `COMPLETED`**, theo **ngày tạo đơn**. Đơn PENDING/CANCELLED không vào
+  tiền, nhưng `statusBreakdown` **vẫn đếm** để xem pipeline.
+- `grossSubtotal` = tiền gốc · `discountTotal` = tổng giảm (dòng + chung) ·
+  **`netRevenue = grossSubtotal − discountTotal`** · **`revenue = totalAmount`** (đã gồm ship).
+- `cogs` = giá vốn snapshot lúc bán · `grossProfit = netRevenue − cogs` ·
+  `marginPercent = grossProfit / netRevenue × 100`.
+- **Không phân trang**: trả trọn `rows` + các trường `total*`. Không có `page`/`size`/`sort`,
+  không lồng `data.data` ⇒ **không dùng helper `search()`**, cũng đừng gắn `DataTable` sort vào.
+
+⚠️ **`marginPercent` là `null` khi `netRevenue <= 0`** (đo thật: khoảng ngày rỗng ⇒
+`totalMarginPercent: null`). Mọi chỗ hiển thị phải render `—`, đừng `.toFixed()` thẳng.
+
+⚠️ **`missingCostQty > 0` ⇒ COGS thiếu ⇒ lãi gộp bị THỔI PHỒNG.** Backend yêu cầu FE cảnh báo;
+đã dựng ở cả Dashboard lẫn tab Lãi gộp. Dữ liệu thật hiện `missingCostQty: 140/143` (hầu hết SKU
+chưa có giá vốn) nên cảnh báo này **luôn hiện** cho tới khi nhập giá vốn — đúng, không phải bug.
+
+⚠️ **`fromDate`/`toDate` BẮT BUỘC ở cả 5 endpoint.** Thiếu ⇒ `400 error.input.invalid` (`code:7`);
+`fromDate > toDate` ⇒ `400` **`code:14`** (`Thiếu dữ liệu truyền vào` — thông báo không khớp lỗi
+thật, đừng hiện thẳng cho người dùng). FE chặn sẵn khoảng ngày sai trước khi gọi.
+
+⚠️ **Múi giờ**: backend gom nhóm ngày/tháng theo **giờ VN (UTC+7)** nhưng nhận tham số **UTC**.
+FE quy đổi ở `lib/report-range.ts` — máy chạy đúng giờ VN thì khớp; máy lệch múi giờ sẽ lấy sai
+biên ngày. **Đã biết, không tự bù trừ ở FE** để tránh sai kép nếu backend đổi cách quy đổi.
+
+**Data-scope (đo thật bằng 3 tài khoản):** `scope` trả về là `STAFF_SELF | BRANCH | CHAIN`.
+`branchId` **chỉ SUPER_ADMIN dùng được**; STAFF/ADMIN gửi lên **bị bỏ qua trong im lặng**
+(ADMIN ép `branchId` chi nhánh khác vẫn nhận đúng chi nhánh mình) ⇒ **chỉ bày bộ lọc chi nhánh
+cho SUPER_ADMIN**, bày cho role thấp hơn là đánh lừa người dùng. `GET /report/branch-comparison`
+**không nhận `branchId`** và DTO của nó **không có `scope`** — luôn toàn chuỗi.
+
+**Ý nghĩa `key`/`label` theo `groupBy`** (báo cáo bán hàng): `DAY` → `yyyy-MM-dd` · `MONTH` →
+`yyyy-MM` · `BRANCH`/`STAFF` → `key` = id, `label` = tên (NV đã xoá ⇒ label rơi về id) ·
+`CHANNEL` → `ONLINE|POS|OTHER` · `PRODUCT` → `key` = mã SKU, `label` = tên SP.
+
+⚠️ **`shippingTotal` là `null` khi `groupBy = PRODUCT`** — phí ship thuộc về đơn, không chia được
+về từng SKU. Đã đo thật.
+
+⚠️ **Nhóm `PRODUCT` của BC lãi gộp không so sánh tuyệt đối được** với DAY/MONTH/BRANCH:
+`netRevenue` cấp SKU = Σ `line_total` (đã trừ giảm-**dòng**, *không* trừ giảm-**chung** cả đơn)
+⇒ tổng theo PRODUCT có thể **cao hơn** nhóm khác. Chỉ dùng xếp hạng tương đối giữa các SKU.
+
+⚠️ **BC xuất-nhập-tồn trộn 3 mốc thời gian trong cùng một dòng** — đừng cộng trừ để "kiểm tra":
+`inQty`/`outQty`/`transferOutQty` theo **ngày phiếu** (chỉ phiếu **đã duyệt**) · `soldQty` theo
+**ngày đơn** · `currentTotal` là tồn **tại thời điểm gọi API**, không theo kỳ lọc. Phiếu
+`TRANSFER` **chỉ ghi chiều xuất ở chi nhánh nguồn**, không có cột "chuyển đến".
+
+**❗ Lệch tài liệu (đo thật 2026-08-29):** handoff §B2 ghi *"nhóm PRODUCT ⇒ `orderCount = null`"*
+nhưng **API thật vẫn trả số** (`orderCount: 1`, `11`). Chỉ `shippingTotal` là `null` thật.
+FE khai kiểu nullable và phòng cả hai nhánh — nếu backend sửa lại cho khớp tài liệu thì FE
+không cần đổi.
+
+⚠️ **`groupBy` chỉ nhận MỘT chiều** — không có `MONTH × BRANCH`. Biểu đồ "doanh thu theo tháng,
+so sánh chi nhánh" của mockup `01` vì vậy phải gọi **1 request cho mỗi chi nhánh**
+(`groupBy: MONTH` + `branchId`) rồi ghép ở FE. Chỉ làm được với **SUPER_ADMIN** (role khác không
+truyền được `branchId`) và chỉ an toàn khi số chi nhánh nhỏ — xem `branch-month-chart.tsx`.
+
+⚠️ **Báo cáo KHÔNG trả danh sách đơn** — cả 5 endpoint đều là số đã gom nhóm. Khối "Đơn hàng gần
+đây" của mockup `01` phải lấy từ `POST /order/search`, không có đường nào khác.
+
+⚠️ **`TopProductRow` không có danh mục sản phẩm** (`{skuId, skuCode, productName, itemsSold,
+netRevenue}`) và **không có ảnh**. Tra thêm qua `/product/search` cũng vô ích vì `categories`
+**luôn rỗng** ở API danh sách. Cột "Danh mục" của mockup ⇒ hiển thị `—`.
+
+### Cập nhật 2026-08-30 — `groupBy: YEAR` + chặn kỳ quá dài + vá bug lãi gộp
+
+Backend đã làm xong 3 việc FE đề xuất ở `docs/backend-request-year-granularity.md` (đã kiểm thử thật):
+
+1. **`groupBy: YEAR`** — `EReportGroupBy` nay **7 giá trị**
+   (`DAY|MONTH|YEAR|BRANCH|CHANNEL|STAFF|PRODUCT`). `key` dạng `yyyy`, cắt theo **giờ VN**.
+   Áp dụng cho cả `/report/sales` và `/report/profit`.
+2. **Trần độ dài kỳ** — mã lỗi **mới `error.report.rangeTooLong`** (HTTP 400, `code: 7`):
+   `MAX_DAY_BUCKETS = 31` · `MAX_MONTH_BUCKETS = 24` · `MAX_YEAR_BUCKETS = 10`.
+   Nhóm **không theo thời gian** (`BRANCH|CHANNEL|STAFF|PRODUCT`) **không bị giới hạn**.
+3. 🐞 **Vá bug lãi gộp** — `/report/profit` với `groupBy = CHANNEL|STAFF` trước đây **lọt qua và
+   trả dữ liệu gom theo NGÀY** nhưng vẫn dán nhãn `groupBy: "CHANNEL"` (sai số liệu trong im lặng).
+   Nay trả **`400`** đúng như Javadoc đã cam kết. ⇒ `/report/sales` nhận **7** giá trị,
+   `/report/profit` chỉ nhận **5**.
+
+⚠️ **Backend đếm ô theo GIỜ VN, nhưng nhận tham số UTC** (`from.atZone(VN_ZONE).toLocalDate()`).
+Gửi `toDate` là `2026-12-31T23:59:59Z` sẽ bị quy thành **`2027-01-01` giờ VN** ⇒ **thừa 1 ô** ⇒
+chặn oan. FE tránh được nhờ `toIsoUtc(endOfDay(...))` sinh ra `T16:59:59Z` (đo thật trên máy giờ VN:
+`2026-12-31T16:59:59Z` → `23:59:59` giờ VN, đúng biên). ⇒ **Test API bằng curl phải gửi
+`T16:59:59Z`, đừng gõ tay `T23:59:59Z`** rồi tưởng FE sai.
+
+⚠️ **FE chặn DAY ở 30, backend cho 31** — **cố ý**, không phải lệch: user chốt *"ngày không được
+quá 30 ngày"*. Backend nới hơn 1 ô là hàng rào phòng thủ, FE mới là nơi ràng buộc nghiệp vụ.
+
+**Chưa có (backend ghi "đợt sau", FE chưa cần lo):** nút **Export Excel/PDF**
+(`POST /report/{type}/export` — hiện chỉ trả JSON) · giá vốn nâng cao FIFO/bình quân (hiện dùng
+`product.cost_price` phẳng) · báo cáo size-curve / hàng chậm luân chuyển.
+
+### Giá vốn sản phẩm (`costPrice`) — Phase 7 đợt 1, **kiểm thử API thật 2026-08-29**
+
+> Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-phase7-cost.md`. FE đã **đo thật 9/9 case, khớp
+> 100% tài liệu**. Đây là **nền tảng cho báo cáo lãi gộp** ở đợt sau, chưa dùng để hiển thị ở đâu khác.
+
+`ProductResDTO` · `CreateProductReqDTO` · `UpdateProductReqDTO` đều có thêm **`costPrice`**
+(number, **nullable**, `@DecimalMin(0)`). Quyền **không đổi**: đọc `[STAFF]`, ghi `[SUPER_ADMIN]`.
+
+| Case | Đo thật |
+|---|---|
+| `POST` kèm `costPrice: 150000` | `costPrice: 150000` ✓ |
+| `POST` bỏ trống | `costPrice: null` ✓ |
+| `POST` `costPrice: -5` | `400` `code:7` `error.input.invalid` ✓ |
+| `PUT` **bỏ hẳn** field | **giữ nguyên** giá cũ ✓ |
+| `PUT` `costPrice: null` | **giữ nguyên** giá cũ ✓ |
+| `PUT` `costPrice: 180000` | đổi thành `180000` ✓ |
+| **`PUT` `costPrice: 0`** | **lưu đúng `0`** (không bị coi là rỗng) ✓ |
+| STAFF `PUT` | `403` ✓ |
+
+⚠️ **Không có cách nào XOÁ giá vốn về `null`** sau khi đã nhập — cả `undefined` lẫn `null` đều được
+backend hiểu là "giữ nguyên" (partial-update chung của product). Chỉ đổi sang số khác được.
+⇒ FE **không dựng nút "xoá giá vốn"**; ô để trống khi sửa nghĩa là *giữ nguyên*, và hint trong form
+phải nói đúng như vậy (`costPriceKeepHint`), đừng để người dùng tưởng bỏ trống là xoá.
+
+⚠️ **`0` KHÁC rỗng.** Chỗ nào đọc ô nhập phải so **`trim() === ''`**, tuyệt đối không dùng falsy
+check (`!value`) — `0` là giá vốn hợp lệ và backend lưu đúng `0`, dùng `!value` sẽ nuốt mất.
+
+⚠️ **Backend TRẢ `costPrice` cho cả STAFF** (đo thật: STAFF `GET /product/{id}` vẫn thấy `costPrice`)
+— **không** ẩn field phía server. ⇒ Việc giấu giá vốn khỏi STAFF/ADMIN **hoàn toàn dựa vào FE**
+(gate `canWrite` ở `product-detail-modal.tsx`). Đây là **che ở UI, không phải bảo mật** — nếu user
+coi giá vốn là số liệu nhạy cảm thật thì phải **xin backend lọc field theo role**.
+
+**Giá vốn KHÔNG xuất hiện ở màn bán hàng/đơn/hoá đơn** — backend tự chụp (snapshot) vào đơn lúc tạo,
+cố tình không lộ cho khách. FE **không được** đưa `costPrice` sang POS/đơn hàng/hoá đơn.
 
 ### Domain Kho & Tồn kho — khảo sát api-docs + test API thật khi code Phase 10 (**2026-08-10**)
 
@@ -780,6 +930,15 @@ mobile chỉ cần "không vỡ", và **không làm dark theme** (CONVENTIONS m�
   `bg-popover`. Bản shadcn gốc dùng `bg-background` cho `DialogContent`, `SheetContent` và
   `Button variant="outline"` ⇒ các thành phần này **chìm vào nền, trông như trong suốt**.
   Đã sửa cả 3 sang `bg-card` (2026-08-09). Chạy `npx shadcn add` thêm component mới thì phải rà lại.
+- ⚠️ **`SelectContent` đã đổi mặc định sang `position="popper"` + `side="bottom"` + `align="start"`**
+  (2026-08-30, user chốt: *"dropdown phải hiển thị ở dưới box hiển thị chính"*). Bản shadcn gốc dùng
+  `position="item-aligned"` — chế độ này của Radix đặt panel **chồng lên chính trigger** nên mở
+  dropdown là che mất ô đang xem. Sửa **một chỗ** ở `components/ui/select.tsx` (92 nơi dùng, không
+  nơi nào tự truyền `position`/`align`). Cùng lúc bỏ `h-[var(--radix-select-trigger-height)]` ở
+  `SelectPrimitive.Viewport` — class đó của bản gốc ép panel cao đúng 1 dòng, cắt cụt danh sách.
+  **Không** thêm `sideOffset` (class `translate-y-1` đã cho 4px; thêm nữa thành 8px, lệch với
+  `Popover`/`DropdownMenu`), và **không** đặt `avoidCollisions={false}` (trigger sát đáy màn hình
+  vẫn phải được lật lên trên, thà lật còn hơn cắt cụt). `npx shadcn add` ghi đè thì phải áp lại.
 - Router chọn `BrowserRouter`/`HashRouter` theo env `VITE_USE_HASH_ROUTE` (xem [src/App.tsx](src/App.tsx)).
 - TS strict + `noUnusedLocals`/`noUnusedParameters` đang bật ⇒ biến thừa làm **build fail**, không chỉ cảnh báo lint.
 - `.env` bị gitignore; mẫu biến ở `.env.example`.

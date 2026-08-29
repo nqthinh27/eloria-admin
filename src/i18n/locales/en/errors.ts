@@ -133,6 +133,10 @@ export default {
         input: {
             invalid: 'The submitted data is invalid.',
         },
+        /** Backend rejects report ranges longer than MAX_*_BUCKETS (day 31 · month 24 · year 10). */
+        report: {
+            rangeTooLong: 'The report period is too long for the selected granularity. Please narrow the date range.',
+        },
         validation: 'Invalid data. Please review the fields you entered.',
         dataIntegrity: {
             violation: 'This record is in use elsewhere and the action cannot be completed.',

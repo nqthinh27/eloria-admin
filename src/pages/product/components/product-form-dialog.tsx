@@ -40,6 +40,13 @@ const buildSchema = (t: (key: string) => string, isEdit: boolean) =>
             .string()
             .min(1, t('product.form.validation.priceRequired'))
             .refine((v) => Number(v) >= 0, t('product.form.validation.priceMin')),
+        // Giá vốn **tuỳ chọn** ⇒ chuỗi rỗng hợp lệ; chỉ chặn số âm (backend `@DecimalMin(0)`).
+        costPrice: z
+            .string()
+            .refine(
+                (v) => v.trim() === '' || Number(v) >= 0,
+                t('product.form.validation.costPriceMin'),
+            ),
         brandId: z.string().optional(),
         material: z.string().optional(),
         gender: z.string().optional(),
@@ -93,6 +100,7 @@ export function ProductFormDialog({
             code: '',
             name: '',
             price: '',
+            costPrice: '',
             brandId: NONE,
             material: NONE,
             gender: NONE,
@@ -109,6 +117,7 @@ export function ProductFormDialog({
             code: product?.code ?? '',
             name: product?.name ?? '',
             price: product ? String(product.price) : '',
+            costPrice: product?.costPrice != null ? String(product.costPrice) : '',
             brandId: product?.brandId ?? NONE,
             material: product?.material ?? NONE,
             gender: product?.gender ?? NONE,
@@ -123,6 +132,9 @@ export function ProductFormDialog({
         const common = {
             name: values.name,
             price: Number(values.price),
+            // Bỏ trống ⇒ **không gửi field**: khi tạo là "chưa có giá vốn", khi sửa là
+            // "giữ nguyên giá cũ" (backend partial-update, không xoá về null).
+            costPrice: values.costPrice.trim() === '' ? undefined : Number(values.costPrice),
             brandId: values.brandId === NONE ? undefined : values.brandId,
             material: values.material === NONE ? undefined : (values.material as EMaterial),
             gender: values.gender === NONE ? undefined : (values.gender as EGender),
@@ -207,6 +219,33 @@ export function ProductFormDialog({
                                                 placeholder={t('product.form.pricePlaceholder')}
                                             />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            {/*
+                              Giá vốn — Phase 7 đợt 1. Dialog này chỉ mở được khi `canWrite`
+                              (= SUPER_ADMIN, xem ProductListPage) nên không cần gate thêm ở đây.
+                            */}
+                            <FormField
+                                control={form.control}
+                                name="costPrice"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t('product.form.costPrice')}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                min={0}
+                                                placeholder={t('product.form.costPricePlaceholder')}
+                                            />
+                                        </FormControl>
+                                        <p className="text-muted-foreground text-xs">
+                                            {isEdit
+                                                ? t('product.form.costPriceKeepHint')
+                                                : t('product.form.costPriceHint')}
+                                        </p>
                                         <FormMessage />
                                     </FormItem>
                                 )}

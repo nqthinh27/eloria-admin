@@ -312,6 +312,19 @@ export function ProductDetailModal({
     const info: { label: string; value: React.ReactNode }[] = [
         { label: t('product.detail.code'), value: current.code },
         { label: t('product.detail.price'), value: formatVnd(current.price) },
+        // Giá vốn là **số liệu nội bộ** (Phase 7 đợt 1) ⇒ chỉ SUPER_ADMIN (`canWrite`) thấy.
+        // STAFF/ADMIN mở được modal này nên phải gate, khác với form thêm/sửa vốn đã chặn ở ngoài.
+        ...(canWrite
+            ? [
+                  {
+                      label: t('product.detail.costPrice'),
+                      value:
+                          current.costPrice != null
+                              ? formatVnd(current.costPrice)
+                              : t('product.detail.notUpdated'),
+                  },
+              ]
+            : []),
         {
             label: t('product.detail.brand'),
             value: current.brandName ?? t('product.list.noBrand'),

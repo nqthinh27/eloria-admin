@@ -147,7 +147,9 @@ export function SearchSelect({
                 </Button>
             </PopoverTrigger>
 
+            {/* Danh sách luôn xổ **xuống dưới** ô hiển thị, khớp `SelectContent` (user chốt 2026-08-30). */}
             <PopoverContent
+                side="bottom"
                 align="start"
                 className="w-[var(--radix-popover-trigger-width)] p-0">
                 {showSearch && (

@@ -146,6 +146,14 @@ export default {
         input: {
             invalid: 'Dữ liệu nhập vào không hợp lệ.',
         },
+        /**
+         * Backend chặn kỳ báo cáo quá dài (`MAX_*_BUCKETS`: ngày 31 · tháng 24 · năm 10).
+         * FE đã tự chặn trước khi gọi (30/24/10) nên key này chỉ nổ khi **lệch múi giờ**
+         * làm thừa 1 ô — xem PLAN mục BE12.
+         */
+        report: {
+            rangeTooLong: 'Kỳ báo cáo quá dài so với đơn vị thống kê đang chọn. Vui lòng thu hẹp khoảng thời gian.',
+        },
         validation: 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường đã nhập.',
         dataIntegrity: {
             violation: 'Dữ liệu đang được sử dụng ở nơi khác, không thể thực hiện thao tác.',
