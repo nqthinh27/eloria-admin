@@ -21,7 +21,13 @@ export function AppLayout() {
 
     return (
         <BranchProvider>
-            <div className="bg-background flex min-h-screen">
+            {/*
+              * `h-dvh` (không phải `min-h-screen`) để chuỗi chiều cao có mốc rõ ràng: màn nào cần
+              * khoá cao vừa viewport chỉ việc dùng `h-full` thay vì tự trừ tay chiều cao topbar
+              * (màn POS cần khối tổng tiền luôn thấy, không phải cuộn). `dvh` để trên mobile
+              * thanh địa chỉ trượt không làm hụt đáy. Nội dung dài giờ cuộn trong `<main>`.
+              */}
+            <div className="bg-background flex h-dvh overflow-hidden">
                 {/* Sidebar desktop */}
                 <aside
                     className={cn(
@@ -54,7 +60,7 @@ export function AppLayout() {
                         collapsed ? 'lg:pl-[72px]' : 'lg:pl-64',
                     )}>
                     <AppTopbar onOpenMobileMenu={() => setMobileOpen(true)} />
-                    <main className="flex-1 px-4 py-6 lg:px-6">
+                    <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 lg:px-6">
                         <Outlet />
                     </main>
                 </div>

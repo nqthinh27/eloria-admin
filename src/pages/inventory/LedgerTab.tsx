@@ -6,6 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { warehouseLedgerApi } from '@/api/inventory'
 import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
+import { toSearchSort, useTableState } from '@/hooks/use-table-state'
 import { hasRole } from '@/config/roles'
 import { formatDateTime } from '@/lib/format'
 import { toastSuccess } from '@/lib/toast'
@@ -17,6 +18,7 @@ import {
 } from '@/types/inventory'
 import { DataTable } from '@/components/data-table/data-table'
 import { DataTableToolbar } from '@/components/data-table/data-table-toolbar'
+import { DataTableControls } from '@/components/data-table/data-table-view-options'
 import { StatusBadge, type StatusTone } from '@/components/status-badge'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Button } from '@/components/ui/button'
@@ -28,6 +30,8 @@ import { LedgerRejectDialog } from './components/ledger-reject-dialog'
 
 const ALL = 'ALL'
 const PAGE_SIZE = 10
+/** Mặc định của backend khi không truyền `sort`. Giữ nguyên để thứ tự không đổi bất ngờ. */
+const DEFAULT_SORT = ['createdDate,DESC']
 
 const STATUS_TONE: Record<string, StatusTone> = {
     [EWarehouseLedgerStatus.DRAFT]: 'muted',
@@ -58,58 +62,26 @@ export function LedgerTab() {
     const [data, setData] = useState<WarehouseLedger[]>([])
     const [total, setTotal] = useState(0)
     const [loading, setLoading] = useState(true)
+    /**
+     * Đang tải lại ngầm: **mờ bảng + spinner + icon nút xoay**, nhưng KHÔNG nháy skeleton —
+     * dữ liệu cũ nằm nguyên để không mất vị trí đọc (CONVENTIONS mục 5.2).
+     */
+    const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState(false)
-    const [page, setPage] = useState(1)
     const [keyword, setKeyword] = useState('')
     const [typeFilter, setTypeFilter] = useState<string>(ALL)
     const [statusFilter, setStatusFilter] = useState<string>(ALL)
     const [branchFilter, setBranchFilter] = useState<string>(ALL)
+
+    /* page · sort · cột ẩn/hiện · nonce tải lại — xem `use-table-state`. */
+    const table = useTableState()
+    const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     const [formOpen, setFormOpen] = useState(false)
     const [detailId, setDetailId] = useState<string | null>(null)
     const [submitLedger, setSubmitLedger] = useState<WarehouseLedger | null>(null)
     const [approveLedger, setApproveLedger] = useState<WarehouseLedger | null>(null)
     const [rejectLedger, setRejectLedger] = useState<WarehouseLedger | null>(null)
-
-    const load = useCallback(
-        async (signal?: AbortSignal) => {
-            setLoading(true)
-            setError(false)
-            try {
-                const result = await warehouseLedgerApi.search(
-                    {
-                        keyword: keyword || undefined,
-                        type:
-                            typeFilter === ALL
-                                ? undefined
-                                : (typeFilter as EWarehouseLedgerType),
-                        ledgerStatus:
-                            statusFilter === ALL
-                                ? undefined
-                                : (statusFilter as EWarehouseLedgerStatus),
-                        branchId:
-                            canFilterBranch && branchFilter !== ALL ? branchFilter : undefined,
-                    },
-                    { page, size: PAGE_SIZE, sort: ['createdDate,DESC'] },
-                    signal,
-                )
-                setData(result.data)
-                setTotal(result.total)
-            } catch {
-                if (signal?.aborted) return
-                setError(true)
-            } finally {
-                if (!signal?.aborted) setLoading(false)
-            }
-        },
-        [page, keyword, typeFilter, statusFilter, branchFilter, canFilterBranch],
-    )
-
-    useEffect(() => {
-        const controller = new AbortController()
-        void load(controller.signal)
-        return () => controller.abort()
-    }, [load])
 
     useEffect(() => {
         const controller = new AbortController()
@@ -127,25 +99,23 @@ export function LedgerTab() {
         [user?.username],
     )
 
-    const handleSubmit = async () => {
-        if (!submitLedger) return
-        await warehouseLedgerApi.submit(submitLedger.id)
-        toastSuccess('inventory.toast.ledgerSubmitted', { ns: 'inventory' })
-        await load()
-    }
-
-    const handleApprove = async () => {
-        if (!approveLedger) return
-        await warehouseLedgerApi.approve(approveLedger.id)
-        toastSuccess('inventory.toast.ledgerApproved', { ns: 'inventory' })
-        await load()
-    }
-
+    /*
+     * Khai trước `load` vì `toSearchSort` cần `meta.sortField` của cột để dịch id cột → field BE.
+     *
+     * ⚠️ **Sort phía server** (CONVENTIONS mục 5.2): entity `WarehouseLedger` sort được `code`,
+     * `name`, `type`, `status`, `branchId`, `receiveFrom`, `sendTo`, `description`, `createdDate`,
+     * `createdBy`. Ngược lại `branchName` / `toBranchName` / `toBranchId` / `lines` chỉ có ở DTO
+     * ⇒ sort vào đó backend trả **HTTP 500**, không phải 400 — xem CLAUDE.md mục "Sort phía server".
+     */
     const columns = useMemo<ColumnDef<WarehouseLedger, unknown>[]>(
         () => [
             {
                 accessorKey: 'code',
                 header: t('inventory.ledger.column.code'),
+                // Cột định danh (mã phiếu) — không cho ẩn, người dùng sẽ không biết đang xem phiếu nào.
+                enableHiding: false,
+                // `code` là cột thật của `WarehouseLedger` ⇒ backend sort được.
+                meta: { sortField: 'code', columnLabel: t('inventory.ledger.column.code') },
                 cell: ({ row }) => (
                     <span className="text-primary font-mono text-xs">{row.original.code}</span>
                 ),
@@ -153,6 +123,8 @@ export function LedgerTab() {
             {
                 accessorKey: 'name',
                 header: t('inventory.ledger.column.name'),
+                // `name` là cột thật của `WarehouseLedger` ⇒ backend sort được.
+                meta: { sortField: 'name', columnLabel: t('inventory.ledger.column.name') },
                 cell: ({ row }) => (
                     <span className="font-medium">{row.original.name ?? '—'}</span>
                 ),
@@ -160,6 +132,8 @@ export function LedgerTab() {
             {
                 accessorKey: 'type',
                 header: t('inventory.ledger.column.type'),
+                // `type` (IN/OUT/TRANSFER) là cột thật của `WarehouseLedger` ⇒ backend sort được.
+                meta: { sortField: 'type', columnLabel: t('inventory.ledger.column.type') },
                 cell: ({ row }) => (
                     <StatusBadge tone={TYPE_TONE[row.original.type]}>
                         {t(`inventory.ledger.type.${row.original.type}`)}
@@ -169,6 +143,14 @@ export function LedgerTab() {
             {
                 accessorKey: 'branchName',
                 header: t('inventory.ledger.column.branch'),
+                /*
+                 * ⚠️ Ô này ghép **hai** field DTO (`branchName → toBranchName`), mà cả hai đều
+                 * KHÔNG phải cột của entity `WarehouseLedger` (entity chỉ giữ `branchId`) ⇒ sort
+                 * vào đây backend 500. Không map sang `branchId` vì sắp theo UUID cho ra thứ tự
+                 * ngẫu nhiên với người dùng, tệ hơn là không cho sort.
+                 */
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.ledger.column.branch') },
                 cell: ({ row }) => (
                     <span className="text-sm">
                         {row.original.branchName}
@@ -188,6 +170,13 @@ export function LedgerTab() {
             {
                 accessorKey: 'status',
                 header: t('inventory.ledger.column.status'),
+                /*
+                 * ⚠️ Trạng thái **vòng đời phiếu** (`DRAFT → WAITING_APPROVAL → ACCEPTED|REJECTED`).
+                 * Bộ lọc phía FE gọi field này là `ledgerStatus` (tên trong `WarehouseLedgerSearchReqDTO`,
+                 * để tách khỏi `status` 0/1 của bản ghi), nhưng **cột thật trong entity vẫn tên
+                 * `status`** ⇒ `sortField` phải là `status`, gửi `ledgerStatus` sẽ 500.
+                 */
+                meta: { sortField: 'status', columnLabel: t('inventory.ledger.column.status') },
                 cell: ({ row }) => (
                     <StatusBadge tone={STATUS_TONE[row.original.status]}>
                         {t(`inventory.ledger.status.${row.original.status}`)}
@@ -197,6 +186,8 @@ export function LedgerTab() {
             {
                 accessorKey: 'createdBy',
                 header: t('inventory.ledger.column.createdBy'),
+                // `createdBy` (username người tạo) là cột audit thật của entity ⇒ backend sort được.
+                meta: { sortField: 'createdBy', columnLabel: t('inventory.ledger.column.createdBy') },
                 cell: ({ row }) => (
                     <span className="text-muted-foreground text-sm">{row.original.createdBy}</span>
                 ),
@@ -204,6 +195,11 @@ export function LedgerTab() {
             {
                 accessorKey: 'createdDate',
                 header: t('inventory.ledger.column.createdDate'),
+                // `createdDate` là cột audit thật của entity ⇒ backend sort được (cũng là sort mặc định).
+                meta: {
+                    sortField: 'createdDate',
+                    columnLabel: t('inventory.ledger.column.createdDate'),
+                },
                 cell: ({ row }) => (
                     <span className="text-muted-foreground text-sm">
                         {formatDateTime(row.original.createdDate)}
@@ -213,6 +209,10 @@ export function LedgerTab() {
             {
                 id: 'actions',
                 header: t('inventory.ledger.column.actions'),
+                // Đường vào mọi thao tác (xem/gửi duyệt/duyệt/từ chối) — không cho ẩn, và không có gì để sort.
+                enableHiding: false,
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.ledger.column.actions') },
                 cell: ({ row }) => {
                     const ledger = row.original
                     const own = isOwnLedger(ledger)
@@ -290,23 +290,122 @@ export function LedgerTab() {
         [t, canApprove, isOwnLedger],
     )
 
+    /**
+     * `quiet` = nạp lại ngầm (nút Tải lại / sau khi ghi dữ liệu): giữ nguyên dữ liệu đang hiển thị
+     * thay vì nháy skeleton, để không mất vị trí đọc (CONVENTIONS mục 5.1 + 5.2).
+     */
+    const load = useCallback(
+        async (signal?: AbortSignal, quiet = false) => {
+            if (quiet) setRefreshing(true)
+            else setLoading(true)
+            setError(false)
+            try {
+                const result = await warehouseLedgerApi.search(
+                    {
+                        keyword: keyword || undefined,
+                        type:
+                            typeFilter === ALL
+                                ? undefined
+                                : (typeFilter as EWarehouseLedgerType),
+                        ledgerStatus:
+                            statusFilter === ALL
+                                ? undefined
+                                : (statusFilter as EWarehouseLedgerStatus),
+                        branchId:
+                            canFilterBranch && branchFilter !== ALL ? branchFilter : undefined,
+                    },
+                    {
+                        page,
+                        size: PAGE_SIZE,
+                        sort: toSearchSort(sorting, DEFAULT_SORT, columns),
+                    },
+                    signal,
+                )
+                setData(result.data)
+                setTotal(result.total)
+            } catch {
+                if (signal?.aborted) return
+                setError(true)
+            } finally {
+                if (!signal?.aborted) {
+                    setLoading(false)
+                    setRefreshing(false)
+                }
+            }
+        },
+        [
+            page,
+            keyword,
+            typeFilter,
+            statusFilter,
+            branchFilter,
+            canFilterBranch,
+            sorting,
+            columns,
+        ],
+    )
+
+    useEffect(() => {
+        const controller = new AbortController()
+        void load(controller.signal)
+        return () => controller.abort()
+    }, [load])
+
+    /*
+     * Nút Tải lại: giữ nguyên page/sort/filter/scroll, chỉ gọi lại API.
+     * `runRefresh` bọc thêm **toast báo đã cập nhật** khi xong (user chốt 2026-08-28) — trong lúc
+     * chạy thì cờ `refreshing` làm mờ bảng + hiện spinner.
+     */
+    useEffect(() => {
+        if (table.reloadNonce === 0) return
+        const controller = new AbortController()
+        void table.runRefresh((signal) => load(signal, true), controller.signal)
+        return () => controller.abort()
+        // `load` cố ý không nằm trong dep: chỉ chạy khi người dùng bấm Tải lại.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [table.reloadNonce])
+
+    /** Ghi dữ liệu xong ⇒ nạp lại ngầm, **giữ nguyên** page/sort/filter (CONVENTIONS mục 5.1). */
+    const reload = useCallback(() => load(undefined, true), [load])
+
+    const handleSubmit = async () => {
+        if (!submitLedger) return
+        await warehouseLedgerApi.submit(submitLedger.id)
+        toastSuccess('inventory.toast.ledgerSubmitted', { ns: 'inventory' })
+        await reload()
+    }
+
+    const handleApprove = async () => {
+        if (!approveLedger) return
+        await warehouseLedgerApi.approve(approveLedger.id)
+        toastSuccess('inventory.toast.ledgerApproved', { ns: 'inventory' })
+        await reload()
+    }
+
     return (
         <div className="space-y-4">
+            {/*
+              Nút **tác động dữ liệu** tách khỏi hàng lọc (CONVENTIONS mục 5, chốt 2026-08-28).
+              Tab này **không có `PageHeader` riêng** — tiêu đề màn do `InventoryPage` (component cha)
+              sở hữu, nên không đưa nút lên đó được; thay vào đó cho nút đứng **một hàng riêng** phía
+              trên toolbar. Hàng dưới vì vậy chỉ còn search/filter + điều khiển bảng.
+            */}
+            <div className="flex justify-end">
+                <Button onClick={() => setFormOpen(true)}>
+                    <Plus />
+                    {t('inventory.action.createLedger')}
+                </Button>
+            </div>
+
             <DataTableToolbar
                 searchValue={keyword}
-                onSearchChange={(value) => {
-                    setKeyword(value)
-                    setPage(1)
-                }}
+                onSearchChange={(value) => table.resetTo(() => setKeyword(value))}
                 searchPlaceholder={t('inventory.ledger.searchPlaceholder')}
                 filters={
                     <>
                         <Select
                             value={typeFilter}
-                            onValueChange={(v) => {
-                                setTypeFilter(v)
-                                setPage(1)
-                            }}>
+                            onValueChange={(v) => table.resetTo(() => setTypeFilter(v))}>
                             <SelectTrigger className="w-full sm:w-44">
                                 <SelectValue />
                             </SelectTrigger>
@@ -322,10 +421,7 @@ export function LedgerTab() {
 
                         <Select
                             value={statusFilter}
-                            onValueChange={(v) => {
-                                setStatusFilter(v)
-                                setPage(1)
-                            }}>
+                            onValueChange={(v) => table.resetTo(() => setStatusFilter(v))}>
                             <SelectTrigger className="w-full sm:w-44">
                                 <SelectValue />
                             </SelectTrigger>
@@ -344,10 +440,7 @@ export function LedgerTab() {
                         {canFilterBranch && (
                             <Select
                                 value={branchFilter}
-                                onValueChange={(v) => {
-                                    setBranchFilter(v)
-                                    setPage(1)
-                                }}>
+                                onValueChange={(v) => table.resetTo(() => setBranchFilter(v))}>
                                 <SelectTrigger className="w-full sm:w-52">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -365,11 +458,14 @@ export function LedgerTab() {
                         )}
                     </>
                 }
-                actions={
-                    <Button onClick={() => setFormOpen(true)}>
-                        <Plus />
-                        {t('inventory.action.createLedger')}
-                    </Button>
+                tableControls={
+                    <DataTableControls
+                        columns={columns}
+                        columnVisibility={columnVisibility}
+                        onColumnVisibilityChange={setColumnVisibility}
+                        onRefresh={table.refresh}
+                        refreshing={refreshing}
+                    />
                 }
             />
 
@@ -378,8 +474,13 @@ export function LedgerTab() {
                 data={data}
                 getRowId={(row) => row.id}
                 loading={loading}
+                refreshing={refreshing}
                 error={error}
                 onRetry={() => void load()}
+                sorting={sorting}
+                onSortingChange={setSorting}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
                 unitLabel={t('inventory.ledger.resultLabel')}
                 pagination={{ page, size: PAGE_SIZE, total, onPageChange: setPage }}
                 emptyState={
@@ -396,7 +497,7 @@ export function LedgerTab() {
                 onOpenChange={setFormOpen}
                 branches={branches}
                 canChooseBranch={canFilterBranch}
-                onCreated={load}
+                onCreated={reload}
             />
 
             <LedgerDetailDialog
@@ -407,7 +508,7 @@ export function LedgerTab() {
             <LedgerRejectDialog
                 ledger={rejectLedger}
                 onOpenChange={(open) => !open && setRejectLedger(null)}
-                onRejected={load}
+                onRejected={reload}
             />
 
             <ConfirmDialog

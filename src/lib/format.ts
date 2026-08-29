@@ -25,3 +25,13 @@ export function formatDateTime(value: string | Date): string {
 export function formatRelativeTime(value: string | Date): string {
     return formatDistanceToNow(new Date(value), { addSuffix: true, locale: vi })
 }
+
+/**
+ * `14:32:07 13/07/2024` — **giờ trước, ngày sau**, có cả giây.
+ *
+ * Thứ tự ngược với `formatDateTime` là **cố ý**: đây là định dạng người dùng chốt riêng cho
+ * dòng "Thời gian" trên hoá đơn in. Đừng dùng thay `formatDateTime` ở bảng/danh sách.
+ */
+export function formatInvoiceDateTime(value: string | Date): string {
+    return format(new Date(value), 'HH:mm:ss dd/MM/yyyy')
+}

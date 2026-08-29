@@ -37,6 +37,13 @@ export default {
         pageOf: 'Trang {{page}} / {{pageCount}}',
         prevPage: 'Trang trước',
         nextPage: 'Trang sau',
+        /** Tải lại giữ nguyên page/sort/filter/scroll — CONVENTIONS mục 5.2. */
+        refresh: 'Tải lại',
+        /** Lớp phủ khi đang tải lại (dữ liệu cũ vẫn hiển thị bên dưới). */
+        refreshing: 'Đang tải lại…',
+        /** Toast báo tải lại xong — người dùng cần biết bảng đã là dữ liệu mới. */
+        refreshed: 'Tải lại dữ liệu thành công',
+        columns: 'Hiển thị cột',
     },
     searchSelect: {
         searchPlaceholder: 'Tìm kiếm…',

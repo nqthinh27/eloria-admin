@@ -7,6 +7,7 @@ import {
     useReactTable,
     type ColumnDef,
     type SortingState,
+    type VisibilityState,
 } from '@tanstack/react-table'
 import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -21,6 +22,9 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import { RefreshingOverlay } from './data-table-view-options'
+// Kích hoạt `declare module` mở rộng `ColumnMeta` (sortField / columnLabel).
+import './types'
 
 export type DataTablePagination = {
     /** Trang hiện tại, bắt đầu từ 1 — khớp `SearchReq.page` phía backend. */
@@ -41,18 +45,41 @@ type DataTableProps<TData> = {
     /** Nhãn số nhiều cho dòng "Hiển thị x–y trong tổng số n …" (ví dụ: "đơn hàng", "nhân viên"). */
     unitLabel: string
     pagination?: DataTablePagination
-    /** Sort phía client — chỉ dùng khi `data` đã là toàn bộ tập kết quả trang hiện tại. */
+    /**
+     * Sort hiện tại. Có kèm `onSortingChange` ⇒ **sort phía server** (`manualSorting`);
+     * không kèm ⇒ sort phía client trong phạm vi trang hiện tại.
+     *
+     * ⚠️ CONVENTIONS mục 5.2: bảng phân trang phía server **phải** dùng sort server, và cột nào
+     * backend không sort được phải khai `enableSorting: false` — sort client trên 1 trang cho ra
+     * kết quả sai mà người dùng không biết.
+     */
     sorting?: SortingState
     onSortingChange?: (sorting: SortingState) => void
+    /** Cột đang ẩn/hiện — lấy từ `useTableState`. Không truyền ⇒ `DataTable` tự giữ state. */
+    columnVisibility?: VisibilityState
+    onColumnVisibilityChange?: (value: VisibilityState) => void
+    /**
+     * Đang **tải lại** (khác `loading` = nạp lần đầu): bảng **mờ đi + khoá tương tác + hiện spinner
+     * giữa bảng**, nhưng **giữ nguyên dữ liệu cũ** thay vì nháy skeleton làm mất vị trí đọc
+     * (user chốt 2026-08-28: phải thấy rõ là đang tải, icon xoay ở nút thôi thì quá kín đáo).
+     *
+     * ⚠️ **Không có prop `onRefresh`.** Nút Tải lại và dropdown Hiển thị cột nằm ở
+     * `DataTableToolbar` (slot `tableControls`), **cùng hàng với search/filter**
+     * (CONVENTIONS mục 5) — `DataTable` không vẽ chúng nữa, chỉ hiển thị trạng thái đang tải.
+     */
+    refreshing?: boolean
     emptyState?: ReactNode
     className?: string
 }
 
 /**
- * Bảng dữ liệu dùng chung (PLAN Phase 5) — sort cột, phân trang, empty/loading/error state,
- * scroll ngang trong khung ở màn hẹp (CONVENTIONS mục 5). Search/filter là control rời do
- * từng màn tự dựng (đặt phía trên bảng) vì cần gọi lại `POST .../search` với tham số riêng;
- * `DataTable` chỉ render kết quả trang hiện tại + điều khiển phân trang.
+ * Bảng dữ liệu dùng chung (PLAN Phase 5) — sort cột, phân trang, bật/tắt cột, nút tải lại,
+ * empty/loading/error state, scroll ngang trong khung ở màn hẹp
+ * (CONVENTIONS mục 5 + 5.2).
+ *
+ * Search/filter là control rời do từng màn tự dựng (`DataTableToolbar`, đặt phía trên bảng) vì cần
+ * gọi lại `POST .../search` với tham số riêng; `DataTable` chỉ render kết quả trang hiện tại +
+ * các điều khiển của chính bảng.
  */
 export function DataTable<TData>({
     columns,
@@ -65,23 +92,36 @@ export function DataTable<TData>({
     pagination,
     sorting: controlledSorting,
     onSortingChange,
+    columnVisibility: controlledVisibility,
+    onColumnVisibilityChange,
+    refreshing = false,
     emptyState,
     className,
 }: DataTableProps<TData>) {
     const { t } = useTranslation('common')
     const [internalSorting, setInternalSorting] = useState<SortingState>([])
     const sorting = controlledSorting ?? internalSorting
+    const [internalVisibility, setInternalVisibility] = useState<VisibilityState>({})
+    const columnVisibility = controlledVisibility ?? internalVisibility
 
     const table = useReactTable({
         data,
         columns,
-        state: { sorting },
+        state: { sorting, columnVisibility },
         onSortingChange: (updater) => {
             const next = typeof updater === 'function' ? updater(sorting) : updater
             if (onSortingChange) {
                 onSortingChange(next)
             } else {
                 setInternalSorting(next)
+            }
+        },
+        onColumnVisibilityChange: (updater) => {
+            const next = typeof updater === 'function' ? updater(columnVisibility) : updater
+            if (onColumnVisibilityChange) {
+                onColumnVisibilityChange(next)
+            } else {
+                setInternalVisibility(next)
             }
         },
         getCoreRowModel: getCoreRowModel(),
@@ -91,10 +131,22 @@ export function DataTable<TData>({
     })
 
     const rows = table.getRowModel().rows
+    /** Số cột đang hiện — dùng cho `colSpan` của các dòng trạng thái. */
+    const visibleColumnCount = table.getVisibleLeafColumns().length
 
     return (
         <div className={cn('space-y-4', className)}>
-            <div className="bg-card overflow-x-auto rounded-lg border">
+            {/* `relative` để lớp phủ "đang tải lại" bám đúng khung bảng. */}
+            <div className="bg-card relative overflow-x-auto rounded-lg border">
+                {/*
+                 * Lớp phủ khi **tải lại**: làm mờ + khoá tương tác + hiện spinner, nhưng dữ liệu cũ
+                 * vẫn nằm nguyên bên dưới nên người dùng không mất chỗ đang đọc
+                 * (user chốt 2026-08-28). Khác hẳn `loading` (nạp lần đầu) — lúc đó mới dựng skeleton.
+                 *
+                 * `pointer-events-auto` là cố ý: chặn bấm vào nút trong bảng khi dữ liệu sắp đổi,
+                 * tránh thao tác nhầm lên dòng ngay trước lúc nó bị thay thế.
+                 */}
+                {refreshing && !loading && <RefreshingOverlay />}
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -147,7 +199,7 @@ export function DataTable<TData>({
                         {loading ? (
                             Array.from({ length: pagination?.size ?? 5 }).map((_, i) => (
                                 <TableRow key={i} className="hover:bg-transparent">
-                                    {columns.map((_, colIndex) => (
+                                    {Array.from({ length: visibleColumnCount }).map((_, colIndex) => (
                                         <TableCell key={colIndex}>
                                             <Skeleton className="h-5 w-full max-w-40" />
                                         </TableCell>
@@ -156,7 +208,7 @@ export function DataTable<TData>({
                             ))
                         ) : error ? (
                             <TableRow className="hover:bg-transparent">
-                                <TableCell colSpan={columns.length} className="h-40 text-center">
+                                <TableCell colSpan={visibleColumnCount} className="h-40 text-center">
                                     <div className="text-muted-foreground flex flex-col items-center gap-2">
                                         <AlertCircle className="size-6" />
                                         <p className="text-sm">{t('dataTable.error')}</p>
@@ -170,7 +222,7 @@ export function DataTable<TData>({
                             </TableRow>
                         ) : rows.length === 0 ? (
                             <TableRow className="hover:bg-transparent">
-                                <TableCell colSpan={columns.length} className="h-40 text-center">
+                                <TableCell colSpan={visibleColumnCount} className="h-40 text-center">
                                     <div className="text-muted-foreground text-sm">
                                         {emptyState ?? t('dataTable.empty')}
                                     </div>

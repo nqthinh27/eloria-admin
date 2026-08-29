@@ -4,23 +4,39 @@
 > agent **chỉ thực hiện đúng phase được chỉ định**, không tự làm lấn sang phase khác.
 > Đọc [CONVENTIONS.md](CONVENTIONS.md) trước khi bắt đầu bất kỳ phase nào.
 
-Trạng thái: **Phase 0 → 10 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · **10: 2026-08-10**). Các phase còn lại chưa bắt đầu.
+Trạng thái: **Phase 0 → 11 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · **11: 2026-08-18**). Các phase còn lại chưa bắt đầu.
 
-> ## ▶️ **PHASE TIẾP THEO: 11 — Bán hàng & Đơn hàng** *(sẵn sàng bắt đầu, cập nhật 2026-08-15)*
+> ## ✅ **PHASE 11 ĐÃ XONG (2026-08-18)** — Bán hàng & Đơn hàng
 >
-> Backend **đã sẵn sàng hoàn toàn**: 13 endpoint `/order/*`, đã chạy trọn vòng đời đơn trên dữ liệu
-> thật nhiều lần. Dữ liệu mẫu có sẵn: 3 chi nhánh · 67 SKU · 4 khách · ~30 đơn phủ đủ 5 trạng thái.
+> 3 màn chạy trên **API thật**: `/pos` (mockup `03`) · `/orders` (mockup `04`) · dialog chi tiết
+> (mockup `05`). Đã kiểm thử trọn vòng đời trên dữ liệu thật: tạo đơn → trừ tồn ngay →
+> confirm/pack/ship → thu tiền 1 lần → complete; và nhánh huỷ đơn đã thu → hoàn tồn + tự sinh
+> dòng `REFUNDED`. Test đủ 3 role (`staffone`/`adminbranch`/`superadmin`).
 >
-> **Trước khi code, đọc theo thứ tự:**
-> 1. **Hộp "3 quyết định của user"** ở đầu Phase 11 (trạng thái đơn · đơn PENDING giam tồn · trần phân trang).
-> 2. **CLAUDE.md** — 3 mục quan trọng: "Domain Đơn hàng" · **"Mô hình thanh toán"** (thu 1 lần,
->    đổi 2026-08-15) · **"Mô hình tồn kho"** (bỏ giữ chỗ, đổi 2026-08-14).
-> 3. **`35.1.eloria-backend/docs/api/ban-hang-p6.md`** — tài liệu backend, có bảng subKey đầy đủ.
-> 4. **`src/types/order.ts`** hiện là **type đoán từ Phase 6, SAI so với API thật** ⇒ **viết lại từ
->    api-docs**, đừng sửa vá (cảnh báo chi tiết đã ghi ở đầu file đó).
+> **3 điểm lệch mockup có chủ đích** (đều do giới hạn backend, đã ghi chú tại chỗ trong code):
+> bảng POS liệt kê **SKU** thay vì sản phẩm cha · bỏ cột **SỐ SP** và **NHÂN VIÊN** ở `04`
+> (`lines: null` ở `search`, `staffId` không kèm tên) · thêm cột **THANH TOÁN**.
 >
-> ✅ **Không còn điểm nào chặn — bắt tay code được ngay.** B7 bám quy ước backend · B8 (duyệt chiết
-> khấu) và vấn đề đơn PENDING giam tồn đều **hoãn sang Phase 16** theo chủ trương *thông luồng trước*.
+> **Bộ chọn chi nhánh ở màn POS (2026-08-18):** chốt chi nhánh **ngay đầu màn**, trước khi chọn
+> hàng — SUPER_ADMIN chưa chọn thì chặn bằng empty state, đổi chi nhánh khi giỏ có hàng thì hỏi
+> xác nhận rồi xoá giỏ. Lý do: tồn theo từng chi nhánh (đo thật: Hoàn Kiếm 346 / Trung tâm 1498 /
+> Cầu Giấy 0), để `branchId` rỗng thì picker nạp tồn **gộp cả 3** ⇒ chọn hàng xong mới báo hết
+> hàng ở bước thanh toán. **Chỉ SUPER_ADMIN có dropdown**: backend
+> (`OrderServiceImpl#resolveScopedBranch`) **bỏ qua `branchId` của STAFF/ADMIN trong im lặng**
+> (đo thật: ADMIN gửi chi nhánh khác, đơn vẫn tạo ở chi nhánh mình) ⇒ bày dropdown cho ADMIN là
+> đánh lừa. Tham chiếu `docs/api/order-branch-scope-audit.md` phía backend.
+>
+> **Phát sinh cho backend:** **BE5 (`channel`) đã được backend fix 2026-08-18** ⇒ màn POS gửi
+> `channel: 'POS'`, tab "Tại quầy" có dữ liệu thật. Còn lại **BE6** (`keyword` không khớp tên SP)
+> và **BE7** (`categoryId` không roll-up danh mục cha) — user chốt **xử lý tạm phía client**,
+> backend không đổi. Xem mục C.
+>
+> ## ▶️ **PHASE TIẾP THEO: 12 — Dashboard & Báo cáo doanh thu**
+>
+> Phụ thuộc cứng Phase 11 (đã xong) ⇒ **đã có đơn hàng thật để dựng số liệu**.
+> Trước khi code cần khảo sát lại api-docs xem backend đã có endpoint thống kê chưa —
+> hiện **chưa thấy** endpoint báo cáo nào, nhiều khả năng phải tự tổng hợp từ `/order/search`
+> hoặc xin backend bổ sung.
 >
 > Phase 13/14/15 (đổi trả · khuyến mại · ca làm việc) **vẫn chờ backend**.
 
@@ -83,21 +99,25 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | B6 | Backend chỉ set cookie `refresh_token` khi login gửi `rememberMe: true`. | ✅ **Đã chốt** — **luôn gửi `rememberMe: true`**, **không** hiển thị checkbox "Ghi nhớ đăng nhập". |
 | **B7** | **Trạng thái đơn hàng lệch 3 nơi.** BE `EOrderStatus` = `PENDING/SHIPPING/SHIPPED/REJECTED` (4, thiên giao hàng) · mockup `04` vẽ 5 trạng thái (*Chờ thanh toán · Đang xử lý · Đang giao · Hoàn thành · Đã huỷ*) · FE Phase 6 dựng 5 giá trị khác nữa. Ngoài ra BE **không có** `channel` (Online/Tại quầy) mà mockup có 1 cột + 3 tab. | ✅ **ĐÃ CHỐT XONG (2026-08-15)** — backend có **8** giá trị `PENDING\|CONFIRMED\|PACKED\|SHIPPING\|SHIPPED\|COMPLETED\|CANCELLED\|REJECTED` và **`channel` ĐÃ CÓ** (`ONLINE\|POS\|OTHER`). **User chốt: làm ĐÚNG theo quy ước backend** — dùng thẳng 8 trạng thái, không map ngầm về 5 trạng thái mockup. Xem hộp "3 quyết định" đầu Phase 11. |
 | **B8** | **Cơ chế "chờ ADMIN duyệt" khi chiết khấu vượt ngưỡng** (mockup POS ghi *"tối đa 10% cho STAFF"*): ngưỡng lưu ở đâu, ai duyệt, duyệt bằng mã hay bằng trạng thái đơn? | 🕐 **HOÃN sang Phase 16 (user chốt 2026-08-15)** — "thông luồng trước, rà lại sau". Backend **không có cơ chế ngưỡng/duyệt nào** (`CreateOrderReqDTO` chỉ có `discountAmount`/`discountPercent` trần trụi) ⇒ Phase 11 làm giảm giá tay không ràng buộc. Xem hộp đầu Phase 16. |
-| **B9** | Phase 4 đặt menu Dashboard `minRole = ADMIN` ⇒ **STAFF không vào được**, nhưng Phase 12 lại mô tả "STAFF xem số liệu của mình". | ⏳ **Chờ user** — hoặc hạ `minRole` xuống STAFF, hoặc bỏ nhánh STAFF khỏi Phase 12. |
+| **B9** | Phase 4 đặt menu Dashboard `minRole = ADMIN` ⇒ **STAFF không vào được**, nhưng Phase 12 lại mô tả "STAFF xem số liệu của mình". | ✅ **ĐÃ CHỐT (2026-08-29)** — **giữ `minRole = ADMIN`**, **bỏ nhánh STAFF** khỏi Phase 12. Dashboard là công cụ quản lý; STAFF bán hàng không cần xem doanh thu chi nhánh/toàn chuỗi. ⇒ Phase 12 chỉ còn 2 mức phạm vi: **ADMIN = chi nhánh mình · SUPER_ADMIN = toàn chuỗi**. |
 
-**Điểm chờ chốt còn lại: B9** *(B7 và B8 đã chốt 2026-08-15)*.
+**✅ Không còn điểm chờ chốt nào** *(B7 + B8 chốt 2026-08-15, B9 chốt 2026-08-29)*.
 
-> ✅ **KHÔNG còn điểm nào chặn Phase 11.** B7 bám quy ước backend; **B8 hoãn sang Phase 16** cùng
-> nhóm "thông luồng trước, rà lại sau" (xem hộp đầu Phase 16). B9 thuộc Phase 12, chưa chặn.
+> ✅ **KHÔNG còn điểm nào chặn Phase 11** (đã xong). **B9 đã chốt** ⇒ Phase 12 không còn vướng
+> quyết định của user; thứ duy nhất còn chặn Phase 12 là **API báo cáo phía backend**.
 
 ### Việc chờ backend (FE không tự làm được)
 
 | # | Việc | Trạng thái |
 |---|---|---|
-| **BE1** | **Nâng trần phân trang 200 → 5000** — sửa `max-page-size` ở `35.1.eloria-backend/src/main/resources/config/application.yml:129`. FE sửa hằng số trước cũng vô nghĩa vì backend cap im lặng. | ⏳ **User đã chốt hướng (2026-08-15)**, chờ backend sửa. Chi tiết + danh sách file FE phải rà ở hộp "3 quyết định" đầu Phase 11. |
+| **BE1** | **Nâng trần phân trang 200 → 5000** — sửa `max-page-size` ở `35.1.eloria-backend/src/main/resources/config/application.yml:129`. | ✅ **ĐÃ XONG** — backend commit `7145f5c` đặt `max-page-size: 5000`; đo thật 2026-08-18 gửi `size=300` trả đủ 300. FE vẫn **giữ nguyên cảnh báo khi bị cắt** (so `data.length` với `total`) vì trần nào rồi cũng có thể chạm. |
 | **BE2** | **API đặt `minStock`** — chưa có endpoint nào ⇒ cảnh báo tồn thấp chưa dùng được đúng nghĩa (mọi dòng `minStock = 0`, badge "Cảnh báo" không bao giờ hiện). | ⏳ Chờ backend. |
 | **BE3** | **Race trên cùng 1 đơn trả `500` thay vì `409`** — backend cần bắt thêm `CannotAcquireLockException`/`DeadlockLoserDataAccessException`. | ⏳ Chờ backend. Không chặn Phase 11 (hiếm gặp trong vận hành thật). |
 | **BE4** | **`POST /websocket`** — chưa rõ mục đích, chưa dùng. | ⏳ Cần hỏi backend trước khi nối realtime. |
+| **BE5** | **Không set được `channel` khi tạo đơn** (phát hiện 2026-08-18). | ✅ **ĐÃ XONG (2026-08-18)** — backend thêm `channel` vào `CreateOrderReqDTO`, `create()` lấy theo request (bỏ trống ⇒ `ONLINE`, tương thích ngược), `update()` cho sửa khi đơn còn `PENDING`. Đo thật đủ 4 case + lọc 3 kênh. **FE đã gửi `channel: 'POS'`** ở dialog thanh toán ⇒ tab "Tại quầy" có dữ liệu thật. |
+| **BE6** | **`keyword` của `stock-item/search` và `sku/search` chỉ khớp MÃ SKU, không khớp tên sản phẩm** (đo thật: `"jeans"` → 0 dòng, `"SP003"` → 8). Riêng `product/search` khớp tên nhưng **phân biệt dấu** (`"Quần"` → 0). | ⏳ **Phát hiện khi code Phase 11 (2026-08-18)**. FE tạm **lọc phía client** ở màn POS (nạp tồn rồi lọc theo tên/mã/màu/size) + cảnh báo khi tập nạp bị cắt. Nên xin backend cho `keyword` khớp cả `productName` và bỏ dấu. |
+| **BE8** | **Chuẩn hoá `code`/SKU (uppercase + bỏ khoảng trắng)** — `CustomStringUtil.normalizeCode()`, áp cho `code` lúc create/update của Brand · Color · Size · Product · Category. | ✅ **ĐÃ XONG (2026-08-18)** — đo thật `"br 001 "` → `BR001`, `"  br 001  x "` → `BR001X`, code toàn khoảng trắng bị chặn `error.input.invalid`, và mã chỉ khác hoa/thường bị bắt trùng đúng (`error.brand.codeExisted`). Toàn bộ 98 bản ghi hiện có (brand/category/color/size/product/sku) **đã chuẩn 100%**. **FE đã mirror luật này** ở `lib/validation.ts#normalizeCode`, áp vào ô mã của form Danh mục + Sản phẩm để người dùng thấy đúng thứ sẽ được lưu. |
+| **BE7** | **`product/search?categoryId=` không roll-up lên danh mục cha** — lọc theo `AO` trả 0 dù có sản phẩm thuộc danh mục con `AO-SM`; lọc theo đúng danh mục lá thì trả đủ. | ⏳ **Phát hiện khi code Phase 11 (2026-08-18)**. FE tạm chỉ hiện **danh mục lá** ở hàng pill POS để không có pill bấm vào ra rỗng. |
 
 ---
 
@@ -136,12 +156,22 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **8** | ✅ Khách hàng (CRM) (**API thật**) | 5, 6 | `10` |
 | **9** | ✅ Sản phẩm & Danh mục SP (**API thật**) | 5, 6 | `11`, `12` |
 | **10** | ✅ Kho hàng: tồn kho · phiếu nhập/xuất/chuyển · kiểm kê (**API thật**) | 5, 6, 9 | `13`, `14`, `15` |
-| **11** | **Bán hàng + Đơn hàng** (POS không mở ca · danh sách & chi tiết đơn) | 5, 6, 9, 10 | `03`, `04`, `05` |
-| **12** | **Dashboard & Báo cáo doanh thu** | 5, 11 | `01` |
-| **13** | Đổi / Trả | 5, 6, 11 | `06` |
-| **14** | Khuyến mại | 5, 6, 9 | `16` |
-| **15** | **Ca làm việc (mở ca / chốt ca)** — tách khỏi phase 11 | 11 | `02` |
-| **16** | Hoàn thiện: audit i18n · a11y · responsive · tài liệu | tất cả | — |
+| **11** | ✅ **Bán hàng + Đơn hàng** (POS không mở ca · danh sách & chi tiết đơn) | 5, 6, 9, 10 | `03`, `04`, `05` |
+| **12** | ⛔ **Dashboard & Báo cáo doanh thu** — *chờ backend* | 5, 11 | `01` |
+| **13** | ⛔ Đổi / Trả — *chờ backend* | 5, 6, 11 | `06` |
+| **14** | ⛔ Khuyến mại — *chờ backend* | 5, 6, 9 | `16` |
+| **15** | ⛔ **Ca làm việc (mở ca / chốt ca)** — tách khỏi phase 11, *chờ backend* | 11 | `02` |
+| **16** | 🟢 Hoàn thiện: audit i18n · a11y · responsive · tài liệu — **làm được ngay** | tất cả | — |
+
+> ### ⛔ **CHỐT NGÀY 2026-08-29 — Phase 12–15 đều đang chờ backend**
+>
+> Khảo sát source backend: **không có** `ReportResource`/`DashboardResource`, **không có** entity
+> `Promotion`/`Shift`/`Return`, `EOrderType.REFUND` là enum chết. Chi tiết + bằng chứng ở hộp
+> "CHỐT LẠI TRƯỚC KHI BẮT ĐẦU" đầu Phase 12.
+>
+> ⇒ **Phase làm được ngay không cần backend: chỉ còn Phase 16.**
+> Backend đã có sẵn kế hoạch tương ứng (`35.1.eloria-backend/PLAN.md:298` — Phase 7 Dashboard &
+> Báo cáo, phase duy nhất chưa xong của backend).
 
 Thứ tự đề xuất chạy: **0 → 1 → 2 → 3 → 4 → 5 → 7** (Phase 7 đã có API thật, làm sớm để
 kiểm chứng toàn bộ hạ tầng trên dữ liệu thật), rồi **6** khi bắt đầu các màn cần mock,
@@ -1046,6 +1076,22 @@ khi bấm "Lưu", có toast, danh sách tự nạp lại · thêm mới gửi pa
 - **Nút "Xuất dữ liệu" chỉ hiện toast "sắp có"** — chưa có API export phía backend (đúng phạm vi
   PLAN Phase 5).
 
+> ### ⚠️ **3 quyết định trên đã BỊ THAY THẾ — backend Phase 3b (2026-08-28)**
+>
+> Backend **bỏ hẳn branch data-scope cho khách hàng** (khách dùng chung toàn chuỗi; `branchId` chỉ
+> còn nghĩa *"chi nhánh đăng ký"*, được phép `null`). Ghi lại ở đây để không ai đọc mục trên rồi
+> "sửa ngược" code về trạng thái cũ — chi tiết ở [CLAUDE.md](CLAUDE.md) mục "Phase 3b":
+>
+> 1. *"Bộ lọc chi nhánh chỉ hiện với SUPER_ADMIN"* ⇒ **nay hiện với mọi role**, vì `branchId` đã là
+>    filter tuỳ chọn dùng được cho tất cả.
+> 2. *"`branchId` trong form dùng `z.string({ error })`"* ⇒ **bỏ hẳn ràng buộc bắt buộc**;
+>    `branchId` nay `optional()` với mọi role, `error.branch.required` không còn phát sinh.
+> 3. *"Xử lý đủ 2 biến thể tra trùng"* ⇒ **chỉ còn 1 biến thể**: `viewable` luôn `true` khi `exists`,
+>    nhánh `viewable: false` đã bị gỡ khỏi UI.
+>
+> Vẫn đúng, **không** đổi: form sửa khoá `phoneNumber` + `branchId` (`UpdateCustomerReqDTO` vẫn
+> không nhận 2 field này), và tra trùng vẫn là `[ADMIN]`.
+
 **Giả định:** dữ liệu mẫu tạo trên backend dev local; `membershipPoint` của mọi khách đang là `0`
 (backend mặc định, chưa có nghiệp vụ cộng điểm) nên cột ĐIỂM TÍCH LUỸ hiện toàn `0` — đúng dữ liệu
 thật, không phải lỗi hiển thị. Backend **không có endpoint xoá khách hàng** nên bản ghi tạo lúc
@@ -1765,7 +1811,7 @@ và **kiểm thử API thật từng kịch bản**.
 
 ---
 
-## Phase 11 — Bán hàng & Đơn hàng ⭐ **PHASE TRỌNG TÂM GIAI ĐOẠN ĐẦU**
+## Phase 11 — Bán hàng & Đơn hàng ✅ **ĐÃ XONG 2026-08-18**
 
 > ### 📌 **4 QUYẾT ĐỊNH CỦA USER — chốt 2026-08-15, đọc trước khi code**
 >
@@ -1829,7 +1875,12 @@ và **kiểm thử API thật từng kịch bản**.
 Nhưng user chốt **vẫn giữ màn POS như mockup `03`** làm màn tạo đơn (quét barcode + giỏ hàng bên
 phải), chỉ **bỏ phần mở ca**. Đây là phase nặng nhất về state cục bộ.
 
-### 11.0 — ⚠️ ĐIỀU KIỆN TIÊN QUYẾT: backend phải có API đơn hàng
+### 11.0 — ✅ ĐIỀU KIỆN TIÊN QUYẾT: backend đã có API đơn hàng
+
+> **Đã thoả (khảo sát lại 2026-08-18):** đủ **13 endpoint `/order/*`** trên server đang chạy,
+> gọi thật PASS toàn bộ. Phần mô tả bên dưới là **ghi chép lịch sử lúc backend chưa có** —
+> các bảng enum trong đó (`EOrderStatus` 4 giá trị…) **đã lỗi thời**, xem `src/types/order.ts`
+> để lấy shape đúng.
 
 **Backend hiện CHƯA có bất kỳ entity/resource nào cho đơn hàng.** Chỉ mới có sẵn enum trong
 `datatype/` (khai trước, chưa dùng): `EOrderStatus`, `EOrderType`, `EPaymentMethod`,
@@ -1907,6 +1958,58 @@ nút **Đóng** / **In hoá đơn**. Dùng lại `DetailModal` đã có.
 **DoD:** tạo được đơn từ màn bán hàng → đơn xuất hiện đúng ở danh sách → mở chi tiết khớp mockup →
 đổi trạng thái đơn chạy đúng → tồn kho trừ đúng sau khi bán. Test đủ 3 role.
 
+### 11.5 — Rà soát & hoàn thiện sau Phase 11 (2026-08-27 → 2026-08-29)
+
+Các đợt user yêu cầu sửa sau khi Phase 11 đã "xong". Ghi lại vì **đổi cả hành vi lẫn quy ước**,
+không phải sửa lặt vặt.
+
+**① Luồng thanh toán POS — dựng lại 2 lần**
+
+- *2026-08-27*: bỏ toggle "Thu tiền ngay". Bấm "Xác nhận & tạo đơn" **chỉ gọi `POST /order`**;
+  thu tiền tách thành bước xác nhận riêng cho **mọi** hình thức (trước đây CASH/CARD thu tự động).
+- *2026-08-29*: dựng **`OrderReceiptDialog`** — modal **xem trước phiếu** sau khi tạo đơn, hiện
+  nội dung phiếu thật (`GET /order/{id}/invoice`, cùng nguồn với bản in) + 4 nút
+  *Xác nhận đã thanh toán · In hoá đơn · Xem đơn hàng · Tạo đơn mới*. **In vẫn khoá tới khi `PAID`**.
+- **Khách vãng lai ⇒ tự lập hồ sơ khách TRƯỚC khi tạo đơn** (đủ tên + SĐT hợp lệ). Bắt buộc làm
+  trước vì backend **không có API gắn khách vào đơn đã tạo** — chi tiết ở CLAUDE.md mục
+  "Luồng bán tại quầy". Tạo hồ sơ lỗi thì bán tiếp như khách vãng lai, **không chặn bán hàng**.
+- `CheckoutDialog` hiển thị lại **thông tin khách đã gán** (trước đây bị ẩn hẳn khi có khách).
+
+**② Màn POS — chọn hàng**
+
+- **Infinite scroll** thay cho nạp một lần 500 dòng; **đổi tab danh mục ⇒ query lại từ trang 1**
+  (kể cả tab "Tất cả" — trước đây tab này không bao giờ reload).
+  ⚠️ Hai đường lấy dữ liệu vì `stock-item/search` **không nhận `categoryId`/`productId`** — xem
+  ghi chú đầu `product-picker.tsx`.
+- Animation **bay vào giỏ** khi thêm hàng; **rung + toast** khi vượt tồn.
+- Ô số lượng ở giỏ **nhập tay được**, clamp theo tồn; nút `+` khoá khi chạm trần.
+- Kết quả tra khách **nổi lên trên** (absolute), không đẩy dòng hàng xuống.
+- **Bán xong nạp lại tồn** ở cột chọn hàng (trước đây giữ số cũ ⇒ bán tiếp cùng SKU thấy tồn sai).
+
+**③ Quy ước mới rút ra — đã ghi vào CONVENTIONS**
+
+| Quy ước | Nội dung |
+|---|---|
+| **mục 5.1** | Ghi dữ liệu xong **phải nạp lại danh sách**, giữ nguyên page/sort/filter/scroll |
+| **mục 5.2** | Mọi bảng phải có **Tải lại · Bật/tắt cột · Sort phía server** (kiểu ProTable) |
+| **mục 5** | **Nút ghi dữ liệu ở `PageHeader`**, **điều khiển bảng ở `DataTableToolbar`** *(đảo lại rule 2026-08-09)* |
+| **mục 5.2 (1)** | Tải lại phải có **3 lớp phản hồi**: icon xoay · mờ bảng + spinner · toast khi xong |
+
+⇒ Đã áp cho **toàn bộ 9 màn danh sách** + hạ tầng dùng chung mới:
+`useTableState` · `DataTableControls` · `RefreshingOverlay` · `meta.sortField`/`columnLabel`.
+
+⚠️ **Phát hiện quan trọng khi làm mục 5.2**: sort theo field **chỉ có ở DTO** (`branchName`,
+`skuCode`, `productName`, `available`…) làm backend trả **HTTP 500**, không phải 400 — mà mặc định
+của TanStack là `enableSorting: true` nên vài bảng **đang có sẵn header bấm được sẽ nổ**.
+Đã khai `enableSorting: false` cho mọi cột không sort được; bảng field sort được của **cả 11 module**
+ghi ở CLAUDE.md mục "Sort phía server".
+
+**④ Backend Phase 3b (2026-08-28) — khách hàng thành TOÀN CỤC**
+
+Bỏ hẳn branch data-scope cho khách. FE đã sửa: bộ lọc chi nhánh hiện với **mọi role** · `branchId`
+khi tạo khách thành **tuỳ chọn** · gỡ nhánh `viewable === false` · ô tra khách ở POS hiện thêm
+chi nhánh đăng ký (kết quả nay là toàn chuỗi nên cần phân biệt khách trùng tên).
+
 ---
 
 ## Phase 12 — Dashboard & Báo cáo doanh thu
@@ -1928,10 +2031,9 @@ mockup**, không rút gọn.
   chuyển >60 ngày (4 dòng có icon + màu ngữ nghĩa) + 2 ô *Nhập kho tuần này* / *Xuất bán tuần này*.
   **Nguồn: API tồn kho của Phase 10** — không mock.
 - Biểu đồ **so sánh chi nhánh theo tháng** (bar chart nhóm) + select chi nhánh.
-- **Dashboard đổi theo role**: STAFF = số liệu của mình · ADMIN = chi nhánh · SUPER_ADMIN = toàn
-  chuỗi + khối so sánh chi nhánh. *(Nhắc lại từ Phase 4: menu Dashboard có `minRole = ADMIN` ⇒
-  **STAFF hiện không vào được màn này**. Nếu vẫn muốn STAFF xem số liệu của mình thì phải hạ
-  `minRole` — cần user chốt, xem B9.)*
+- **Dashboard đổi theo role** — ✅ **B9 đã chốt 2026-08-29: giữ `minRole = ADMIN`, BỎ nhánh STAFF.**
+  Chỉ còn **2 mức**: **ADMIN** = số liệu chi nhánh mình · **SUPER_ADMIN** = toàn chuỗi + khối so
+  sánh chi nhánh. STAFF **không vào được màn này** (Dashboard là công cụ quản lý).
 - Các khối báo cáo bán hàng / kho / doanh thu, mỗi bảng có Export.
   ⚠️ **Bỏ "giá vốn – lãi gộp"** khỏi phạm vi: **không có nguồn dữ liệu giá vốn** (`ProductResDTO`
   chỉ có `price`, không có `costPrice`; kho cũng không lưu giá nhập). Muốn có phải bổ sung backend.
@@ -1940,6 +2042,72 @@ mockup**, không rút gọn.
 > bộ đơn về FE rồi cộng là **sai hướng** (không phân trang nổi, sai khi nhiều dữ liệu). Đề xuất
 > backend làm sẵn endpoint dạng `POST /report/revenue` (theo khoảng ngày + branchId, trả mảng đã
 > gộp theo ngày) và `GET /report/summary` cho hàng KPI. Đưa vào cùng đợt làm backend đơn hàng.
+
+### ⛔ **CHỐT LẠI TRƯỚC KHI BẮT ĐẦU — khảo sát backend 2026-08-29**
+
+**Backend KHÔNG có bất kỳ API tổng hợp/báo cáo nào.** `web/rest/` chỉ có 21 Resource, **không có**
+`ReportResource`/`DashboardResource`/`StatisticResource`. ⇒ **Phase 12 đang bị chặn một phần.**
+
+**Thứ FE tự làm được ngay** (từ API sẵn có):
+
+| Khối của mockup | Nguồn | Ghi chú |
+|---|---|---|
+| KPI *Đơn hàng* (+ tách Online/Quầy) | `POST /order/search` + `fromDate`/`toDate`/`channel` | Chỉ cần `total` của response, **không phải tải hết dòng** |
+| KPI *Khách mới* | `POST /customer/search` | Không có filter theo ngày tạo ⇒ **cần backend thêm**, hoặc sort `createdDate,DESC` rồi đếm thủ công |
+| Khối *Tình trạng kho* (SKU đang bán · tồn khả dụng · SKU hết hàng) | `POST /sku/search`, `POST /stock-item/search` (`lowStockOnly`) | Dùng `total`/`activeTotal` |
+| Biểu đồ doanh thu 13 ngày | `order/search` 13 lần (mỗi ngày 1 request) **hoặc** tải đơn trong 13 ngày rồi gộp ở FE | ⚠️ Cách nào cũng xấu — xem bên dưới |
+
+**Thứ KHÔNG có nguồn dữ liệu — phải cắt hoặc xin backend:**
+
+- **Doanh thu (tiền)**: `order/search` trả từng đơn có `totalAmount`, nhưng **không có API SUM** ⇒
+  muốn tổng tiền phải **tải hết đơn của kỳ** rồi cộng ở FE. Trần phân trang là **5000**; chạy được
+  lúc dữ liệu còn ít nhưng **sai âm thầm khi vượt 5000 đơn** — đúng thứ PLAN đã cảnh báo là "sai hướng".
+- **"Mục tiêu: 80tr"** (KPI doanh thu) — không có khái niệm mục tiêu/target ở backend.
+- **"% so hôm qua"** — phải tự tính bằng cách truy vấn thêm kỳ trước (nhân đôi số request).
+- **"Chậm luân chuyển > 60 ngày"** — không có dữ liệu ngày bán/ngày nhập gần nhất theo SKU.
+- **"Nhập kho tuần này / Xuất bán tuần này"** — `warehouse-ledger/search` có `lines: null` ở danh
+  sách (chỉ `GET /{id}` mới có) ⇒ không cộng được số lượng nếu không N+1 request.
+- **"Hàng chờ duyệt: 3 đổi/trả · 2 chiết khấu"** — **đổi/trả (Phase 13) và duyệt chiết khấu (B8)
+  đều chưa tồn tại**. Chỉ đếm được phiếu kho `WAITING_APPROVAL`.
+- **So sánh chi nhánh theo tháng** — cần gộp theo (tháng × chi nhánh), càng không làm nổi ở FE.
+
+⚠️ **Thêm 2 rào cản đo được từ source backend:**
+
+- **`lines` bị lược khỏi `order/search`** (`OrderServiceImpl:136` gọi `toDto(o, branchNames, false)`)
+  ⇒ **không có cách nào** dựng báo cáo theo sản phẩm/SKU (top bán chạy) nếu không gọi
+  `GET /order/{id}` cho **từng đơn**.
+- **`fromDate`/`toDate` lọc theo `createdDate`, KHÔNG phải `completedDate`** ⇒ "doanh thu theo ngày
+  hoàn tất" không lọc thẳng được.
+
+⇒ **Ba hướng, cần user chốt:**
+
+1. **Xin backend làm `/report/*` rồi mới code Phase 12** *(đúng plan gốc)* — sạch nhất, nhưng phải chờ.
+   ✅ Backend **đã có sẵn kế hoạch này**: `35.1.eloria-backend/PLAN.md:298` — *"Phase 7 — Dashboard &
+   Báo cáo"*, là **phase duy nhất chưa ✅** của backend, đã liệt kê đúng các endpoint cần:
+   `GET /dashboard/summary` · `POST /report/sales` · `POST /report/inventory` · `POST /report/profit` ·
+   `GET /report/branch-comparison` · `POST /report/{type}/export`.
+2. **Làm Phase 12 rút gọn ngay**: chỉ dựng các khối đếm được bằng `total` (đơn hàng, tồn kho, khách),
+   **tạm ẩn** biểu đồ doanh thu + so sánh chi nhánh + mục tiêu + % so hôm qua. Mockup sẽ **không
+   khớp**, phải chấp nhận.
+3. **Đảo thứ tự: làm Phase 13/14/15 trước** — ❌ **không được**, cả ba đều chưa có API (xem dưới).
+
+### Trạng thái backend của các phase còn lại (khảo sát 2026-08-29)
+
+| Phase | Backend | Bằng chứng |
+|---|---|---|
+| **12** Dashboard | ❌ **Chưa có** | Không có `ReportResource`/`DashboardResource`; không `@Query` nào có `SUM`/`GROUP BY` |
+| **13** Đổi/Trả | ❌ **Chưa có** | `EOrderType.REFUND` là **enum chết** — nơi ghi `type` duy nhất là `OrderServiceImpl:201` set cứng `PURCHASE`. `/cancel` chỉ đảo `paymentStatus`, **không phải** luồng trả hàng |
+| **14** Khuyến mại | ❌ **Chưa có** | 3 enum mồ côi + `OrderDetail.promotionId` luôn `null`; không bảng, không API |
+| **15** Ca làm việc | ❌ **Chưa có** | `EShiftStatus` không nơi nào dùng; `OrderSale.shiftId` luôn `null`; **không có bảng `work_shift`** (Liquibase chỉ tạo 18 bảng) |
+| **16** Hoàn thiện | ✅ **Làm được ngay** | Thuần FE: i18n · a11y · responsive · 3 việc hoãn từ Phase 11 |
+
+⚠️ **Kết luận: Phase 12–15 đều chờ backend. Phase duy nhất FE làm được ngay là Phase 16.**
+
+*(Ghi chú: backend hiện có **~103 endpoint** trong `*Resource.java`, so với 83 path ghi ở CLAUDE.md
+ngày 2026-08-21 — phần tăng thêm là Order/BankAccount/WarehouseLedger, **không có** endpoint báo cáo nào.)*
+
+**B9 vẫn chưa chốt** (Dashboard `minRole = ADMIN` ⇒ STAFF không vào được, nhưng mô tả phase lại có
+nhánh STAFF) — cần trả lời trước khi code phase này.
 
 ---
 
@@ -2031,6 +2199,15 @@ cầu backend mở rộng).
 >
 > Rủi ro nếu bỏ qua: nhân viên giảm giá tuỳ ý không ai kiểm soát. Mức độ nghiêm trọng tuỳ quy mô
 > đội bán hàng — hiện đội mỏng nên chấp nhận được, cần xem lại khi mở cửa hàng/tuyển thêm người.
+
+> **③ Kiểm chứng sort phía server trên backend đang chạy** *(phát sinh 2026-08-28 khi làm
+> CONVENTIONS mục 5.2)*
+>
+> Danh sách field sort được của 11 module (CLAUDE.md mục "Sort phía server") **đọc từ source JPA
+> entity, CHƯA gọi thử API thật**. Sai một tên field là backend trả **HTTP 500** (không phải 400)
+> và người dùng chỉ thấy "lỗi hệ thống" — không đoán được là do bấm sort.
+> ⇒ Bấm thử **từng header sort được** trên cả 7 bảng, xác nhận 200; và thử 1–2 field DTO-only để
+> chắc chắn `enableSorting: false` đã chặn đúng chỗ.
 
 - Rà **toàn bộ chuỗi** đã vào i18n, `vi` và `en` không thiếu key.
 - Rà responsive: desktop/tablet đúng thiết kế, `< md` không vỡ / không tràn ngang.

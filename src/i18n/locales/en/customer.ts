@@ -38,8 +38,11 @@ export default {
             dob: 'Date of birth',
             gender: 'Gender',
             genderPlaceholder: 'Select gender',
-            branch: 'Branch',
-            branchPlaceholder: 'Select branch',
+            branch: 'Registered branch',
+            branchPlaceholder: 'Select branch (optional)',
+            /** Phase 3b: customers are chain-wide; the branch only records where they signed up. */
+            branchHint:
+                'Only records which branch created this customer. Customers are shared across the whole chain — every branch can look them up and sell to them.',
             submitCreate: 'Add customer',
             submitUpdate: 'Save changes',
             submitting: 'Saving…',
@@ -49,7 +52,6 @@ export default {
                 fullNameMaxLength: 'Full name must be at most 100 characters',
                 phoneInvalid: 'Phone number must be 10 digits starting with 0',
                 emailInvalid: 'Invalid email address',
-                branchRequired: 'Please select a branch',
             },
         },
 
@@ -61,14 +63,15 @@ export default {
             notUpdated: 'Not provided',
         },
 
+        /**
+         * ⚠️ Phase 3b: `notViewableTitle`/`notViewableDescription` were **removed** — customers are
+         * global, so a duplicate phone always resolves to a viewable profile.
+         * `{{branch}}` in `foundDescription` now means the **registered** branch.
+         */
         duplicate: {
             checking: 'Checking for duplicate phone number…',
             foundTitle: 'Phone number already registered',
             foundDescription: 'Customer "{{name}}" ({{branch}}) already uses this phone number.',
-            notViewableTitle: 'Phone number already in use',
-            notViewableDescription:
-                'This phone number belongs to a profile in another branch. Contact an administrator to look it up or merge the profiles.',
-            viewButton: 'View existing profile',
         },
 
         toast: {

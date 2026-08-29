@@ -6,12 +6,14 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { stockItemApi } from '@/api/inventory'
 import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
+import { toSearchSort, useTableState } from '@/hooks/use-table-state'
 import { hasRole } from '@/config/roles'
 import { formatNumber } from '@/lib/format'
 import { ERole } from '@/types/common'
 import type { StockItem } from '@/types/inventory'
 import { DataTable } from '@/components/data-table/data-table'
 import { DataTableToolbar } from '@/components/data-table/data-table-toolbar'
+import { DataTableControls } from '@/components/data-table/data-table-view-options'
 import { StatusBadge } from '@/components/status-badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -19,6 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const ALL = 'ALL'
 const PAGE_SIZE = 10
+/** Mặc định của backend khi không truyền `sort`. Giữ nguyên để thứ tự không đổi bất ngờ. */
+const DEFAULT_SORT = ['createdDate,DESC']
 
 /**
  * Trạng thái tồn dùng cho badge — **suy ra ở FE**, backend không trả field này.
@@ -47,44 +51,19 @@ export function StockTab() {
     const [data, setData] = useState<StockItem[]>([])
     const [total, setTotal] = useState(0)
     const [loading, setLoading] = useState(true)
+    /**
+     * Đang tải lại ngầm: **mờ bảng + spinner + icon nút xoay**, nhưng KHÔNG nháy skeleton —
+     * dữ liệu cũ nằm nguyên để không mất vị trí đọc (CONVENTIONS mục 5.2).
+     */
+    const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState(false)
-    const [page, setPage] = useState(1)
     const [keyword, setKeyword] = useState('')
     const [branchFilter, setBranchFilter] = useState<string>(ALL)
     const [lowStockOnly, setLowStockOnly] = useState(false)
 
-    const load = useCallback(
-        async (signal?: AbortSignal) => {
-            setLoading(true)
-            setError(false)
-            try {
-                const result = await stockItemApi.search(
-                    {
-                        keyword: keyword || undefined,
-                        branchId:
-                            canFilterBranch && branchFilter !== ALL ? branchFilter : undefined,
-                        lowStockOnly: lowStockOnly || undefined,
-                    },
-                    { page, size: PAGE_SIZE, sort: ['createdDate,DESC'] },
-                    signal,
-                )
-                setData(result.data)
-                setTotal(result.total)
-            } catch {
-                if (signal?.aborted) return
-                setError(true)
-            } finally {
-                if (!signal?.aborted) setLoading(false)
-            }
-        },
-        [page, keyword, branchFilter, lowStockOnly, canFilterBranch],
-    )
-
-    useEffect(() => {
-        const controller = new AbortController()
-        void load(controller.signal)
-        return () => controller.abort()
-    }, [load])
+    /* page · sort · cột ẩn/hiện · nonce tải lại — xem `use-table-state`. */
+    const table = useTableState()
+    const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     useEffect(() => {
         if (!canFilterBranch) return
@@ -112,11 +91,31 @@ export function StockTab() {
         return { outOfStock, low }
     }, [data])
 
+    /*
+     * Khai trước `load` vì `toSearchSort` cần `meta.sortField` của cột để dịch id cột → field BE.
+     *
+     * ⚠️ **Bảng này là trường hợp tệ nhất về sort** (CONVENTIONS mục 5.2): entity `StockItem` chỉ có
+     * đúng 6 field của chính nó (`skuId`, `branchId`, `total`, `minStock` + audit `createdDate`/
+     * `lastModifiedDate`/`id`). Toàn bộ phần còn lại của `StockItemResDTO` (`skuCode`, `productName`,
+     * `colorName`, `sizeLabel`, `branchName`) là **field ghép ở tầng DTO**, không có cột thật trong
+     * bảng ⇒ sort vào đó backend trả **HTTP 500** (`PropertyReferenceException` rơi vào handler
+     * `Exception` chung, không phải 400). Vì vậy 5 cột đó bị khoá sort, kể cả cột định danh SKU.
+     */
     const columns = useMemo<ColumnDef<StockItem, unknown>[]>(
         () => [
             {
                 accessorKey: 'skuCode',
                 header: t('inventory.stock.column.sku'),
+                // Cột định danh — không cho ẩn, người dùng sẽ không biết đang xem dòng tồn của SKU nào.
+                enableHiding: false,
+                /*
+                 * ⚠️ `skuCode` chỉ có ở DTO (lấy sang từ `Sku`), KHÔNG phải cột của `StockItem`
+                 * ⇒ sort vào đây backend 500. Entity chỉ có `skuId`, nhưng sort theo `skuId` là
+                 * sort theo mã SKU thô — trùng nghĩa hiển thị nhưng vẫn khác cột người dùng thấy,
+                 * nên khoá hẳn cho khỏi gây hiểu nhầm thứ tự.
+                 */
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.stock.column.sku') },
                 cell: ({ row }) => (
                     <span className="text-muted-foreground font-mono text-xs">
                         {row.original.skuCode}
@@ -126,11 +125,17 @@ export function StockTab() {
             {
                 accessorKey: 'productName',
                 header: t('inventory.stock.column.product'),
+                // ⚠️ `productName` là field DTO ghép từ `Product`, không phải cột của `StockItem` ⇒ sort 500.
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.stock.column.product') },
                 cell: ({ row }) => <span className="font-medium">{row.original.productName}</span>,
             },
             {
                 accessorKey: 'sizeLabel',
                 header: t('inventory.stock.column.size'),
+                // ⚠️ `sizeLabel` là field DTO lấy từ `SizeOption`, không phải cột của `StockItem` ⇒ sort 500.
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.stock.column.size') },
                 cell: ({ row }) => (
                     <span className="bg-muted inline-flex size-7 items-center justify-center rounded-full text-xs">
                         {row.original.sizeLabel}
@@ -140,10 +145,15 @@ export function StockTab() {
             {
                 accessorKey: 'colorName',
                 header: t('inventory.stock.column.color'),
+                // ⚠️ `colorName` là field DTO lấy từ `Color`, không phải cột của `StockItem` ⇒ sort 500.
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.stock.column.color') },
             },
             {
                 accessorKey: 'total',
                 header: t('inventory.stock.column.total'),
+                // `total` là cột thật của `StockItem` ⇒ backend sort được.
+                meta: { sortField: 'total', columnLabel: t('inventory.stock.column.total') },
                 cell: ({ row }) => (
                     <span className="font-semibold">{formatNumber(row.original.total)}</span>
                 ),
@@ -159,6 +169,14 @@ export function StockTab() {
             {
                 accessorKey: 'available',
                 header: t('inventory.stock.column.available'),
+                /*
+                 * ⚠️ `available` KHÔNG phải cột của `StockItem` — nó là **bí danh tính toán** của
+                 * `total`: từ mô hình **không giữ chỗ** (2026-08-14, backend xoá hẳn cột `reserved`
+                 * khỏi cả API lẫn DB) thì `available === total` ở mọi dòng, không còn phép trừ nào.
+                 * Sort thẳng `available` sẽ 500, nên map `sortField` về `total` — cùng một con số
+                 * nên thứ tự người dùng thấy vẫn đúng tuyệt đối.
+                 */
+                meta: { sortField: 'total', columnLabel: t('inventory.stock.column.available') },
                 cell: ({ row }) => {
                     const tone = stockTone(row.original)
                     return (
@@ -178,6 +196,8 @@ export function StockTab() {
             {
                 accessorKey: 'minStock',
                 header: t('inventory.stock.column.minStock'),
+                // `minStock` là cột thật của `StockItem` ⇒ backend sort được.
+                meta: { sortField: 'minStock', columnLabel: t('inventory.stock.column.minStock') },
                 cell: ({ row }) =>
                     /*
                      * `minStock` luôn có số từ 2026-08-11 (mặc định 0). Vẫn chưa có API đặt ngưỡng
@@ -197,6 +217,13 @@ export function StockTab() {
             {
                 accessorKey: 'branchName',
                 header: t('inventory.stock.column.branch'),
+                /*
+                 * ⚠️ `branchName` chỉ có ở DTO (ghép từ `Branch`), entity chỉ giữ `branchId` ⇒ sort
+                 * vào đây backend 500. Không map sang `branchId` vì sắp theo UUID cho ra thứ tự
+                 * ngẫu nhiên với người dùng, tệ hơn là không cho sort.
+                 */
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.stock.column.branch') },
                 cell: ({ row }) => (
                     <span className="text-muted-foreground text-sm">{row.original.branchName}</span>
                 ),
@@ -204,6 +231,12 @@ export function StockTab() {
             {
                 id: 'status',
                 header: t('inventory.stock.column.status'),
+                /*
+                 * ⚠️ Cột suy diễn hoàn toàn ở FE (`stockTone`), backend **không có** field nào tương
+                 * ứng — không phải cột entity, cũng không phải field DTO ⇒ không thể sort phía server.
+                 */
+                enableSorting: false,
+                meta: { columnLabel: t('inventory.stock.column.status') },
                 cell: ({ row }) => {
                     const tone = stockTone(row.original)
                     if (tone === 'outOfStock') {
@@ -230,6 +263,71 @@ export function StockTab() {
         ],
         [t],
     )
+
+    /**
+     * `quiet` = nạp lại ngầm (nút Tải lại): giữ nguyên dữ liệu đang hiển thị thay vì nháy skeleton,
+     * để không mất vị trí đọc (CONVENTIONS mục 5.1 + 5.2).
+     */
+    const load = useCallback(
+        async (signal?: AbortSignal, quiet = false) => {
+            if (quiet) setRefreshing(true)
+            else setLoading(true)
+            setError(false)
+            try {
+                const result = await stockItemApi.search(
+                    {
+                        keyword: keyword || undefined,
+                        branchId:
+                            canFilterBranch && branchFilter !== ALL ? branchFilter : undefined,
+                        lowStockOnly: lowStockOnly || undefined,
+                    },
+                    {
+                        page,
+                        size: PAGE_SIZE,
+                        sort: toSearchSort(sorting, DEFAULT_SORT, columns),
+                    },
+                    signal,
+                )
+                setData(result.data)
+                setTotal(result.total)
+            } catch {
+                if (signal?.aborted) return
+                setError(true)
+            } finally {
+                if (!signal?.aborted) {
+                    setLoading(false)
+                    setRefreshing(false)
+                }
+            }
+        },
+        [page, keyword, branchFilter, lowStockOnly, canFilterBranch, sorting, columns],
+    )
+
+    useEffect(() => {
+        const controller = new AbortController()
+        void load(controller.signal)
+        return () => controller.abort()
+    }, [load])
+
+    /*
+     * Nút Tải lại: giữ nguyên page/sort/filter/scroll, chỉ gọi lại API.
+     * `runRefresh` bọc thêm **toast báo đã cập nhật** khi xong (user chốt 2026-08-28) — trong lúc
+     * chạy thì cờ `refreshing` làm mờ bảng + hiện spinner.
+     */
+    useEffect(() => {
+        if (table.reloadNonce === 0) return
+        const controller = new AbortController()
+        void table.runRefresh((signal) => load(signal, true), controller.signal)
+        return () => controller.abort()
+        // `load` cố ý không nằm trong dep: chỉ chạy khi người dùng bấm Tải lại.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [table.reloadNonce])
+
+    /*
+     * ⚠️ Cố ý **không** khai `reload` như các màn khác: tab này **chỉ đọc**
+     * (`POST /stock-item/search`), không có mutation nào cần nạp lại ngầm sau khi ghi
+     * (CONVENTIONS mục 5.1). Nút Tải lại đã đi thẳng qua `table.refresh` → effect `reloadNonce`.
+     */
 
     return (
         <div className="space-y-4">
@@ -269,20 +367,14 @@ export function StockTab() {
 
             <DataTableToolbar
                 searchValue={keyword}
-                onSearchChange={(value) => {
-                    setKeyword(value)
-                    setPage(1)
-                }}
+                onSearchChange={(value) => table.resetTo(() => setKeyword(value))}
                 searchPlaceholder={t('inventory.stock.searchPlaceholder')}
                 filters={
                     <>
                         {canFilterBranch && (
                             <Select
                                 value={branchFilter}
-                                onValueChange={(v) => {
-                                    setBranchFilter(v)
-                                    setPage(1)
-                                }}>
+                                onValueChange={(v) => table.resetTo(() => setBranchFilter(v))}>
                                 <SelectTrigger className="w-full sm:w-52">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -303,16 +395,29 @@ export function StockTab() {
                             <Checkbox
                                 id="lowStockOnly"
                                 checked={lowStockOnly}
-                                onCheckedChange={(checked) => {
-                                    setLowStockOnly(checked === true)
-                                    setPage(1)
-                                }}
+                                onCheckedChange={(checked) =>
+                                    table.resetTo(() => setLowStockOnly(checked === true))
+                                }
                             />
                             <Label htmlFor="lowStockOnly" className="text-sm font-normal">
                                 {t('inventory.stock.lowStockOnly')}
                             </Label>
                         </div>
                     </>
+                }
+                /*
+                 * Điều khiển bảng (Tải lại + Hiển thị cột) nằm cùng hàng search/filter
+                 * (CONVENTIONS mục 5, chốt 2026-08-28). Tab này **chỉ đọc** nên không có nút
+                 * tác động dữ liệu nào để đưa lên `PageHeader`.
+                 */
+                tableControls={
+                    <DataTableControls
+                        columns={columns}
+                        columnVisibility={columnVisibility}
+                        onColumnVisibilityChange={setColumnVisibility}
+                        onRefresh={table.refresh}
+                        refreshing={refreshing}
+                    />
                 }
             />
 
@@ -321,8 +426,13 @@ export function StockTab() {
                 data={data}
                 getRowId={(row) => row.id}
                 loading={loading}
+                refreshing={refreshing}
                 error={error}
                 onRetry={() => void load()}
+                sorting={sorting}
+                onSortingChange={setSorting}
+                columnVisibility={columnVisibility}
+                onColumnVisibilityChange={setColumnVisibility}
                 unitLabel={t('inventory.stock.resultLabel')}
                 pagination={{ page, size: PAGE_SIZE, total, onPageChange: setPage }}
                 emptyState={

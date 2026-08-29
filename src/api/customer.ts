@@ -12,9 +12,11 @@ import type {
  * Service khách hàng — **API thật** (backend bổ sung endpoint từ 2026-08-08, xác nhận lại
  * 2026-08-09). Không còn nhánh mock: `src/mocks/customer.ts` chỉ phục vụ Phase 6 và đã hết vai trò.
  *
- * Backend tự giới hạn phạm vi dữ liệu: STAFF/ADMIN chỉ thấy khách chi nhánh mình; chỉ SUPER_ADMIN
- * lọc được theo `branchId`. FE vẫn chặn ở UI (CONVENTIONS mục 6.4) nhưng không coi đó là lớp
- * bảo mật duy nhất.
+ * ⚠️ **Phase 3b (2026-08-28) — khách hàng là TOÀN CỤC.** Backend đã **bỏ hẳn branch data-scope**
+ * cho khách: mọi STAFF+ xem/sửa/gắn-vào-đơn được **mọi khách toàn chuỗi**, `branchId` chỉ còn là
+ * filter tuỳ chọn ứng với *"chi nhánh đăng ký"* (có thể `null`). Ghi chú cũ ("STAFF/ADMIN chỉ thấy
+ * khách chi nhánh mình; chỉ SUPER_ADMIN lọc được theo `branchId`") **không còn đúng**.
+ * Xem CLAUDE.md mục "Phase 3b".
  */
 export const customerApi = {
     /**

@@ -38,8 +38,11 @@ export default {
             dob: 'Ngày sinh',
             gender: 'Giới tính',
             genderPlaceholder: 'Chọn giới tính',
-            branch: 'Chi nhánh',
-            branchPlaceholder: 'Chọn chi nhánh',
+            branch: 'Chi nhánh đăng ký',
+            branchPlaceholder: 'Chọn chi nhánh (không bắt buộc)',
+            /** Phase 3b: khách dùng chung toàn chuỗi, chi nhánh chỉ để đánh dấu nơi tạo. */
+            branchHint:
+                'Chỉ để đánh dấu khách được tạo ở chi nhánh nào. Khách dùng chung toàn hệ thống, mọi chi nhánh đều tra cứu và bán được.',
             submitCreate: 'Thêm khách hàng',
             submitUpdate: 'Lưu thay đổi',
             submitting: 'Đang lưu…',
@@ -49,7 +52,6 @@ export default {
                 fullNameMaxLength: 'Họ và tên tối đa 100 ký tự',
                 phoneInvalid: 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0',
                 emailInvalid: 'Email không hợp lệ',
-                branchRequired: 'Vui lòng chọn chi nhánh',
             },
         },
 
@@ -61,15 +63,17 @@ export default {
             notUpdated: 'Chưa cập nhật',
         },
 
-        /** Cảnh báo trùng hồ sơ theo SĐT — `GET /customer/duplicates` (`[ADMIN]`). */
+        /**
+         * Cảnh báo trùng hồ sơ theo SĐT — `GET /customer/duplicates` (`[ADMIN]`).
+         *
+         * ⚠️ Phase 3b: đã **bỏ** `notViewableTitle`/`notViewableDescription` — khách là toàn cục
+         * nên trùng SĐT thì luôn xem được hồ sơ, không còn ca "hồ sơ ở chi nhánh khác".
+         * `{{branch}}` trong `foundDescription` nay là **chi nhánh đăng ký**.
+         */
         duplicate: {
             checking: 'Đang kiểm tra trùng số điện thoại…',
             foundTitle: 'Số điện thoại đã có hồ sơ',
             foundDescription: 'Đã tồn tại khách hàng "{{name}}" ({{branch}}) dùng số điện thoại này.',
-            notViewableTitle: 'Số điện thoại đã được sử dụng',
-            notViewableDescription:
-                'Số điện thoại này đã có hồ sơ ở chi nhánh khác. Liên hệ quản trị viên để tra cứu hoặc gộp hồ sơ.',
-            viewButton: 'Xem hồ sơ đã có',
         },
 
         toast: {

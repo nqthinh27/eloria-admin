@@ -47,7 +47,11 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**
+
+> **Khảo sát lại 2026-08-21:** backend hiện có **83 path** (+7 so với 2026-08-11). Mới: domain
+> **tài khoản ngân hàng & VietQR** (8 endpoint `/bank-account/*`) và **giảm giá 2 tầng**
+> (`lines[].discountAmount`). Xem hai mục riêng ở cuối phần này.
 
 > **Khảo sát lại 2026-08-11 (lần 1):** backend hiện có **76 path**. **Domain đơn hàng đã xuất hiện
 > đầy đủ** (13 endpoint `/order/*` + `POST /websocket`) — xem mục "Domain Đơn hàng" bên dưới;
@@ -139,6 +143,50 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
   "chỉ hiển thị duy nhất lần này" — không có endpoint xem lại, UI phải tự lưu tạm trong state dialog.
 - **`UpdateStatusReqDTO` dùng chung cho staff và branch** = `{id, status}`, `status` giới hạn
   `minimum: 0, maximum: 1`.
+
+### ⚠️ Sort phía server — field nào sort được, field nào **gây 500** (khảo sát source backend 2026-08-28)
+
+Mọi endpoint `/search` đều là `repository.findAll(Specification<Entity>, pageable)` rồi mới map sang
+DTO ⇒ **`sort` giải theo tên field của ENTITY**, không phải field của DTO. Không service nào dùng
+`@Query`/native/projection cho search, nên quy tắc này đúng cho **cả 11 module**.
+
+⚠️ **Sort theo field chỉ có ở DTO ⇒ `PropertyReferenceException` ⇒ rơi vào handler `Exception`
+chung ⇒ HTTP 500 `ERROR_IN_BACKEND`** — **không phải 400**. Người dùng chỉ thấy "lỗi hệ thống",
+không có cách nào đoán ra là do bấm sort. Vì vậy CONVENTIONS mục 5.2 bắt buộc:
+**cột không nằm trong danh sách dưới đây phải khai `enableSorting: false`.**
+
+Field **luôn sort được** (10/11 entity kế thừa `AbstractAuditingEntityUUID`):
+`id` · `createdBy` · `createdDate` · `lastModifiedBy` · `lastModifiedDate`.
+Riêng **`AuditLog` không kế thừa** — nó có `createdDate`/`createdBy`/`lastModifiedDate`/
+`lastModifiedBy` riêng nhưng **không có `status`** (`sort=status` trên audit-log ⇒ 500).
+
+**Field DTO-only — TUYỆT ĐỐI không sort:**
+
+| Module | Field chỉ có ở DTO (sort ⇒ 500) |
+|---|---|
+| `stock-item` | `skuCode` · `productName` · `colorName` · `sizeLabel` · `branchName` · **`available`** (alias tính từ `total`) |
+| `sku` | **`skuCode`** (dùng `id` — hai field cùng giá trị, chỉ `id` là cột thật) · `productName` · `colorName` · `sizeLabel` · `unitPrice` |
+| `warehouse-ledger` | `branchName` · `toBranchId` · `toBranchName` (suy từ `sendTo`) · `lines` |
+| `product` | `brandName` · `images` · `categories` |
+| `order` | `branchName` · `paidAmount` (tính từ `payments`) · `lines` · `payments` |
+| `branch` | `provinceName` · `wardName` · `staffCount` (tính) |
+| `staff` · `customer` | `branchName` |
+| `category` | `parentName` |
+| `brand` · `audit-log` | *(không có — DTO trùng entity, sort field nào cũng được)* |
+
+Field **sort được** hay dùng, theo module: `staff`/`customer` (`SysUser`): `username`, `fullName`,
+`phoneNumber`, `email`, `status`, `role`, `dob`, `gender`, `membershipPoint`, `branchId` ·
+`branch`: `name`, `code`, `phoneNumber`, `address`, `status` · `product`: `code`, `name`, `price`,
+`gender`, `status`, `brandId`, `material` · `sku`: `id`, `ean`, `status`, `productId`, `colorId`,
+`sizeId` · `category`: `code`, `name`, `level`, `sortOrder`, `status`, `parentId` ·
+`order`: `orderCode`, `status`, `type`, `paymentStatus`, `paymentMethod`, `subtotal`,
+`totalAmount`, `discountAmount`, `shippingFee`, `channel`, `customerName`, `customerPhone`,
+`branchId`, `completedDate` · `stock-item`: **chỉ** `total`, `minStock`, `skuId`, `branchId`
+(+ audit) · `warehouse-ledger`: `code`, `name`, `type`, `status`, `branchId` ·
+`audit-log`: `action`, `entityName`, `entityId`, `username`, `fullName`, `branchId`, `branchName`.
+
+*(Sort theo đường dẫn lồng như `branch.name` về lý thuyết chạy được — Hibernate tự tạo left join —
+nhưng **chưa nơi nào dùng và chưa test**, đừng tự ý dùng.)*
 
 ### Quy ước `status` 3 giá trị — **rule chung toàn hệ thống** (chốt với user 2026-08-09)
 
@@ -244,17 +292,47 @@ source backend + gọi API thật:**
   hai thứ này**, đừng gộp thành một badge.
 - `CreateCustomerReqDTO` bắt buộc `fullName` + `phoneNumber`; **`dob` là `date-time`** — gửi
   `"1995-04-12"` (date thuần) bị **từ chối `400 error.input.invalid`**, phải gửi
-  `"1995-04-12T00:00:00Z"`; `email` bỏ trống ⇒ backend tự sinh
-  `{phoneNumber}@example.com`; **SUPER_ADMIN bắt buộc truyền `branchId`** (thiếu ⇒ `code:14`,
-  `subKey: error.branch.required`), STAFF/ADMIN bị ép về chi nhánh của mình.
+  `"1995-04-12T00:00:00Z"`; `email` bỏ trống ⇒ backend tự sinh `{phoneNumber}@example.com`.
+  ⚠️ **`branchId` nay là TUỲ CHỌN với mọi role** — xem "Phase 3b" bên dưới.
 - **`UpdateCustomerReqDTO` chỉ có `{fullName, email, dob, gender}`** — **không** đổi được
   `phoneNumber`/`branchId`/`status` (mapper backend `@Mapping(ignore)` các field này).
-- `CustomerSearchReqDTO` = `{keyword, status, branchId}`; **`branchId` chỉ có tác dụng với
-  SUPER_ADMIN**. STAFF/ADMIN luôn chỉ thấy khách chi nhánh mình (backend tự chặn).
+- `CustomerSearchReqDTO` = `{keyword, status, branchId}`; `branchId` nay là **filter tuỳ chọn cho
+  mọi role** (xem "Phase 3b").
 - `GET /customer/duplicates?phone=` là **`[ADMIN]`** (STAFF gọi ⇒ 403), trả
-  `{exists, viewable, customer}`: khách **ngoài chi nhánh** trả `exists:true, viewable:false,
-  customer:null` (không lộ hồ sơ). Tạo trùng SĐT ⇒ `code:3`, `subKey: error.phone.existed`.
+  `{exists, viewable, customer}`. Tạo trùng SĐT ⇒ `code:3`, `subKey: error.phone.existed`.
 - **Không có endpoint xoá khách hàng, đổi trạng thái khách hàng, hay gộp (merge) hồ sơ trùng.**
+
+#### ⚠️ **Phase 3b (2026-08-28) — KHÁCH HÀNG LÀ TOÀN CỤC, BỎ HẲN BRANCH DATA-SCOPE**
+
+> Nguồn: `35.1.eloria-backend/docs/api/phase-3b-khach-toan-cuc-review.md`.
+> **Mâu thuẫn với mô tả Phase 3 phía trên ⇒ Phase 3b thắng.** Schema **không đổi**, không migration.
+
+`sys_user.branch_id` của khách **đổi ý nghĩa**: từ "chi nhánh sở hữu (dùng để chặn truy cập)" thành
+**"chi nhánh đăng ký"** — chỉ là thông tin tham khảo, **có thể `NULL`**. Mục đích: tích điểm
+(`membershipPoint`), hoá đơn, lịch sử mua **xuyên chi nhánh** trên **một** hồ sơ khách duy nhất.
+
+| Endpoint | Trước (Phase 3) | **Sau (Phase 3b)** |
+|---|---|---|
+| `POST /customer/search` | STAFF/ADMIN bị ép về chi nhánh mình; chỉ SUPER_ADMIN lọc `branchId` | **Mọi role thấy toàn bộ khách**; `branchId` là filter **tuỳ chọn cho mọi role** |
+| `GET /customer/{id}` | Khác chi nhánh ⇒ `403` | **Xem được mọi khách** |
+| `PUT /customer/{id}` | ADMIN chỉ sửa khách chi nhánh mình | **ADMIN+ sửa được mọi khách** |
+| `GET /customer/duplicates` | Khác chi nhánh ⇒ `exists:true, viewable:false, customer:null` | **`viewable` LUÔN `true`** khi `exists`, trả đủ hồ sơ |
+| `POST /customer` | SUPER_ADMIN bắt buộc `branchId`; STAFF/ADMIN bị ép chi nhánh mình | **`branchId` tuỳ chọn**; bỏ trống ⇒ mặc định chi nhánh người tạo; **có thể `NULL`** |
+| Gắn khách vào đơn (`POST`/`PUT /order`) | Khách khác chi nhánh ⇒ `403 error.forbidden` | **Gắn được khách bất kỳ**, không giới hạn chi nhánh |
+
+- **RBAC không đổi** — STAFF đọc/tạo, ADMIN sửa; `@PreAuthorize` giữ nguyên. Chỉ **data-scope** đổi.
+- ⚠️ **Breaking nhẹ cho FE**: `duplicates.viewable` **luôn `true`** khi `exists: true` (field vẫn
+  giữ để tương thích client cũ) ⇒ **nhánh xử lý "trùng SĐT nhưng không xem được hồ sơ" đã chết**,
+  đừng dựng UI cho nó nữa.
+- ⚠️ **`error.branch.required` (`code:14`) khi tạo khách không còn phát sinh** — bỏ validate bắt buộc
+  chi nhánh. Key i18n giữ lại chỉ để đọc log cũ.
+- **Tính duy nhất SĐT vốn đã toàn cục** (`existsByPhoneNumber` không lọc branch) nên không phát sinh
+  trùng mới khi mở phạm vi.
+- **Không đụng tới** `update-segment` / `merge` / `update-status` / xoá mềm khách — vẫn chưa có.
+
+⇒ **FE phải**: bỏ điều kiện chỉ-SUPER_ADMIN của bộ lọc chi nhánh ở màn Khách hàng · bỏ yêu cầu bắt
+buộc `branchId` khi tạo khách · bỏ nhánh `viewable === false` · bỏ mọi ghi chú/UI ngụ ý khách bị
+giới hạn theo chi nhánh (kể cả ô tra khách ở màn POS).
 
 **Chi tiết domain sản phẩm — xác minh khi code Phase 9 (2026-08-09), đối chiếu api-docs + source
 backend + gọi API thật:**
@@ -347,11 +425,15 @@ từ tên file Java.
 
 | Nhóm | Role | Endpoint |
 |---|---|---|
-| Giỏ & tạo đơn | `STAFF` | `POST /order/cart/preview` (tính tiền, không ghi DB) · `POST /order` (→PENDING, **giữ tồn**) |
+| Giỏ & tạo đơn | `STAFF` | `POST /order/cart/preview` (tính tiền, không ghi DB) · `POST /order` (→PENDING, **TRỪ TỒN NGAY** — xem "Mô hình tồn kho") |
 | Đọc | `STAFF` | `POST /order/search` · `GET /order/{id}` · `GET /order/{id}/invoice` (JSON để FE tự in) |
 | Sửa/huỷ | `STAFF` | `PUT /order/{id}` (chỉ khi còn PENDING) · `POST /order/{id}/cancel` (hoàn tồn) · `POST /order/{id}/note` |
-| Chuyển trạng thái | `STAFF` | `/confirm` (PENDING→CONFIRMED) · `/pack` (CONFIRMED→PACKED, **trừ tồn thật**) · `/ship` (PACKED→SHIPPING) · `/complete` (SHIPPING + đã thu → COMPLETED) |
+| Chuyển trạng thái | `STAFF` | `/confirm` (PENDING→CONFIRMED) · `/pack` (CONFIRMED→PACKED, **không trừ tồn lần hai**) · `/ship` (PACKED→SHIPPING) · `/complete` (SHIPPING + đã thu → COMPLETED) |
 | Thanh toán | `STAFF` | `POST /order/{id}/payment` — ⚠️ **thu ĐÚNG 1 LẦN cho toàn bộ tiền** (đổi 2026-08-15, xem mục "Mô hình thanh toán") |
+
+⚠️ **Cập nhật 2026-08-21**: dòng hàng nay có **`lines[].discountAmount`** (giảm giá 2 tầng) và có thêm
+domain **tài khoản ngân hàng / VietQR** cho luồng thu tiền chuyển khoản — xem hai mục
+"Giảm giá đơn hàng — 2 TẦNG" và "Domain Tài khoản ngân hàng & VietQR" bên dưới.
 
 - **`EOrderStatus` thực tế có 8 giá trị**, không phải 4 như ghi nhận cũ:
   `PENDING | CONFIRMED | PACKED | SHIPPING | SHIPPED | COMPLETED | CANCELLED | REJECTED`
@@ -384,7 +466,8 @@ từ tên file Java.
 - **`POST /order/{id}/note` bị chặn trên đơn `CANCELLED`** (`error.order.alreadyClosed`) — để
   không ghi đè mất lý do huỷ (backend lưu lý do vào chính `description`).
 - **`customerId` khi tạo đơn nay được validate**: id không tồn tại / không phải role CUSTOMER ⇒
-  `error.user.notExisted`; khách khác chi nhánh ⇒ **403 `error.forbidden`**.
+  `error.user.notExisted`. ⚠️ **Vế "khách khác chi nhánh ⇒ 403 `error.forbidden`" đã BỊ BỎ**
+  (Phase 3b, 2026-08-28) — nay **gắn được khách bất kỳ vào đơn**, không giới hạn chi nhánh.
 - **Xoá nhân viên bị chặn khi còn đơn chưa đóng** — `error.staff.referenced` (HTTP 400).
   Đơn đã COMPLETED/CANCELLED thì không chặn ⇒ huỷ/hoàn tất đơn xong mới xoá được.
 - **Prefix mã đơn khi chi nhánh không có `code`** nay lấy 5 ký tự đầu viết tắt tên
@@ -408,6 +491,153 @@ thái thật**. Backend nên bắt thêm `CannotAcquireLockException`/`DeadlockL
 *(Lưu ý: đây là race trên **cùng một đơn** — hiếm trong vận hành thật. Race **tranh tồn giữa nhiều
 đơn khác nhau** đã được kiểm chứng sạch: 6 đơn đồng thời → 2 thành công · 4 `error.stock.insufficient`
 · 0 lỗi 500, tồn về 0 không âm.)*
+
+### Vòng đời đơn tách theo kênh — **ĐỔI 2026-08-22: đơn POS TỰ HOÀN THÀNH khi thu tiền**
+
+Bán tại quầy không có khâu giao vận ⇒ backend rút gọn vòng đời cho `channel === 'POS'`:
+
+| Kênh | Vòng đời | FE phải làm gì |
+|---|---|---|
+| **`POS`** | `PENDING` --*payment*--> **`COMPLETED`** | **Chỉ gọi `POST /order/{id}/payment`.** Không gọi `confirm`/`pack`/`ship`/`complete` |
+| `ONLINE` / `OTHER` | `PENDING → CONFIRMED → PACKED → SHIPPING → COMPLETED` | Đi đủ các bước như cũ |
+
+- `POST /order/{id}/payment` với đơn POS **tự set `status = COMPLETED` + `completedDate`** trong
+  cùng transaction (`OrderServiceImpl#payment`), bỏ qua cả 3 bước giữa.
+- ⚠️ **Gọi `complete()` sau `pay()` trên đơn POS luôn lỗi `error.order.invalidStatus`** ⇒ FE
+  **không bày nút vòng đời nào cho đơn POS** (`nextAction` trả `null` khi `channel === 'POS'`),
+  đừng để người dùng bấm rồi mới báo lỗi.
+- Đơn POS **đã huỷ/đã hoàn tất** thì bước thu tiền không đụng tới `status` (backend tự loại trừ
+  `COMPLETED`/`CANCELLED`).
+
+✅ **Đã kiểm thử trên server build mới 2026-08-22 — PASS toàn bộ:**
+
+| Kịch bản | Kết quả đo thật |
+|---|---|
+| POS: tạo → `pay` | `PENDING` → **`COMPLETED`**, `completedDate` được set ✓ |
+| POS: `complete` sau `pay` | `error.order.invalidStatus` ✓ (FE đã ẩn nút nên không bấm được) |
+| POS: thu lần 2 | `error.order.alreadyPaid` ✓ |
+| ONLINE: `pay` | vẫn `PENDING` — **không** tự hoàn thành ✓ |
+| ONLINE: `confirm → pack → ship → complete` | chạy đủ 4 bước ✓ |
+| Chiết khấu 2 tầng | `subtotal 500.000` · `discount 70.000` · `total 460.000` · `lineTotal 480.000` ✓ |
+| VietQR | PNG **480×480** hợp lệ, HTTP 200 ✓ |
+| Hoá đơn | đủ field kể cả `staffName` — **một lời gọi API là xong** ✓ |
+
+⚠️ **Hệ quả cần biết: đơn POS đã thu tiền thì KHÔNG huỷ được nữa.** Vì `pay` đóng đơn thành
+`COMPLETED` ngay, `POST /order/{id}/cancel` trả **`error.order.alreadyClosed`** ⇒ **không hoàn tiền
+và không trả tồn được** qua API. Đo thật 2026-08-22. Trước đây đơn POS còn ở `PENDING` nên huỷ thoải
+mái. FE hiện đã coi `COMPLETED` là trạng thái đóng (ẩn nút Huỷ + Thu tiền) nên **không ai bấm nhầm**,
+nhưng nghiệp vụ **đổi/trả hàng tại quầy sẽ không có đường đi** cho tới khi có API đổi/trả riêng
+(Phase 13, `type: REFUND` mới chỉ là enum). **Cần hỏi user/backend** nếu quầy có nhu cầu huỷ đơn vừa bán.
+
+### Giảm giá đơn hàng — **2 TẦNG, khảo sát lại api-docs + kiểm thử thật 2026-08-21**
+
+> Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-discount-qr.md`. FE đã đo thật khớp 100%.
+
+Trước đây đơn chỉ có **1 mức giảm chung**. Nay **2 tầng, đều nhập tay** (chưa có promo engine):
+
+```
+lineTotal (mỗi dòng)   = đơn giá × SL − lines[].discountAmount     ← TẦNG 1
+subtotal (header)      = Σ (đơn giá × SL)          ← TIỀN GỐC, CHƯA trừ gì
+discountAmount(header) = Σ lines[].discountAmount + giảm-chung     ← MỘT con số tổng
+totalAmount            = max(0, subtotal − discountAmount + shippingFee)
+```
+
+- **Field mới duy nhất**: `lines[].discountAmount` (number ≥ 0, optional) — có ở cả 3 endpoint
+  `POST /order/cart/preview`, `POST /order`, `PUT /order/{id}`.
+- **Tầng 2** vẫn là `discountAmount` **hoặc** `discountPercent` ở cấp đơn; gửi cả hai thì **`%` thắng**,
+  và `%` tính trên `subtotal` **gốc**.
+- Backend tự clamp: giảm-dòng ∈ `[0, đơn giá × SL]`, dòng `isGift` ép 0, tổng giảm cap ≤ `subtotal`.
+- `GET /order/{id}` và `GET /order/{id}/invoice` cũng trả `lines[].discountAmount` + `lines[].lineTotal`
+  ⇒ **hoá đơn tách được chiết khấu từng sản phẩm**.
+
+⚠️ **`subtotal` là GIÁ GỐC**, không phải "tạm tính sau giảm dòng". Con số "tổng đã giảm" hiển thị cho
+khách chính là `discountAmount` ở header — **FE tuyệt đối không cộng lại 2 tầng**, backend đã gộp sẵn;
+cộng thêm lần nữa là trừ hai lần.
+
+⚠️ **FE phải gửi TÁCH 2 tầng** (`orderLines[].discountAmount` + `discountAmount` chung), và
+**`CartPanel` (preview) với `CheckoutDialog` (tạo đơn) bắt buộc gửi giống hệt nhau** — lệch một chút
+là số xem trước khác số thu thật. Vì vậy dòng hàng dạng-gửi-lên-backend được tính **một chỗ** ở
+`CartProvider` (`orderLines`), không để mỗi màn tự map.
+
+**Đo thật 2026-08-21** — 2 áo × 250.000, giảm dòng 20.000, giảm chung 10%:
+`subtotal 500.000` · `discountAmount 70.000` (20.000 + 10%×500.000) · `totalAmount 430.000` ·
+`lines[0].lineTotal 480.000`.
+
+### Domain Tài khoản ngân hàng & VietQR — **MỚI 2026-08-21** (83 path)
+
+| Nhóm | Role | Endpoint |
+|---|---|---|
+| Đọc | `STAFF` | `POST /bank-account/search` · `GET /bank-account/default` · `GET /bank-account/{id}` |
+| **Ảnh QR đơn hàng** | `STAFF` | `GET /bank-account/order/{orderId}/qr` |
+| Ghi | `SUPER_ADMIN` | `POST /bank-account` · `PUT /bank-account/{id}` · `POST /bank-account/{id}/set-default` · `POST /bank-account/update-status` · `DELETE /bank-account/{id}` |
+
+- ⚠️ **`GET .../qr` trả PNG thuần, KHÔNG bọc `BaseResponse`** ⇒ bắt buộc `apiClient.getBlob()`
+  (giống `GET /sku/{id}/barcode`); `get()` sẽ hỏng vì `unwrap` đọc `body.code`.
+- Số tiền (`order.totalAmount`) và nội dung CK (`ELORIA` + mã đơn) **nhúng cứng trong ảnh** — FE không
+  dựng, không sửa được. Caller phải tự `URL.revokeObjectURL`.
+- Tài khoản **dùng chung toàn chuỗi, KHÔNG branch data-scope**; nhưng **đơn thì có** — STAFF/ADMIN chỉ
+  lấy được QR của đơn chi nhánh mình (`error.forbidden`).
+- Lỗi: `error.bankAccount.noDefault` (400, chưa cấu hình TK nhận tiền) · `error.order.notExisted` (404).
+- ✅ **Đã chạy được từ 2026-08-21** (backend fix xong migration): `GET .../qr` trả **PNG 480×480**
+  thật, `GET /bank-account/default` trả TK mặc định (MB Bank). Trước đó bảng `bank_account` chưa
+  tồn tại nên trả 500 `error.other`. FE vẫn bắt **mọi** lỗi ở bước tải QR (không chỉ `noDefault`)
+  để phòng môi trường chưa cấu hình TK.
+
+### Luồng bán tại quầy — **ĐỔI 2026-08-29: tạo đơn xong hiện MODAL XEM TRƯỚC PHIẾU**
+
+```
+[Giỏ] → "Thanh toán" → CheckoutDialog (khách · giao hàng · hình thức thanh toán)
+   → "Xác nhận & tạo đơn":  ① tạo hồ sơ khách vãng lai (nếu đủ tên+SĐT)  ② POST /order
+   → OrderReceiptDialog (xem trước phiếu thật)
+        ├─ "Xác nhận đã thanh toán" → POST /order/{id}/payment  (QR: mở QrPaymentDialog trước)
+        ├─ "In hóa đơn"  ← **chỉ mở khoá sau khi PAID**
+        ├─ "Xem đơn hàng" → /orders
+        └─ "Tạo đơn mới"
+```
+
+- **`CheckoutDialog` chỉ tạo đơn**, không thu tiền. Mọi bước thu tiền nằm ở modal phiếu, nhờ vậy
+  nhân viên luôn nhìn thấy nội dung phiếu trước khi xác nhận đã nhận tiền.
+- **Khách đã có hồ sơ**: `CheckoutDialog` hiển thị lại tên + SĐT để đối chiếu (trước đây bị ẩn hẳn).
+- ⚠️ **Khách vãng lai ⇒ tạo hồ sơ TRƯỚC khi tạo đơn**, không phải sau khi thu tiền: backend
+  **không có API gắn khách vào đơn đã tạo** (`PUT /order/{id}` chỉ sửa được đơn còn `PENDING`, mà
+  đơn POS nhảy thẳng `COMPLETED` ngay khi thu tiền). Tạo sau thì hồ sơ **không bao giờ nối được**
+  với đơn vừa bán. Chỉ tạo khi có **đủ tên + SĐT hợp lệ**; tạo lỗi (hay gặp: `error.phone.existed`)
+  thì **bỏ qua và bán tiếp** như khách vãng lai, không chặn bán hàng.
+- Modal phiếu nạp `GET /order/{id}/invoice` — **cùng nguồn với bản in**, nên thứ xem trước luôn
+  khớp thứ in ra, và bấm In không phải gọi API lần nữa.
+
+### Luồng thanh toán QR (user chốt 2026-08-21)
+
+```
+[Đơn đã tạo] → GET /bank-account/order/{id}/qr → hiện ảnh cho khách quét
+   → khách chuyển khoản → NV tự đối chiếu app ngân hàng
+   → bấm "Xác nhận đã nhận tiền" → POST /order/{id}/payment {method:'QR'} → PAID
+```
+
+- **Hình thức `QR` KHÔNG thu thẳng** — phải qua dialog quét mã (`QrPaymentDialog`), áp dụng ở **cả**
+  màn POS lẫn dialog chi tiết đơn. Tiền mặt/thẻ/COD vẫn thu thẳng như cũ.
+- ⚠️ **Xác nhận là THỦ CÔNG**: backend **chưa có webhook banking** ⇒ FE không biết tiền đã về, nhân
+  viên phải tự kiểm tra. Có webhook rồi thì thay chỗ này bằng polling/websocket, phần còn lại giữ nguyên.
+- Ở POS, đơn được **tạo trước rồi mới hiện QR** ⇒ tồn đã trừ. Đóng dialog QR mà chưa xác nhận ⇒ báo ra
+  ngoài là đơn **chưa thu tiền**, **tuyệt đối không tạo lại đơn**.
+
+### In hoá đơn — **chỉ in khi đã `PAID`** (user chốt 2026-08-21)
+
+- Nút "In hoá đơn" bị **disable khi `paymentStatus !== 'PAID'`**, kèm `title` giải thích — chặn ở **cả 2
+  nơi**: dialog chi tiết đơn **và** dialog kết quả sau khi tạo đơn ở POS.
+- ⚠️ **`InvoiceResDTO` chỉ có khối chi nhánh** — không có tên hệ thống, logo, hotline chung, chân trang.
+  Javadoc backend ghi rõ *"letterhead/logo/QR ngân hàng do frontend tự gắn"* ⇒ FE khai ở
+  **`storeConfig`** (`src/config/app.ts`, đọc từ `VITE_STORE_*`). Logo là **chữ** `é l o r i a`
+  (lấy từ storefront `35.3.eloria-client`) — khoảng trắng giữa các ký tự là **cố ý**, đừng "sửa".
+- ✅ **`InvoiceResDTO` có `staffName`** (field mới 2026-08-21) ⇒ in hoá đơn **chỉ cần gọi đúng một
+  API `GET /order/{id}/invoice`**, không ghép thêm `/account/me` hay `GET /order/{id}`.
+  ⚠️ Chỉ `InvoiceResDTO` có; `OrderResDTO` vẫn chỉ có `staffId` (UUID, không kèm tên).
+- Khổ giấy in nhiệt **80mm**, cỡ chữ nền **13px** (trước 11–12px — người dùng phản hồi quá nhỏ).
+
+⚠️ **Dữ liệu bẩn đã gặp (user chốt: để backend xử lý, FE không workaround)**: `branch.address` và
+`staffName` trên dữ liệu seed đang bị **mojibake trong DB** (`Sá»‘ 1 ÄÆ°á»ng…`, `NhÃ¢n ViÃªn Má»™t`
+— UTF-8 bị decode nhầm Latin-1 lúc **ghi**). Tên chi nhánh thì đúng. Hoá đơn in ra sẽ hiện y như
+vậy; **không phải lỗi FE** — đừng thêm code "sửa" mã hoá ở FE, sẽ hỏng khi backend vá dữ liệu.
 
 ### Mô hình thanh toán — **ĐỔI 2026-08-15: THU ĐÚNG 1 LẦN, 1 HÌNH THỨC, TOÀN BỘ TIỀN**
 

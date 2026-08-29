@@ -30,6 +30,10 @@ type CustomerColumnActions = {
  * không có các field đó và backend chưa có entity đơn hàng nào để tính (xác nhận qua api-docs +
  * source + gọi API thật 2026-08-09) — user đã chốt phương án bám DTO thật. Khi Phase 12 có API
  * đơn hàng thì bổ sung lại cho khớp mockup.
+ *
+ * ⚠️ **Sort phía server** (CONVENTIONS mục 5.2): `id` cột ở FE khác tên field backend nên phải khai
+ * `meta.sortField`. Cột **CHI NHÁNH bị khoá sort** vì `branchName` chỉ có ở DTO, không phải cột
+ * thật của `SysUser` — sort vào đó backend trả **500**, xem CLAUDE.md mục "Sort phía server".
  */
 export function buildCustomerColumns(
     t: TFunction<['customer', 'common']>,
@@ -39,6 +43,10 @@ export function buildCustomerColumns(
         {
             id: 'customer',
             header: t('customer.list.column.customer'),
+            // Cột định danh — không cho ẩn, người dùng sẽ không biết đang xem hồ sơ của ai.
+            enableHiding: false,
+            // Ô ghép tên + SĐT; sort theo tên (field chính người dùng đọc trước).
+            meta: { sortField: 'fullName', columnLabel: t('customer.list.column.customer') },
             cell: ({ row }) => {
                 const customer = row.original
                 const initial = customer.fullName.charAt(0).toUpperCase()
@@ -59,6 +67,7 @@ export function buildCustomerColumns(
             id: 'contact',
             header: t('customer.list.column.contact'),
             size: 200,
+            meta: { sortField: 'email', columnLabel: t('customer.list.column.contact') },
             cell: ({ row }) => (
                 <span className="text-muted-foreground text-sm">
                     {row.original.email ?? t('customer.list.noEmail')}
@@ -69,18 +78,26 @@ export function buildCustomerColumns(
             id: 'branch',
             header: t('customer.list.column.branch'),
             size: 160,
+            // ⚠️ `branchName` KHÔNG phải cột của `SysUser` (chỉ có ở DTO) ⇒ sort vào đây backend 500.
+            enableSorting: false,
+            meta: { columnLabel: t('customer.list.column.branch') },
             cell: ({ row }) => row.original.branchName ?? t('customer.list.noBranch'),
         },
         {
             id: 'membershipPoint',
             header: t('customer.list.column.membershipPoint'),
             size: 130,
+            meta: {
+                sortField: 'membershipPoint',
+                columnLabel: t('customer.list.column.membershipPoint'),
+            },
             cell: ({ row }) => formatNumber(row.original.membershipPoint ?? 0),
         },
         {
             id: 'status',
             header: t('customer.list.column.status'),
             size: 130,
+            meta: { sortField: 'status', columnLabel: t('customer.list.column.status') },
             cell: ({ row }) =>
                 row.original.status === EntityStatus.ACTIVE ? (
                     <StatusBadge tone="success">{t('customer.list.statusActive')}</StatusBadge>
@@ -92,12 +109,17 @@ export function buildCustomerColumns(
             id: 'createdDate',
             header: t('customer.list.column.createdDate'),
             size: 110,
+            meta: { sortField: 'createdDate', columnLabel: t('customer.list.column.createdDate') },
             cell: ({ row }) => formatDate(row.original.createdDate),
         },
         {
             id: 'actions',
             header: t('customer.list.column.actions'),
             size: 88,
+            // Đường vào mọi thao tác — không cho ẩn, và không có gì để sort.
+            enableHiding: false,
+            enableSorting: false,
+            meta: { columnLabel: t('customer.list.column.actions') },
             cell: ({ row }) => {
                 const customer = row.original
                 return (

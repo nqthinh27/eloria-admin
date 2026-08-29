@@ -15,6 +15,8 @@ import CustomerListPage from './pages/customer/CustomerListPage'
 import ProductListPage from './pages/product/ProductListPage'
 import CategoryListPage from './pages/product/CategoryListPage'
 import InventoryPage from './pages/inventory/InventoryPage'
+import PosPage from './pages/pos/PosPage'
+import OrderListPage from './pages/orders/OrderListPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
@@ -46,14 +48,8 @@ export default function Router() {
                     </Route>
 
                     <Route element={<RoleRoute minRole={ERole.STAFF} />}>
-                        <Route
-                            path="pos"
-                            element={<Placeholder titleKey="menu.pos" phase={11} />}
-                        />
-                        <Route
-                            path="orders"
-                            element={<Placeholder titleKey="menu.orders" phase={12} />}
-                        />
+                        <Route path="pos" element={<PosPage />} />
+                        <Route path="orders" element={<OrderListPage />} />
                         <Route
                             path="returns"
                             element={<Placeholder titleKey="menu.returns" phase={13} />}

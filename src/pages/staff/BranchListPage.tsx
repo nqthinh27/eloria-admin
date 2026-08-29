@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Lock, MapPin, MoreHorizontal, Pencil, Plus, Trash2, Unlock } from 'lucide-react'
 
@@ -15,6 +15,10 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Can } from '@/components/can'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import {
+    DataTableRefreshButton,
+    RefreshingOverlay,
+} from '@/components/data-table/data-table-view-options'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -46,6 +50,24 @@ export default function BranchListPage() {
     const [formBranch, setFormBranch] = useState<Branch | null | 'new'>(null)
     const [deleteBranch, setDeleteBranch] = useState<Branch | null>(null)
     const [toggleStatusBranch, setToggleStatusBranch] = useState<Branch | null>(null)
+
+    /**
+     * Đang tải lại do **bấm nút Tải lại**: mờ lưới + spinner + toast khi xong
+     * (CONVENTIONS mục 5.2). Phải là cờ riêng chứ không dùng `loading` của `useBranch`: `loading`
+     * cũng bật ở lần nạp đầu (lúc đó phải hiện skeleton, không phải lớp phủ).
+     */
+    const [refreshing, setRefreshing] = useState(false)
+
+    /** Tải lại kèm phản hồi đầy đủ — giữ nguyên từ khoá lọc phía client. */
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true)
+        try {
+            await load()
+            toastSuccess('dataTable.refreshed', { ns: 'common' })
+        } finally {
+            setRefreshing(false)
+        }
+    }, [load])
 
     const filtered = branches.filter((b) =>
         b.name.toLowerCase().includes(keyword.trim().toLowerCase()),
@@ -83,9 +105,21 @@ export default function BranchListPage() {
 
     return (
         <>
+            {/*
+              Nút **tác động dữ liệu** đặt cùng hàng tiêu đề màn (CONVENTIONS mục 5, chốt 2026-08-28);
+              hàng dưới chỉ còn ô tìm kiếm + nút Tải lại.
+            */}
             <PageHeader
                 title={t('staff.branch.pageTitle')}
                 description={t('staff.branch.pageDescription')}
+                actions={
+                    <Can minRole={ERole.SUPER_ADMIN}>
+                        <Button onClick={() => setFormBranch('new')}>
+                            <Plus />
+                            {t('staff.branch.addButton')}
+                        </Button>
+                    </Can>
+                }
             />
 
             <div className="space-y-4">
@@ -96,15 +130,24 @@ export default function BranchListPage() {
                         placeholder={t('staff.branch.searchPlaceholder')}
                         className="sm:max-w-xs"
                     />
-                    <Can minRole={ERole.SUPER_ADMIN}>
-                        <Button onClick={() => setFormBranch('new')}>
-                            <Plus />
-                            {t('staff.branch.addButton')}
-                        </Button>
-                    </Can>
+                    {/*
+                      Lưới card (không phân trang, không có cột để ẩn) nên chỉ có nút Tải lại và
+                      phải đặt tay — màn này không dùng `DataTableToolbar`. Vẫn ở **cùng hàng ô tìm
+                      kiếm**, đúng bố cục chung. Từ khoá lọc phía client được giữ nguyên.
+                    */}
+                    <div className="flex shrink-0 items-center gap-2">
+                        <DataTableRefreshButton
+                            onRefresh={() => void handleRefresh()}
+                            refreshing={refreshing}
+                        />
+                    </div>
                 </div>
 
-                {loading ? (
+                {/*
+                  `!refreshing` để lúc **tải lại** không nháy skeleton: lưới cũ ở nguyên, chỉ bị
+                  lớp phủ làm mờ (CONVENTIONS mục 5.2). Skeleton chỉ dành cho lần nạp đầu.
+                */}
+                {loading && !refreshing ? (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {Array.from({ length: 3 }).map((_, i) => (
                             <Skeleton key={i} className="h-44 rounded-xl" />
@@ -115,7 +158,10 @@ export default function BranchListPage() {
                         {t('staff.branch.empty')}
                     </Card>
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    /* `relative` để lớp phủ "đang tải lại" bám đúng vùng lưới card. */
+                    <div className="relative">
+                        {refreshing && <RefreshingOverlay />}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {filtered.map((branch) => (
                             <Card key={branch.id} className="gap-3 p-5">
                                 <div className="flex items-start justify-between gap-2">
@@ -204,6 +250,7 @@ export default function BranchListPage() {
                                 {t('staff.branch.addCard')}
                             </button>
                         </Can>
+                        </div>
                     </div>
                 )}
 

@@ -10,6 +10,7 @@ import viStaff from './locales/vi/staff'
 import viCustomer from './locales/vi/customer'
 import viProduct from './locales/vi/product'
 import viInventory from './locales/vi/inventory'
+import viOrder from './locales/vi/order'
 import enCommon from './locales/en/common'
 import enErrors from './locales/en/errors'
 import enAuth from './locales/en/auth'
@@ -18,6 +19,7 @@ import enStaff from './locales/en/staff'
 import enCustomer from './locales/en/customer'
 import enProduct from './locales/en/product'
 import enInventory from './locales/en/inventory'
+import enOrder from './locales/en/order'
 
 export const SUPPORTED_LANGUAGES = ['vi', 'en'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
@@ -37,6 +39,7 @@ const resources = {
         customer: viCustomer,
         product: viProduct,
         inventory: viInventory,
+        order: viOrder,
     },
     en: {
         common: enCommon,
@@ -47,6 +50,7 @@ const resources = {
         customer: enCustomer,
         product: enProduct,
         inventory: enInventory,
+        order: enOrder,
     },
 }
 
@@ -67,7 +71,17 @@ i18n
         resources,
         fallbackLng: DEFAULT_LANGUAGE,
         supportedLngs: SUPPORTED_LANGUAGES,
-        ns: ['common', 'errors', 'auth', 'menu', 'staff', 'customer', 'product', 'inventory'],
+        ns: [
+            'common',
+            'errors',
+            'auth',
+            'menu',
+            'staff',
+            'customer',
+            'product',
+            'inventory',
+            'order',
+        ],
         defaultNS: 'common',
         /*
          * CHỈ đọc lựa chọn đã lưu, KHÔNG dò `navigator.language`.

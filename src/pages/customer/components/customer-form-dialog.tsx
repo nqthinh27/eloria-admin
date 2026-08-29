@@ -16,14 +16,22 @@ import type { Customer, CreateCustomerReq, CustomerDuplicate, UpdateCustomerReq 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 /** Chờ gõ xong SĐT rồi mới tra trùng, tránh gọi API mỗi lần gõ 1 ký tự. */
 const DUPLICATE_CHECK_DEBOUNCE_MS = 400
 
-const buildSchema = (t: (key: string) => string, isEdit: boolean, requireBranch: boolean) =>
+const buildSchema = (t: (key: string) => string, isEdit: boolean) =>
     z.object({
         fullName: z
             .string()
@@ -43,17 +51,12 @@ const buildSchema = (t: (key: string) => string, isEdit: boolean, requireBranch:
         dob: z.string().optional(),
         gender: z.nativeEnum(EGender).optional(),
         /*
-         * SUPER_ADMIN bắt buộc truyền `branchId` khi tạo, nếu không backend trả `error.branch.required`.
-         * Chưa chọn gì thì giá trị là `undefined` (không phải chuỗi rỗng) ⇒ phải đặt `error` cho
-         * chính schema, không chỉ `.min(1)`: thiếu nó, zod v4 báo lỗi kiểu mặc định bằng tiếng Anh
-         * ("Invalid input: expected string, received undefined") lọt ra UI.
+         * ⚠️ **Phase 3b (2026-08-28)**: `branchId` **tuỳ chọn với mọi role**. Trước đây SUPER_ADMIN
+         * bắt buộc chọn (thiếu ⇒ `error.branch.required`); nay backend tự lấy chi nhánh người tạo
+         * khi bỏ trống, và chấp nhận cả `null`. Nó chỉ còn là **chi nhánh đăng ký** để đánh dấu
+         * khách được tạo ở đâu, không ràng buộc quyền xem. Xem CLAUDE.md mục "Phase 3b".
          */
-        branchId:
-            requireBranch && !isEdit
-                ? z
-                      .string({ error: () => t('customer.form.validation.branchRequired') })
-                      .min(1, t('customer.form.validation.branchRequired'))
-                : z.string().optional(),
+        branchId: z.string().optional(),
     })
 
 type CustomerFormValues = z.infer<ReturnType<typeof buildSchema>>
@@ -78,6 +81,10 @@ type CustomerFormDialogProps = {
  *   ⇒ khi sửa, 2 field này hiển thị nhưng bị khoá.
  * - `GET /customer/duplicates` là `[ADMIN]` ⇒ chỉ ADMIN+ mới tra trùng được; STAFF gọi sẽ 403 nên
  *   bỏ qua hẳn bước này thay vì hiện lỗi.
+ *
+ * ⚠️ **Phase 3b (2026-08-28)**: khách là **toàn cục**, không còn branch data-scope ⇒ `branchId`
+ * **tuỳ chọn với mọi role** (chỉ là "chi nhánh đăng ký"), và nhánh *"trùng SĐT nhưng không xem
+ * được hồ sơ"* (`viewable === false`) **đã bị gỡ** vì không còn xảy ra. Xem CLAUDE.md mục "Phase 3b".
  */
 export function CustomerFormDialog({
     open,
@@ -90,16 +97,12 @@ export function CustomerFormDialog({
     const { user } = useAuth()
     const { branches } = useBranch()
     const isEdit = customer !== null
-    const isSuperAdmin = hasRole(user?.role, ERole.SUPER_ADMIN)
     const canCheckDuplicate = hasRole(user?.role, ERole.ADMIN)
 
     const [duplicate, setDuplicate] = useState<CustomerDuplicate | null>(null)
     const [checkingDuplicate, setCheckingDuplicate] = useState(false)
 
-    const schema = useMemo(
-        () => buildSchema(t, isEdit, isSuperAdmin),
-        [t, isEdit, isSuperAdmin],
-    )
+    const schema = useMemo(() => buildSchema(t, isEdit), [t, isEdit])
 
     const form = useForm<CustomerFormValues>({
         resolver: zodResolver(schema),
@@ -179,12 +182,19 @@ export function CustomerFormDialog({
                     email: values.email || undefined,
                     dob,
                     gender: values.gender,
-                    // STAFF/ADMIN bị backend ép về chi nhánh của mình, chỉ SUPER_ADMIN chọn được.
-                    branchId: isSuperAdmin ? values.branchId : undefined,
+                    /*
+                     * Phase 3b: **chi nhánh đăng ký**, tuỳ chọn với mọi role. Bỏ trống ⇒ backend
+                     * tự lấy chi nhánh của người tạo (SUPER_ADMIN chưa gán chi nhánh thì để `null`).
+                     */
+                    branchId: values.branchId || undefined,
                 })
             }
             onOpenChange(false)
         } catch (error) {
+            /*
+             * `error.branch.required` không còn phát sinh từ Phase 3b (backend bỏ validate bắt buộc
+             * chi nhánh), nhưng vẫn map để dữ liệu/log cũ hiển thị đúng chỗ nếu gặp lại.
+             */
             setFormErrorFromApi(
                 form,
                 error,
@@ -276,23 +286,25 @@ export function CustomerFormDialog({
                             </p>
                         )}
 
+                        {/*
+                          ⚠️ Phase 3b: **bỏ nhánh `viewable === false`**. Khách nay là toàn cục nên
+                          trùng SĐT thì luôn xem được hồ sơ (`viewable` luôn `true` khi `exists`) —
+                          nhánh "đã dùng nhưng ở chi nhánh khác, không lộ hồ sơ" không còn xảy ra.
+                          `customer` vẫn phòng `null` để không vỡ nếu backend trả thiếu.
+                        */}
                         {duplicate?.exists && (
                             <Alert variant="destructive">
                                 <AlertTriangle className="size-4" />
-                                <AlertTitle>
-                                    {duplicate.viewable
-                                        ? t('customer.duplicate.foundTitle')
-                                        : t('customer.duplicate.notViewableTitle')}
-                                </AlertTitle>
+                                <AlertTitle>{t('customer.duplicate.foundTitle')}</AlertTitle>
                                 <AlertDescription>
-                                    {duplicate.viewable && duplicate.customer
+                                    {duplicate.customer
                                         ? t('customer.duplicate.foundDescription', {
                                               name: duplicate.customer.fullName,
                                               branch:
                                                   duplicate.customer.branchName ??
                                                   t('customer.list.noBranch'),
                                           })
-                                        : t('customer.duplicate.notViewableDescription')}
+                                        : t('customer.duplicate.foundTitle')}
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -347,17 +359,18 @@ export function CustomerFormDialog({
                             control={form.control}
                             name="branchId"
                             render={({ field }) => (
+                                /*
+                                 * Phase 3b: **chi nhánh đăng ký**, tuỳ chọn với mọi role ⇒ bỏ dấu
+                                 * `*` bắt buộc và mở khoá cho cả STAFF/ADMIN (trước chỉ SUPER_ADMIN
+                                 * chọn được). Vẫn khoá khi **sửa** vì `UpdateCustomerReqDTO` không
+                                 * nhận `branchId` — backend `@Mapping(ignore)` field này.
+                                 */
                                 <FormItem>
-                                    <FormLabel>
-                                        {t('customer.form.branch')}
-                                        {!isEdit && isSuperAdmin && (
-                                            <span className="text-destructive"> *</span>
-                                        )}
-                                    </FormLabel>
+                                    <FormLabel>{t('customer.form.branch')}</FormLabel>
                                     <Select
                                         value={field.value}
                                         onValueChange={field.onChange}
-                                        disabled={isEdit || !isSuperAdmin}>
+                                        disabled={isEdit}>
                                         <FormControl>
                                             <SelectTrigger className="w-full">
                                                 <SelectValue
@@ -373,6 +386,9 @@ export function CustomerFormDialog({
                                             ))}
                                         </SelectContent>
                                     </Select>
+                                    <FormDescription>
+                                        {t('customer.form.branchHint')}
+                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

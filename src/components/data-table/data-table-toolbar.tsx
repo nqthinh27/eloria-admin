@@ -6,16 +6,23 @@ import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 
 /**
- * Hàng search + filter + action phía trên bảng (theo `04-don-hang`, `07-nhan-vien`): ô tìm kiếm
- * và các control filter (Select trạng thái/vai trò…) bên trái, các nút hành động (`actions`, ví dụ
- * "Thêm nhân viên") cùng hàng ngang bên phải. Không hiển thị tổng số bản ghi ở đây — con số đó đã
- * có trong phần phân trang của `DataTable` (rule chốt cùng user 2026-08-09).
+ * Hàng search + filter + điều khiển bảng phía trên bảng (theo `04-don-hang`, `07-nhan-vien`):
+ * ô tìm kiếm và các control filter (Select trạng thái/vai trò…) bên trái, cụm **Tải lại +
+ * Hiển thị cột** cùng hàng ngang bên phải. Không hiển thị tổng số bản ghi ở đây — con số đó đã có
+ * trong phần phân trang của `DataTable` (rule chốt cùng user 2026-08-09).
+ *
+ * ⚠️ **Đổi bố cục 2026-08-28** (user chốt): nút **tác động dữ liệu** (Thêm · Xuất · Nhập…) **không
+ * còn đặt ở đây** — chúng chuyển lên `PageHeader`, cùng hàng tiêu đề màn. Hàng này chỉ còn thứ
+ * *định hình cái bảng đang xem*: search, filter, tải lại, ẩn/hiện cột.
+ * Slot `actions` giữ lại cho vài nút thật sự thuộc về hàng lọc (ví dụ "Xoá bộ lọc"), **không**
+ * dùng cho nút ghi dữ liệu.
  */
 export function DataTableToolbar({
     searchValue,
     onSearchChange,
     searchPlaceholder,
     filters,
+    tableControls,
     actions,
     className,
 }: {
@@ -23,6 +30,9 @@ export function DataTableToolbar({
     onSearchChange: (value: string) => void
     searchPlaceholder?: string
     filters?: ReactNode
+    /** Cụm Tải lại + Hiển thị cột — truyền `<DataTableControls …/>` vào đây. */
+    tableControls?: ReactNode
+    /** Nút phụ thuộc về hàng lọc. **Không** đặt nút ghi dữ liệu ở đây (xem ghi chú trên). */
     actions?: ReactNode
     className?: string
 }) {
@@ -42,7 +52,12 @@ export function DataTableToolbar({
                 </div>
                 {filters}
             </div>
-            {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+            {(tableControls || actions) && (
+                <div className="flex shrink-0 items-center gap-2">
+                    {actions}
+                    {tableControls}
+                </div>
+            )}
         </div>
     )
 }

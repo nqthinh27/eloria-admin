@@ -36,6 +36,13 @@ export default {
         pageOf: 'Page {{page}} / {{pageCount}}',
         prevPage: 'Previous page',
         nextPage: 'Next page',
+        /** Refresh keeps page/sort/filter/scroll — CONVENTIONS §5.2. */
+        refresh: 'Refresh',
+        /** Overlay shown while refreshing (the old rows stay visible underneath). */
+        refreshing: 'Refreshing…',
+        /** Toast after a refresh completes — the user needs to know the table is now current. */
+        refreshed: 'Data refreshed',
+        columns: 'Toggle columns',
     },
     searchSelect: {
         searchPlaceholder: 'Search…',

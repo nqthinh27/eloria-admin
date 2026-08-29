@@ -25,6 +25,11 @@ import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DataTableToolbar } from '@/components/data-table/data-table-toolbar'
+import {
+    DataTableRefreshButton,
+    RefreshingOverlay,
+} from '@/components/data-table/data-table-view-options'
+import { useTableState } from '@/hooks/use-table-state'
 import { SearchSelect } from '@/components/search-select'
 import { ProductFormDialog } from './components/product-form-dialog'
 import { ProductDetailModal } from './components/product-detail-modal'
@@ -60,11 +65,20 @@ export default function ProductListPage() {
     const [data, setData] = useState<Product[]>([])
     const [total, setTotal] = useState(0)
     const [loading, setLoading] = useState(true)
+    /** Tải lại ngầm — chỉ quay icon, giữ nguyên lưới đang xem (CONVENTIONS mục 5.2). */
+    const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState(false)
-    const [page, setPage] = useState(1)
     const [keyword, setKeyword] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>(ALL)
     const [categoryFilter, setCategoryFilter] = useState<string>(ALL)
+
+    /*
+     * Màn này là **lưới card**, không phải bảng ⇒ chỉ dùng `page` + `refresh` của `useTableState`.
+     * Không có `sorting`/`columnVisibility` vì không có cột nào để bật/tắt hay bấm sort
+     * (CONVENTIONS mục 5.2 nói về bảng; lưới card chỉ cần nút Tải lại).
+     */
+    const table = useTableState()
+    const { page, setPage } = table
 
     const [categories, setCategories] = useState<Category[]>([])
     const [brands, setBrands] = useState<Brand[]>([])
@@ -74,9 +88,14 @@ export default function ProductListPage() {
     const [formProduct, setFormProduct] = useState<Product | null | 'new'>(null)
     const [detailProduct, setDetailProduct] = useState<Product | null>(null)
 
+    /**
+     * `quiet` = nạp lại ngầm (nút Tải lại / sau khi ghi dữ liệu): giữ nguyên lưới đang hiển thị
+     * thay vì nháy skeleton, để không mất vị trí đọc (CONVENTIONS mục 5.1 + 5.2).
+     */
     const load = useCallback(
-        async (signal?: AbortSignal) => {
-            setLoading(true)
+        async (signal?: AbortSignal, quiet = false) => {
+            if (quiet) setRefreshing(true)
+            else setLoading(true)
             setError(false)
             try {
                 const result = await productApi.search(
@@ -95,7 +114,10 @@ export default function ProductListPage() {
                 if (signal?.aborted) return
                 setError(true)
             } finally {
-                if (!signal?.aborted) setLoading(false)
+                if (!signal?.aborted) {
+                    setLoading(false)
+                    setRefreshing(false)
+                }
             }
         },
         [page, keyword, statusFilter, categoryFilter],
@@ -131,6 +153,23 @@ export default function ProductListPage() {
         return () => controller.abort()
     }, [load])
 
+    /*
+     * Nút Tải lại: giữ nguyên page/filter/scroll, chỉ gọi lại API.
+     * `runRefresh` bọc thêm **toast báo đã cập nhật** khi xong (user chốt 2026-08-28) — trong lúc
+     * chạy thì cờ `refreshing` làm mờ lưới + hiện spinner.
+     */
+    useEffect(() => {
+        if (table.reloadNonce === 0) return
+        const controller = new AbortController()
+        void table.runRefresh((signal) => load(signal, true), controller.signal)
+        return () => controller.abort()
+        // `load` cố ý không nằm trong dep: chỉ chạy khi người dùng bấm Tải lại.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [table.reloadNonce])
+
+    /** Ghi dữ liệu xong ⇒ nạp lại ngầm, **giữ nguyên** page/filter (CONVENTIONS mục 5.1). */
+    const reload = useCallback(() => load(undefined, true), [load])
+
     useEffect(() => {
         const controller = new AbortController()
         void loadRefs(controller.signal)
@@ -143,28 +182,42 @@ export default function ProductListPage() {
     )
 
     const handleSearchChange = (value: string) => {
-        setKeyword(value)
-        setPage(1)
+        table.resetTo(() => setKeyword(value))
     }
 
     const handleCreate = async (payload: CreateProductReq) => {
         await productApi.create(payload)
         toastSuccess('product.toast.created', { ns: 'product' })
-        await load()
+        await reload()
     }
 
     const handleUpdate = async (id: string, payload: UpdateProductReq) => {
         const updated = await productApi.update(id, payload)
         toastSuccess('product.toast.updated', { ns: 'product' })
         setDetailProduct((current) => (current?.id === id ? updated : current))
-        await load()
+        await reload()
     }
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
     return (
         <>
-            <PageHeader title={t('product.pageTitle')} description={t('product.pageDescription')} />
+            {/*
+              Nút **tác động dữ liệu** đặt cùng hàng tiêu đề màn (CONVENTIONS mục 5, chốt 2026-08-28);
+              hàng dưới chỉ còn search/filter + điều khiển bảng.
+            */}
+            <PageHeader
+                title={t('product.pageTitle')}
+                description={t('product.pageDescription')}
+                actions={
+                    canWrite && (
+                        <Button onClick={() => setFormProduct('new')}>
+                            <Plus />
+                            {t('product.list.addButton')}
+                        </Button>
+                    )
+                }
+            />
 
             <div className="space-y-4">
                 <DataTableToolbar
@@ -175,10 +228,7 @@ export default function ProductListPage() {
                         <>
                             <Select
                                 value={statusFilter}
-                                onValueChange={(v) => {
-                                    setStatusFilter(v)
-                                    setPage(1)
-                                }}>
+                                onValueChange={(v) => table.resetTo(() => setStatusFilter(v))}>
                                 <SelectTrigger className="w-full sm:w-44">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -197,10 +247,7 @@ export default function ProductListPage() {
                             <SearchSelect
                                 className="w-full sm:w-52"
                                 value={categoryFilter}
-                                onChange={(v) => {
-                                    setCategoryFilter(v)
-                                    setPage(1)
-                                }}
+                                onChange={(v) => table.resetTo(() => setCategoryFilter(v))}
                                 options={[
                                     { value: ALL, label: t('product.list.allCategories') },
                                     ...categories.map((c) => ({
@@ -212,13 +259,16 @@ export default function ProductListPage() {
                             />
                         </>
                     }
-                    actions={
-                        canWrite && (
-                            <Button onClick={() => setFormProduct('new')}>
-                                <Plus />
-                                {t('product.list.addButton')}
-                            </Button>
-                        )
+                    tableControls={
+                        /*
+                          Lưới card không đi qua `DataTable` nên chỉ có nút Tải lại, không có
+                          dropdown ẩn/hiện cột (không có cột nào để ẩn). Vẫn đặt **cùng hàng
+                          search/filter** như mọi bảng khác (CONVENTIONS mục 5, chốt 2026-08-28).
+                        */
+                        <DataTableRefreshButton
+                            onRefresh={table.refresh}
+                            refreshing={refreshing}
+                        />
                     }
                 />
 
@@ -242,7 +292,10 @@ export default function ProductListPage() {
                         <p className="text-sm">{t('product.list.empty')}</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    /* `relative` để lớp phủ "đang tải lại" bám đúng vùng lưới card. */
+                    <div className="relative">
+                        {refreshing && <RefreshingOverlay />}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {data.map((product) => (
                             <Card
                                 key={product.id}
@@ -285,6 +338,7 @@ export default function ProductListPage() {
                                 </div>
                             </Card>
                         ))}
+                        </div>
                     </div>
                 )}
 
@@ -303,7 +357,7 @@ export default function ProductListPage() {
                                 variant="outline"
                                 size="sm"
                                 disabled={page <= 1}
-                                onClick={() => setPage((p) => p - 1)}>
+                                onClick={() => setPage(page - 1)}>
                                 {t('common:dataTable.prevPage')}
                             </Button>
                             <span className="text-sm">
@@ -313,7 +367,7 @@ export default function ProductListPage() {
                                 variant="outline"
                                 size="sm"
                                 disabled={page >= totalPages}
-                                onClick={() => setPage((p) => p + 1)}>
+                                onClick={() => setPage(page + 1)}>
                                 {t('common:dataTable.nextPage')}
                             </Button>
                         </div>
@@ -341,7 +395,8 @@ export default function ProductListPage() {
                         setDetailProduct(null)
                         setFormProduct(p)
                     }}
-                    onChanged={load}
+                    /* Ghi từ modal chi tiết (sinh SKU, đổi ảnh) ⇒ nạp lại ngầm, giữ nguyên trang. */
+                    onChanged={reload}
                 />
             </div>
         </>

@@ -6,6 +6,7 @@ import { Boxes, MoreHorizontal, Pencil, Plus, Power, Trash2 } from 'lucide-react
 import { categoryApi } from '@/api/product'
 import { toastSuccess } from '@/lib/toast'
 import { useAuth } from '@/hooks/use-auth'
+import { useTableState } from '@/hooks/use-table-state'
 import { hasRole } from '@/config/roles'
 import { EntityStatus, ERole } from '@/types/common'
 import type { Category, CategoryPayload } from '@/types/product'
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { DataTable } from '@/components/data-table/data-table'
 import { DataTableToolbar } from '@/components/data-table/data-table-toolbar'
+import { DataTableControls } from '@/components/data-table/data-table-view-options'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { CategoryFormDialog } from './components/category-form-dialog'
 
@@ -45,10 +47,23 @@ export default function CategoryListPage() {
 
     const [allCategories, setAllCategories] = useState<Category[]>([])
     const [loading, setLoading] = useState(true)
+    /**
+     * Đang tải lại ngầm: **mờ bảng + spinner + icon nút xoay**, nhưng KHÔNG nháy skeleton —
+     * dữ liệu cũ nằm nguyên để không mất vị trí đọc (CONVENTIONS mục 5.2).
+     */
+    const [refreshing, setRefreshing] = useState(false)
     const [error, setError] = useState(false)
-    const [page, setPage] = useState(1)
     const [keyword, setKeyword] = useState('')
     const [levelFilter, setLevelFilter] = useState<string>(ALL_LEVELS)
+
+    /*
+     * page · cột ẩn/hiện · nonce tải lại — xem `use-table-state`.
+     *
+     * ⚠️ Màn này **cố ý KHÔNG dùng `sorting` của hook**: bảng chạy sort phía client (xem ghi chú
+     * ở `<DataTable>` bên dưới), nên không có gì để đẩy lên `SearchPagination.sort`.
+     */
+    const table = useTableState()
+    const { page, setPage, columnVisibility, setColumnVisibility } = table
 
     const [formCategory, setFormCategory] = useState<Category | null | 'new'>(null)
     const [deleteCategory, setDeleteCategory] = useState<Category | null>(null)
@@ -65,8 +80,13 @@ export default function CategoryListPage() {
      *   - Tìm kiếm cũng không cần gọi lại API mỗi lần gõ.
      * Nếu sau này danh mục vượt `MAX_CATEGORIES` thì phải chuyển lại sang phân trang phía server.
      */
-    const load = useCallback(async (signal?: AbortSignal) => {
-        setLoading(true)
+    const load = useCallback(async (signal?: AbortSignal, quiet = false) => {
+        /*
+         * `quiet` = nạp lại ngầm (nút Tải lại / sau khi ghi dữ liệu): giữ nguyên dữ liệu đang
+         * hiển thị thay vì nháy skeleton, để không mất vị trí đọc (CONVENTIONS mục 5.1 + 5.2).
+         */
+        if (quiet) setRefreshing(true)
+        else setLoading(true)
         setError(false)
         try {
             const result = await categoryApi.search(
@@ -80,7 +100,10 @@ export default function CategoryListPage() {
             if (signal?.aborted) return
             setError(true)
         } finally {
-            if (!signal?.aborted) setLoading(false)
+            if (!signal?.aborted) {
+                setLoading(false)
+                setRefreshing(false)
+            }
         }
     }, [])
 
@@ -90,6 +113,20 @@ export default function CategoryListPage() {
         void load(controller.signal)
         return () => controller.abort()
     }, [load])
+
+    /*
+     * Nút Tải lại: giữ nguyên page/sort/filter/scroll, chỉ gọi lại API.
+     * `runRefresh` bọc thêm **toast báo đã cập nhật** khi xong (user chốt 2026-08-28) — trong lúc
+     * chạy thì cờ `refreshing` làm mờ bảng + hiện spinner.
+     */
+    useEffect(() => {
+        if (table.reloadNonce === 0) return
+        const controller = new AbortController()
+        void table.runRefresh((signal) => load(signal, true), controller.signal)
+        return () => controller.abort()
+        // `load` cố ý không nằm trong dep: chỉ chạy khi người dùng bấm Tải lại.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [table.reloadNonce])
 
     /*
      * Lọc keyword + cấp, rồi cắt trang — tất cả phía client trên dữ liệu đã nạp.
@@ -116,14 +153,16 @@ export default function CategoryListPage() {
     useEffect(() => {
         const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE))
         if (page > lastPage) setPage(lastPage)
-    }, [total, page])
+        // `setPage` nay đến từ `useTableState` (không còn là setter `useState` cục bộ) nên phải khai
+        // vào dep cho đúng luật hook; bản thân nó là setter ổn định, thêm vào không gây chạy lại.
+    }, [total, page, setPage])
 
     const handleSearchChange = (value: string) => {
-        setKeyword(value)
-        setPage(1)
+        table.resetTo(() => setKeyword(value))
     }
 
-    const reload = load
+    /** Ghi dữ liệu xong ⇒ nạp lại ngầm, **giữ nguyên** page/filter (CONVENTIONS mục 5.1). */
+    const reload = useCallback(() => load(undefined, true), [load])
 
     const handleCreate = async (payload: CategoryPayload) => {
         await categoryApi.create(payload)
@@ -161,112 +200,148 @@ export default function CategoryListPage() {
         return allCategories.filter((c) => c.id !== editing?.id)
     }, [allCategories, formCategory])
 
-    const columns: ColumnDef<Category, unknown>[] = [
-        {
-            id: 'code',
-            header: t('category.list.column.code'),
-            size: 110,
-            cell: ({ row }) => (
-                <span className="text-muted-foreground font-mono text-xs">{row.original.code}</span>
-            ),
-        },
-        {
-            id: 'name',
-            header: t('category.list.column.name'),
-            cell: ({ row }) => (
-                <div className="flex items-center gap-3">
-                    <span className="bg-accent text-accent-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
-                        <Boxes className="size-4" />
-                    </span>
-                    <span className="font-medium">{row.original.name}</span>
-                </div>
-            ),
-        },
-        {
-            id: 'parent',
-            header: t('category.list.column.parent'),
-            size: 180,
-            cell: ({ row }) =>
-                row.original.parentName ? (
-                    <Badge variant="outline">{row.original.parentName}</Badge>
-                ) : (
-                    <span className="text-muted-foreground text-sm">
-                        {t('category.list.noParent')}
+    /*
+     * ⚠️ **Không khai `meta.sortField`** cho màn này: bảng sort phía client (xem ghi chú ở
+     * `<DataTable>` bên dưới) nên không có field nào được đẩy lên backend.
+     * `meta.columnLabel` thì vẫn bắt buộc — đó là nhãn hiển thị trong dropdown bật/tắt cột.
+     */
+    const columns = useMemo<ColumnDef<Category, unknown>[]>(
+        () => [
+            {
+                id: 'code',
+                header: t('category.list.column.code'),
+                size: 110,
+                meta: { columnLabel: t('category.list.column.code') },
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground font-mono text-xs">
+                        {row.original.code}
                     </span>
                 ),
-        },
-        {
-            id: 'sortOrder',
-            header: t('category.list.column.sortOrder'),
-            size: 100,
-            cell: ({ row }) => row.original.sortOrder ?? '—',
-        },
-        {
-            id: 'status',
-            header: t('category.list.column.status'),
-            size: 140,
-            cell: ({ row }) =>
-                row.original.status === EntityStatus.ACTIVE ? (
-                    <StatusBadge tone="success">{t('category.list.statusActive')}</StatusBadge>
-                ) : (
-                    <StatusBadge tone="muted">{t('category.list.statusInactive')}</StatusBadge>
-                ),
-        },
-        {
-            id: 'actions',
-            header: t('category.list.column.actions'),
-            size: 88,
-            cell: ({ row }) => {
-                const category = row.original
-                if (!canWrite) return null
-                const isActive = category.status === EntityStatus.ACTIVE
-                return (
-                    <div className="flex items-center gap-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8 shrink-0"
-                            title={t('category.list.actionEdit')}
-                            aria-label={t('category.list.actionEdit')}
-                            onClick={() => setFormCategory(category)}>
-                            <Pencil className="size-4" />
-                        </Button>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 shrink-0"
-                                    aria-label={t('category.list.column.actions')}>
-                                    <MoreHorizontal className="size-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={() => setStatusCategory(category)}>
-                                    <Power className="size-4" />
-                                    {isActive
-                                        ? t('category.list.actionDeactivate')
-                                        : t('category.list.actionActivate')}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    variant="destructive"
-                                    onSelect={() => setDeleteCategory(category)}>
-                                    <Trash2 className="size-4" />
-                                    {t('category.list.actionDelete')}
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                )
             },
-        },
-    ]
+            {
+                id: 'name',
+                header: t('category.list.column.name'),
+                // Cột định danh — ẩn đi thì không biết đang xem danh mục nào.
+                enableHiding: false,
+                meta: { columnLabel: t('category.list.column.name') },
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-3">
+                        <span className="bg-accent text-accent-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
+                            <Boxes className="size-4" />
+                        </span>
+                        <span className="font-medium">{row.original.name}</span>
+                    </div>
+                ),
+            },
+            {
+                id: 'parent',
+                header: t('category.list.column.parent'),
+                size: 180,
+                meta: { columnLabel: t('category.list.column.parent') },
+                cell: ({ row }) =>
+                    row.original.parentName ? (
+                        <Badge variant="outline">{row.original.parentName}</Badge>
+                    ) : (
+                        <span className="text-muted-foreground text-sm">
+                            {t('category.list.noParent')}
+                        </span>
+                    ),
+            },
+            {
+                id: 'sortOrder',
+                header: t('category.list.column.sortOrder'),
+                size: 100,
+                meta: { columnLabel: t('category.list.column.sortOrder') },
+                cell: ({ row }) => row.original.sortOrder ?? '—',
+            },
+            {
+                id: 'status',
+                header: t('category.list.column.status'),
+                size: 140,
+                meta: { columnLabel: t('category.list.column.status') },
+                cell: ({ row }) =>
+                    row.original.status === EntityStatus.ACTIVE ? (
+                        <StatusBadge tone="success">{t('category.list.statusActive')}</StatusBadge>
+                    ) : (
+                        <StatusBadge tone="muted">{t('category.list.statusInactive')}</StatusBadge>
+                    ),
+            },
+            {
+                id: 'actions',
+                header: t('category.list.column.actions'),
+                size: 88,
+                // Đường vào mọi thao tác — không cho ẩn, và không có gì để sort.
+                enableHiding: false,
+                enableSorting: false,
+                meta: { columnLabel: t('category.list.column.actions') },
+                cell: ({ row }) => {
+                    const category = row.original
+                    if (!canWrite) return null
+                    const isActive = category.status === EntityStatus.ACTIVE
+                    return (
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 shrink-0"
+                                title={t('category.list.actionEdit')}
+                                aria-label={t('category.list.actionEdit')}
+                                onClick={() => setFormCategory(category)}>
+                                <Pencil className="size-4" />
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8 shrink-0"
+                                        aria-label={t('category.list.column.actions')}>
+                                        <MoreHorizontal className="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => setStatusCategory(category)}>
+                                        <Power className="size-4" />
+                                        {isActive
+                                            ? t('category.list.actionDeactivate')
+                                            : t('category.list.actionActivate')}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        variant="destructive"
+                                        onSelect={() => setDeleteCategory(category)}>
+                                        <Trash2 className="size-4" />
+                                        {t('category.list.actionDelete')}
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )
+                },
+            },
+        ],
+        [t, canWrite],
+    )
 
     const isDeactivating = statusCategory?.status === EntityStatus.ACTIVE
 
     return (
         <>
-            <PageHeader title={t('category.pageTitle')} description={t('category.pageDescription')} />
+            {/*
+              Nút **tác động dữ liệu** đặt cùng hàng tiêu đề màn (CONVENTIONS mục 5, chốt 2026-08-28);
+              hàng dưới chỉ còn search/filter + điều khiển bảng.
+            */}
+            <PageHeader
+                title={t('category.pageTitle')}
+                description={t('category.pageDescription')}
+                actions={
+                    canWrite && (
+                        <Button onClick={() => setFormCategory('new')}>
+                            <Plus />
+                            {t('category.list.addButton')}
+                        </Button>
+                    )
+                }
+            />
 
             <div className="space-y-4">
                 <DataTableToolbar
@@ -276,10 +351,7 @@ export default function CategoryListPage() {
                     filters={
                         <Select
                             value={levelFilter}
-                            onValueChange={(v) => {
-                                setLevelFilter(v)
-                                setPage(1)
-                            }}>
+                            onValueChange={(v) => table.resetTo(() => setLevelFilter(v))}>
                             <SelectTrigger className="w-full sm:w-44">
                                 <SelectValue />
                             </SelectTrigger>
@@ -290,23 +362,45 @@ export default function CategoryListPage() {
                             </SelectContent>
                         </Select>
                     }
-                    actions={
-                        canWrite && (
-                            <Button onClick={() => setFormCategory('new')}>
-                                <Plus />
-                                {t('category.list.addButton')}
-                            </Button>
-                        )
+                    tableControls={
+                        <DataTableControls
+                            columns={columns}
+                            columnVisibility={columnVisibility}
+                            onColumnVisibilityChange={setColumnVisibility}
+                            onRefresh={table.refresh}
+                            refreshing={refreshing}
+                        />
                     }
                 />
 
+                {/*
+                 * ⚠️ **Cố ý KHÔNG truyền `sorting` / `onSortingChange`** ⇒ `DataTable` chạy ở chế
+                 * độ mặc định là **sort phía client**. Ở màn này đó là lựa chọn ĐÚNG, khác hẳn các
+                 * bảng phân trang phía server:
+                 *
+                 * - Màn này nạp **trọn cây danh mục một lần** (`page:1, size:MAX_CATEGORIES`) rồi
+                 *   tự cắt trang ở client ⇒ `allCategories` chính là **toàn bộ tập kết quả**, không
+                 *   phải một lát cắt 10 dòng. Sort client vì thế cho ra thứ tự đúng trên toàn bộ dữ
+                 *   liệu, y hệt sort server.
+                 * - Ngược lại, bảng phân trang phía server chỉ giữ ≤ `size` dòng của trang hiện tại
+                 *   nên sort client sẽ **sắp xếp sai mà người dùng không biết** — đó là lý do
+                 *   CONVENTIONS mục 5.2 cấm dùng nó ở những màn kia.
+                 * - Hệ quả: cũng **không cần** `meta.sortField`, vì không có gì đẩy lên
+                 *   `SearchPagination.sort`.
+                 *
+                 * ⚠️ Nếu sau này danh mục vượt `MAX_CATEGORIES` và phải chuyển sang phân trang phía
+                 * server thì **bắt buộc** đổi luôn sang sort server + khai `meta.sortField`.
+                 */}
                 <DataTable
                     columns={columns}
                     data={visibleData}
                     getRowId={(row) => row.id}
                     loading={loading}
+                    refreshing={refreshing}
                     error={error}
                     onRetry={load}
+                    columnVisibility={columnVisibility}
+                    onColumnVisibilityChange={setColumnVisibility}
                     unitLabel={t('category.list.resultLabel')}
                     emptyState={t('category.list.empty')}
                     pagination={{ page, size: PAGE_SIZE, total, onPageChange: setPage }}

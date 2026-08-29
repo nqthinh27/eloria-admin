@@ -19,7 +19,11 @@ export function AppTopbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
     const { t } = useTranslation('menu')
 
     return (
-        <header className="bg-card sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b px-4 lg:px-6">
+        /*
+         * Không cần `sticky`: từ 2026-08-18 `AppLayout` khoá `h-dvh` và cho `<main>` tự cuộn,
+         * nên topbar nằm NGOÀI vùng cuộn — luôn cố định sẵn.
+         */
+        <header className="bg-card z-30 flex h-16 shrink-0 items-center gap-3 border-b px-4 lg:px-6">
             <Button
                 variant="ghost"
                 size="icon"

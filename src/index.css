@@ -137,6 +137,48 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/*
+ * Màn POS (03-pos-ban-hang.png): hiệu ứng "bay vào giỏ" khi thêm hàng, và rung báo lỗi khi
+ * số lượng vượt tồn. Chỉ 2 nơi dùng (`product-picker.tsx`) nên khai keyframe thẳng ở đây thay vì
+ * cấu hình lại `tailwindcss-animate` (plugin đó không có sẵn quỹ đạo bay 2 điểm tuỳ ý).
+ */
+@keyframes pos-fly-to-cart {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--fly-x), var(--fly-y)) scale(0.35);
+    opacity: 0;
+  }
+}
+
+@keyframes pos-shake-error {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+
+.animate-pos-fly-to-cart {
+  animation: pos-fly-to-cart 0.55s cubic-bezier(0.35, 0, 0.65, 1) forwards;
+}
+
+.animate-pos-shake-error {
+  animation: pos-shake-error 0.4s ease-in-out;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

@@ -6,6 +6,7 @@ import { Loader2, X } from 'lucide-react'
 import { z } from 'zod'
 
 import { setFormErrorFromApi } from '@/lib/form-error'
+import { normalizeCode } from '@/lib/validation'
 import { EGender } from '@/types/common'
 import { EMaterial } from '@/types/product'
 import type { Brand, Category, CreateProductReq, Product, UpdateProductReq } from '@/types/product'
@@ -171,6 +172,12 @@ export function ProductFormDialog({
                                                 {...field}
                                                 value={field.value ?? ''}
                                                 disabled={isEdit}
+                                                // Chuẩn hoá ngay lúc gõ, cùng luật với backend.
+                                                onChange={(event) =>
+                                                    field.onChange(
+                                                        normalizeCode(event.target.value),
+                                                    )
+                                                }
                                                 placeholder={t('product.form.codePlaceholder')}
                                             />
                                         </FormControl>

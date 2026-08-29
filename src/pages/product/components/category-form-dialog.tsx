@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { z } from 'zod'
 
 import { setFormErrorFromApi } from '@/lib/form-error'
+import { normalizeCode } from '@/lib/validation'
 import type { Category, CategoryPayload } from '@/types/product'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -126,6 +127,12 @@ export function CategoryFormDialog({
                                         <FormControl>
                                             <Input
                                                 {...field}
+                                                // Chuẩn hoá ngay lúc gõ, cùng luật với backend.
+                                                onChange={(event) =>
+                                                    field.onChange(
+                                                        normalizeCode(event.target.value),
+                                                    )
+                                                }
                                                 placeholder={t('category.form.codePlaceholder')}
                                             />
                                         </FormControl>

@@ -144,6 +144,31 @@ export function ProductDetailModal({
         [productId],
     )
 
+    /**
+     * Nạp lại bảng SKU **giữ nguyên số trang đã cuộn** (CONVENTIONS mục 5.1).
+     *
+     * Khác `loadSkus` ở chỗ không kéo người dùng về trang 1: sau khi sinh SKU, người đang cuộn tới
+     * trang 5 vẫn ở nguyên đó. Xin lại đúng `skuPage * SKU_PAGE_SIZE` dòng trong **một** request
+     * thay vì gọi lại từng trang.
+     */
+    const reloadSkus = useCallback(async () => {
+        if (!productId) return
+        const loadedPages = Math.max(1, skuPage)
+        setLoadingSkus(true)
+        try {
+            const res = await skuApi.search(
+                { productId },
+                { page: 1, size: loadedPages * SKU_PAGE_SIZE },
+            )
+            setSkus(res.data)
+            setSkuTotal(res.total)
+        } catch {
+            // api-client đã toast; giữ nguyên danh sách đang có.
+        } finally {
+            setLoadingSkus(false)
+        }
+    }, [productId, skuPage])
+
     const loadMoreSkus = useCallback(async () => {
         if (!productId) return
         const nextPage = skuPage + 1
@@ -225,7 +250,11 @@ export function ProductDetailModal({
     const handleGenerate = async (colorIds: string[], sizeIds: string[]) => {
         await productApi.generateSku(product.id, { colorIds, sizeIds })
         toastSuccess('product.toast.skuGenerated', { ns: 'product' })
-        await loadSkus()
+        /*
+         * `reloadSkus` (không phải `loadSkus`): giữ nguyên các trang đã cuộn tải thêm thay vì kéo
+         * người dùng về trang 1 (CONVENTIONS mục 5.1) — cùng lý do với `handleToggleSku` bên dưới.
+         */
+        await reloadSkus()
         onChanged()
     }
 

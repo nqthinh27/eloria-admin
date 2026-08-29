@@ -202,10 +202,22 @@ Rule chung cho **mọi** entity có cột `status` (chốt với user 2026-08-09
   sheet, nút outline, card…) mà dùng `bg-background` sẽ **chìm hẳn vào nền, nhìn như trong suốt**.
   Bản shadcn gốc dùng `bg-background` cho `DialogContent`/`SheetContent`/`Button variant="outline"`
   ⇒ **đã sửa thành `bg-card`**; khi `npx shadcn add` thêm component mới, phải kiểm tra lại điểm này.
-- **Nút hành động của màn danh sách (Thêm · Xuất · Nhập…) đặt CÙNG HÀNG với bộ lọc**, không đặt ở
-  hàng tiêu đề. Dùng slot `actions` của [`DataTableToolbar`](src/components/data-table/data-table-toolbar.tsx):
-  ô tìm kiếm + các `Select`/`SearchSelect` bên trái, cụm nút bên phải cùng một hàng ngang.
-  `PageHeader` chỉ còn tiêu đề + mô tả phụ. (Chốt với user 2026-08-09 — áp dụng cho **mọi** màn danh sách.)
+- **Bố cục hàng công cụ của màn danh sách** *(chốt với user 2026-08-28 — **thay thế** rule
+  2026-08-09 "mọi nút hành động đặt cùng hàng bộ lọc")*. Chia theo **bản chất thao tác**:
+
+  | Nhóm | Ví dụ | Đặt ở đâu |
+  |---|---|---|
+  | **Tác động dữ liệu** | Thêm · Xuất · Nhập · Duyệt hàng loạt | **`PageHeader`** (slot `actions`), cùng hàng tiêu đề màn |
+  | **Điều khiển bảng** | Tải lại · Hiển thị cột | **`DataTableToolbar`** (slot `tableControls`), cùng hàng search/filter |
+
+  Lý do: nút *ghi dữ liệu* là hành động cấp **màn hình** — đứng cạnh tiêu đề thì luôn ở một chỗ cố
+  định dù bộ lọc dài ngắn khác nhau. Còn *tải lại / ẩn hiện cột* chỉ tác động lên **chính bảng** nên
+  phải nằm cạnh search/filter, cùng nhóm với những thứ định hình cái bảng đang hiển thị.
+
+  ⇒ `DataTableToolbar` là **một hàng ngang**: ô tìm kiếm + `Select`/`SearchSelect` **bên trái**,
+  cụm Tải lại + Hiển thị cột **bên phải**.
+  ⚠️ `DataTable` **không tự vẽ** hai nút đó nữa (bản trước tự render ở góc phải phía trên bảng) —
+  màn hình lấy chúng từ `useDataTableControls()` rồi truyền vào `tableControls` của toolbar.
 - **Droplist danh sách dài dùng [`SearchSelect`](src/components/search-select.tsx)** (Popover + Input,
   không thêm dependency): có ô tìm kiếm **bỏ dấu tiếng Việt**, khớp cả tên lẫn mã, hỗ trợ chọn 1 và
   chọn nhiều (hiện chip có nút ✕). Ô search tự hiện khi > 8 lựa chọn. Danh sách ngắn (< 8) cứ dùng
@@ -215,6 +227,61 @@ Rule chung cho **mọi** entity có cột `status` (chốt với user 2026-08-09
   Bộ chuyển ngôn ngữ đặt ở **top bar, bên trái chuông thông báo** — đây là **phần bổ sung ngoài mockup**
   (thiết kế hiện chưa có control này), style bám theo các control còn lại của top bar.
 - Accessibility cơ bản: `label` cho input, `aria-*` cho control, điều hướng bằng bàn phím.
+
+### 5.1 Sau khi ghi dữ liệu ⇒ **nạp lại danh sách, GIỮ NGUYÊN ngữ cảnh** (chốt với user 2026-08-28)
+
+Áp dụng cho **mọi** hành động làm đổi dữ liệu: create · update · delete · `update-status` ·
+`assign-role` · submit/approve/reject phiếu · tạo đơn · thu tiền · kiểm kê…
+
+- Thao tác thành công ⇒ **gọi lại đúng API danh sách của màn hiện tại**. Không được để UI hiển thị
+  dữ liệu cũ và chờ người dùng tự F5: người khác có thể vừa sửa cùng bản ghi, và chính thao tác vừa
+  rồi cũng có thể đổi field mà server tự tính (mã đơn, tồn, tổng tiền, `lastModifiedDate`…).
+- **Bắt buộc giữ nguyên toàn bộ ngữ cảnh bảng**: `page` hiện tại, `size`, `sort`, mọi filter,
+  `keyword`, tab đang mở, và **vị trí scroll**. Tuyệt đối **không** `setPage(1)` sau khi ghi —
+  `setPage(1)` chỉ dành cho **đổi filter/từ khoá**.
+- Cách làm chuẩn trong repo: hàm `load` là `useCallback` có dep là chính các state phân trang/lọc,
+  mutation xong chỉ cần `await load()`. Vì `load` đọc state qua closure nên ngữ cảnh tự được giữ.
+- **Danh sách rỗng sau khi xoá**: xoá bản ghi cuối của trang cuối ⇒ trang hiện tại rỗng. Phải kẹp
+  `page` về trang cuối còn dữ liệu (xem `CategoryListPage`), không để bảng trống trơn.
+- Màn có **nhiều danh sách liên quan nhau** thì nạp lại **tất cả** danh sách bị ảnh hưởng, không chỉ
+  cái vừa thao tác. Ví dụ: bán hàng POS xong phải nạp lại tồn ở cột chọn hàng, vì đơn vừa tạo đã
+  **trừ tồn thật** (xem [CLAUDE.md](CLAUDE.md) mục "Mô hình tồn kho").
+- Ngoại lệ **duy nhất** được phép bỏ qua nạp lại: thao tác không làm đổi thứ gì đang hiển thị trên
+  danh sách (ví dụ `reset-password` chỉ trả mật khẩu tạm). Phải ghi chú lý do ngay tại chỗ.
+
+### 5.2 Bảng danh sách — năng lực bắt buộc (chốt với user 2026-08-28)
+
+Tham chiếu: **ProTable của Ant Design**. Mọi bảng danh sách **phải** dựng bằng
+[`DataTable`](src/components/data-table/data-table.tsx) dùng chung và có đủ 3 năng lực sau:
+
+1. **Nút tải lại (reload)** — đặt **cùng hàng với search/filter** (slot `tableControls` của
+   `DataTableToolbar`), bên phải. Bấm vào **giữ nguyên** `page`, `size`, `sort`, filter, `keyword`
+   và vị trí scroll; chỉ gọi lại API.
+
+   **Phản hồi cho người dùng bắt buộc đủ 3 lớp** *(chốt với user 2026-08-28 — icon xoay ở nút thôi
+   thì quá kín đáo, người dùng không biết là đang tải)*:
+   - **Trong lúc tải**: icon nút xoay · **bảng mờ đi + khoá tương tác + hiện spinner "Đang tải lại…"**
+     (truyền cờ `refreshing` xuống `DataTable`).
+   - **Vẫn giữ nguyên dữ liệu cũ** bên dưới lớp phủ — **không** nháy skeleton, vì skeleton xoá sạch
+     nội dung và làm mất vị trí đang đọc. Skeleton chỉ dành cho `loading` (nạp lần đầu).
+   - **Sau khi xong**: **toast "Tải lại dữ liệu thành công"**. Dùng `tableState.runRefresh(...)`
+     để bọc lượt tải — nó lo phần toast, và tự **bỏ qua khi request bị huỷ** (đổi trang/rời màn
+     giữa chừng) để không báo nhầm.
+   - ⚠️ Reload **sau mutation** thì **không** toast "đã cập nhật": hành động đó đã có toast riêng
+     ("Tạo … thành công"), thêm cái nữa là ồn. Chỉ nút Tải lại mới đi qua `runRefresh`.
+2. **Bật/tắt cột** — dropdown liệt kê các cột ẩn/hiện được, đặt **ngay cạnh nút Tải lại**.
+   Cột **khoá cứng** (`enableHiding: false`) dùng cho cột định danh và cột thao tác — không cho
+   người dùng tự ẩn mất đường thao tác.
+3. **Sort theo cột** — **chỉ mở sort cho cột mà backend thực sự sort được**, và phải là
+   **sort phía server** (đẩy vào `SearchPagination.sort` dạng `field,ASC|DESC`).
+   - ⚠️ **Cấm để sort mặc định của TanStack chạy tự do**: nó chỉ sắp xếp ≤ `size` dòng của **trang
+     hiện tại** nên kết quả **sai** với dữ liệu nhiều trang, mà người dùng không hề biết.
+     Cột không sort được ở server **phải** khai `enableSorting: false`.
+   - Tên field truyền lên là **tên field của DTO backend** (`createdDate`, `fullName`…),
+     không phải `id` cột ở FE. Khai qua `meta.sortField` của `ColumnDef` khi hai tên lệch nhau.
+   - Đổi sort ⇒ **quay về trang 1** (đây là đổi truy vấn, không phải mutation — khác hẳn mục 5.1).
+- Trạng thái bảng (cột đang ẩn, sort hiện tại) là **state của màn**, không lưu localStorage,
+  cho tới khi có yêu cầu riêng.
 
 ---
 
@@ -292,6 +359,10 @@ Thực tế:
   cũng bị chặn (redirect / trang 403). Không chỉ ẩn nút.
 - Bộ chọn chi nhánh trên top bar: `SUPER_ADMIN` được chọn "Tất cả chi nhánh"/từng chi nhánh;
   `ADMIN`/`STAFF` bị **cố định** theo chi nhánh được gán (hiển thị dạng read-only).
+- ⚠️ **Data-scope theo chi nhánh KHÔNG áp dụng cho khách hàng** (backend Phase 3b, 2026-08-28):
+  khách là bản ghi **toàn cục**, mọi STAFF+ xem/sửa/gắn-vào-đơn được **mọi khách toàn chuỗi**.
+  `customer.branchId` chỉ còn nghĩa "chi nhánh đăng ký" (tham khảo, có thể `null`) ⇒ **không**
+  dựng UI ngụ ý khách bị giới hạn chi nhánh. Chi tiết ở [CLAUDE.md](CLAUDE.md) mục "Phase 3b".
 
 **Mô hình quyền: thang bậc kế thừa** (backend fix cứng, FE bám theo — **không có ma trận quyền**):
 
@@ -372,6 +443,9 @@ Khi có thay đổi **lớn, ảnh hưởng tới kiến trúc**, agent **bắt 
   4. Gọi API qua client dùng chung, không tự xử lý 401/403/500 rời rạc (mục 4).
   5. Bám thiết kế UI/UX; desktop/tablet đúng thiết kế, mobile không vỡ; chỉ light theme;
      text có cả `vi` + `en`; đủ trạng thái loading/empty/error (mục 5).
+  5b. **Ghi dữ liệu xong có nạp lại danh sách và giữ nguyên page/sort/filter/scroll không** (mục 5.1);
+     **bảng có đủ nút reload + bật/tắt cột + sort phía server, cột không sort được đã khai
+     `enableSorting: false`** (mục 5.2).
   6. **Khớp bản thiết kế trong `design/`**; không implement tab đổi role STAFF/ADMIN/SA;
      menu & route sinh theo role sau login (mục 6).
   7. Không hardcode chuỗi, không `any`, lint/build sạch (mục 7).

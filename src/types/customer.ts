@@ -37,17 +37,23 @@ export type Customer = {
 
 /**
  * `CustomerSearchReqDTO` — chỉ có `keyword`/`status`/`branchId`.
- * `branchId` chỉ có tác dụng với SUPER_ADMIN (STAFF/ADMIN bị backend ép về chi nhánh của mình).
+ *
+ * ⚠️ **Phase 3b (2026-08-28)**: `branchId` nay là **filter tuỳ chọn cho MỌI role**. Ghi chú cũ
+ * ("chỉ có tác dụng với SUPER_ADMIN, STAFF/ADMIN bị ép về chi nhánh mình") **không còn đúng** —
+ * backend đã bỏ hẳn branch data-scope cho khách hàng. Xem CLAUDE.md mục "Phase 3b".
  */
 export type CustomerSearchReq = SearchReq & {
+    /** Lọc theo **chi nhánh đăng ký** của khách. Tuỳ chọn, dùng được với mọi role. */
     branchId?: string
 }
 
 /**
  * `CreateCustomerReqDTO` — bắt buộc `fullName` + `phoneNumber`.
  * `email` bỏ trống ⇒ backend tự sinh `{phoneNumber}@example.com`.
- * `branchId`: STAFF/ADMIN luôn bị ép về chi nhánh của mình; **SUPER_ADMIN bắt buộc truyền**
- * (thiếu ⇒ lỗi `error.branch.required`).
+ *
+ * ⚠️ **Phase 3b (2026-08-28)**: `branchId` **tuỳ chọn với mọi role** — bỏ trống thì backend mặc
+ * định lấy chi nhánh của người tạo, và **được phép `null`** (SUPER_ADMIN chưa gán chi nhánh).
+ * Ghi chú cũ ("SUPER_ADMIN bắt buộc truyền, thiếu ⇒ `error.branch.required`") **không còn đúng**.
  */
 export type CreateCustomerReq = {
     fullName: string
@@ -55,6 +61,7 @@ export type CreateCustomerReq = {
     email?: string
     dob?: string
     gender?: EGender
+    /** **Chi nhánh đăng ký** — chỉ để đánh dấu khách được tạo ở đâu, không ràng buộc quyền xem. */
     branchId?: string
 }
 
@@ -71,11 +78,14 @@ export type UpdateCustomerReq = {
 
 /**
  * `CustomerDuplicateResDTO` — kết quả tra trùng theo SĐT (`[ADMIN]`).
- * Khách ngoài chi nhánh chỉ báo `exists: true, viewable: false, customer: null`
- * (không lộ hồ sơ) — UI phải xử lý riêng trường hợp này.
+ *
+ * ⚠️ **Phase 3b (2026-08-28)**: `viewable` **luôn `true` khi `exists`** — khách là toàn cục nên
+ * không còn chuyện "trùng SĐT nhưng không được xem hồ sơ". Backend giữ field chỉ để tương thích
+ * client cũ ⇒ **đừng dựng nhánh UI cho `viewable === false`**, nó không bao giờ xảy ra nữa.
  */
 export type CustomerDuplicate = {
     exists: boolean
+    /** @deprecated Luôn `true` khi `exists` kể từ Phase 3b — giữ để khớp DTO backend. */
     viewable: boolean
     customer: Customer | null
 }

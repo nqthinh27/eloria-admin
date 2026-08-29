@@ -31,6 +31,10 @@ type StaffColumnActions = {
  * và `(...)` chứa các hành động phụ (Sửa đầy đủ, Gán vai trò, Reset mật khẩu, Khoá/Mở, Xoá) — chốt
  * cùng user 2026-08-08. Cột NHÂN VIÊN linh hoạt (avatar + tên + email dài ngắn khác nhau); các cột
  * còn lại đặt `size` gần đúng độ dài nội dung thật để THAO TÁC (nội dung ngắn nhất) không bị kéo dãn.
+ *
+ * ⚠️ **Sort phía server** (CONVENTIONS mục 5.2): `id` cột ở FE khác tên field backend nên phải khai
+ * `meta.sortField`. Cột **CHI NHÁNH bị khoá sort** vì `branchName` chỉ có ở DTO, không phải cột
+ * thật của `SysUser` — sort vào đó backend trả **500**, xem CLAUDE.md mục "Sort phía server".
  */
 export function buildStaffColumns(
     t: TFunction<['staff', 'common']>,
@@ -40,6 +44,9 @@ export function buildStaffColumns(
         {
             id: 'staff',
             header: t('staff.list.column.staff'),
+            // Cột định danh — không cho ẩn, người dùng sẽ không biết đang xem dòng của ai.
+            enableHiding: false,
+            meta: { sortField: 'fullName', columnLabel: t('staff.list.column.staff') },
             cell: ({ row }) => {
                 const staff = row.original
                 const initial = staff.fullName.charAt(0).toUpperCase()
@@ -60,18 +67,23 @@ export function buildStaffColumns(
             id: 'branch',
             header: t('staff.list.column.branch'),
             size: 160,
+            // ⚠️ `branchName` KHÔNG phải cột của `SysUser` (chỉ có ở DTO) ⇒ sort vào đây backend 500.
+            enableSorting: false,
+            meta: { columnLabel: t('staff.list.column.branch') },
             cell: ({ row }) => row.original.branchName ?? t('staff.list.noBranch'),
         },
         {
             id: 'role',
             header: t('staff.list.column.role'),
             size: 130,
+            meta: { sortField: 'role', columnLabel: t('staff.list.column.role') },
             cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge>,
         },
         {
             id: 'status',
             header: t('staff.list.column.status'),
             size: 120,
+            meta: { sortField: 'status', columnLabel: t('staff.list.column.status') },
             cell: ({ row }) =>
                 row.original.status === EntityStatus.ACTIVE ? (
                     <StatusBadge tone="success">{t('staff.list.statusActive')}</StatusBadge>
@@ -83,12 +95,16 @@ export function buildStaffColumns(
             id: 'joinedDate',
             header: t('staff.list.column.joinedDate'),
             size: 110,
+            meta: { sortField: 'createdDate', columnLabel: t('staff.list.column.joinedDate') },
             cell: ({ row }) => formatDate(row.original.createdDate),
         },
         {
             id: 'actions',
             header: t('staff.list.column.actions'),
             size: 88,
+            // Đường vào mọi thao tác — không cho ẩn, và không có gì để sort.
+            enableHiding: false,
+            enableSorting: false,
             cell: ({ row }) => {
                 const staff = row.original
                 const isLocked = staff.status === EntityStatus.INACTIVE
