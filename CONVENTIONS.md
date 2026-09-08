@@ -283,6 +283,75 @@ Tham chiếu: **ProTable của Ant Design**. Mọi bảng danh sách **phải** 
 - Trạng thái bảng (cột đang ẩn, sort hiện tại) là **state của màn**, không lưu localStorage,
   cho tới khi có yêu cầu riêng.
 
+### 5.3 Cột THAO TÁC — **luôn có nút "Chi tiết", phần còn lại vào `(...)`** (chốt với user 2026-09-07)
+
+> Quy tắc này đã được chốt từ 2026-08-08 khi làm màn Nhân viên nhưng **chỉ ghi trong PLAN**, nên các
+> màn làm sau bị trôi mỗi nơi một kiểu. Nay nâng thành **luật chung, bắt buộc cho mọi bảng**.
+
+Cột THAO TÁC của **mọi** `DataTable` chỉ được có **đúng 2 thành phần, theo thứ tự**:
+
+| Vị trí | Thành phần | Bắt buộc? |
+|---|---|---|
+| 1 | **Nút "Chi tiết"** (icon `Eye`) — mở modal xem bản ghi | ✅ **LUÔN CÓ** |
+| 2 | Menu `(...)` (icon `MoreHorizontal`) gom **toàn bộ** hành động còn lại | Chỉ khi có ≥ 1 hành động |
+
+- **Cấm** đặt nút hành động thứ ba trực tiếp trên cột (Sửa, Xoá, Bật/tắt, Duyệt…) — kể cả khi chỉ có
+  một hành động duy nhất, nó vẫn phải nằm trong `(...)`. Lý do: cột THAO TÁC có **chiều rộng cố
+  định**; mỗi màn tự thêm nút thì bảng lệch nhau và cột phình ra, đúng thứ rule `size` cố định muốn
+  tránh.
+- **Nút "Chi tiết" không bao giờ bị ẩn theo quyền.** Xem là quyền thấp nhất — người vào được màn thì
+  xem được bản ghi. Chỉ các mục *trong* `(...)` mới gate theo role, và **`(...)` tự ẩn khi rỗng**.
+- Modal chi tiết theo pattern [`DetailModal`](src/components/detail-modal.tsx): chế độ xem chỉ có 2
+  nút **"Sửa" + "Đóng"**; bấm "Sửa" chuyển field sang input **ngay tại chỗ** (inline edit, không mở
+  dialog thứ hai). Field không sửa được qua API vẫn hiện dạng **khoá (`disabled`)**, không ẩn đi.
+- Bản ghi **không có gì để sửa** (ví dụ Nhật ký hệ thống) thì modal chỉ đọc, không có nút "Sửa".
+- Cột THAO TÁC luôn khai `enableHiding: false` + `enableSorting: false` + `size` cố định.
+
+⚠️ **Màn không phải bảng** (card grid như Chi nhánh, danh sách phiếu dạng thẻ) **không áp dụng** rule
+này — nó chỉ dành cho `DataTable`.
+
+### 5.4 Định dạng ngày giờ hiển thị — **`dd/MM/yyyy`**, có giờ thì **`HH:mm:ss dd/MM/yyyy`** (chốt với user 2026-09-07)
+
+Áp dụng cho **mọi** chỗ người dùng nhìn thấy ngày/giờ: ô nhập, bảng, modal chi tiết, hoá đơn, báo cáo.
+
+| Loại | Định dạng hiển thị | Helper |
+|---|---|---|
+| Chỉ ngày | `dd/MM/yyyy` | `formatDate()` |
+| Ngày + giờ | **`HH:mm:ss dd/MM/yyyy`** (giờ **đứng trước** ngày) | `formatDateTime()` |
+
+- ⚠️ **`<Input type="date">` bị CẤM** ở ô người dùng nhập ngày. Input date của trình duyệt hiển thị
+  theo **locale của máy** — máy để tiếng Anh sẽ hiện `mm/dd/yyyy`, không có cách nào ép về
+  `dd/MM/yyyy` bằng CSS hay thuộc tính HTML. Dùng
+  [`DateInput`](src/components/date-input.tsx) — ô text nhập `dd/MM/yyyy` kèm nút lịch (Popover +
+  `Calendar` của shadcn), giá trị trong form vẫn là `yyyy-MM-dd` để gửi API không phải đổi.
+- Giá trị **truyền lên backend không đổi**: vẫn ISO-8601 UTC (`2026-09-07T00:00:00Z`) hoặc
+  `yyyy-MM-dd` tuỳ DTO. Rule này **chỉ nói về phần hiển thị**.
+- **Không tự viết lại logic format** trong component — luôn gọi helper ở
+  [`src/lib/format.ts`](src/lib/format.ts) để đổi một chỗ là đổi cả hệ thống.
+### 5.5 Ô nhập & hiển thị số tiền — **có dấu ngăn cách, gửi lên backend là số thuần** (chốt với user 2026-09-08)
+
+| Nơi | Định dạng | Cách làm |
+|---|---|---|
+| **Hiển thị** (bảng, modal, hoá đơn, báo cáo) | `1.500.000đ` — dấu `.` ngăn cách hàng nghìn | `formatVnd()` |
+| **Ô nhập** | `1.500.000` trong ô + hậu tố **`đ`** hiện bên phải | [`MoneyInput`](src/components/money-input.tsx) |
+| **Gửi API** | `1500000` — **số thuần, không dấu ngăn cách** | `Number(value)` |
+
+- ⚠️ **`<Input type="number">` bị CẤM cho ô tiền.** Trình duyệt không cho chèn dấu ngăn cách vào
+  `type="number"` (mọi ký tự không phải số làm ô thành rỗng) ⇒ không thể hiện `1.500.000`.
+  Dùng `MoneyInput` — input text tự kiểm soát hiển thị, `value`/`onChange` là **chuỗi chữ số thuần**.
+- **Mọi ô nhập tiền BẮT BUỘC có hậu tố đơn vị `đ`** hiện ngay trong ô. Người dùng nhìn ô
+  *"Giá trị đơn tối thiểu"* trống không đoán được là **đồng** hay **nghìn đồng** — phải nói rõ.
+  Ô đổi được đơn vị (chiết khấu `%` ↔ `đ` ở POS) thì hậu tố **đổi theo** lựa chọn hiện tại.
+- ⚠️ Dấu `.` trong tiếng Việt là **ngăn cách hàng nghìn**, KHÔNG phải dấu thập phân. `parseMoneyInput`
+  vì vậy **bỏ hẳn dấu chấm** khi đọc ô: `1.500` là *một nghìn năm trăm*, không phải `1.5`.
+  Tiền VNĐ không có phần lẻ nên không cần hỗ trợ số thập phân.
+- **Ô phần trăm không dùng `MoneyInput`** — `%` không cần ngăn cách hàng nghìn (giá trị ≤ 100) và
+  có thể có phần lẻ. Giữ `<Input inputMode="decimal">`, nhưng **vẫn phải có hậu tố `%`**.
+- **Ô số lượng** (SL trong phiếu kho, kiểm kê, giỏ hàng) **không** áp rule này: số nhỏ, không phải
+  tiền, giữ `type="number"` để dùng được nút tăng/giảm của trình duyệt.
+- **Không tự viết lại logic format** trong component — dùng helper ở
+  [`src/lib/money-input-format.ts`](src/lib/money-input-format.ts) và
+  [`src/lib/format.ts`](src/lib/format.ts).
 ---
 
 ## 6. Thiết kế nguồn — folder `design/`

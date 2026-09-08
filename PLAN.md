@@ -4,7 +4,7 @@
 > agent **chỉ thực hiện đúng phase được chỉ định**, không tự làm lấn sang phase khác.
 > Đọc [CONVENTIONS.md](CONVENTIONS.md) trước khi bắt đầu bất kỳ phase nào.
 
-Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**) (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · **11: 2026-08-18**). Các phase còn lại chưa bắt đầu.
+Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**). **Phase 14 (Khuyến mại) đã xong 2026-09-07.** Phase 13 & 15 vẫn chờ backend ⇒ **phase làm được tiếp theo là Phase 16 (Hoàn thiện)**.
 
 > ## ✅ **PHASE 11 ĐÃ XONG (2026-08-18)** — Bán hàng & Đơn hàng
 >
@@ -142,8 +142,16 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 
 **✅ Không còn điểm chờ chốt nào** *(B7 + B8 chốt 2026-08-15, B9 chốt 2026-08-29)*.
 
-> ✅ **KHÔNG còn điểm nào chặn Phase 11** (đã xong). **B9 đã chốt** ⇒ Phase 12 không còn vướng
-> quyết định của user; thứ duy nhất còn chặn Phase 12 là **API báo cáo phía backend**.
+> ✅ **KHÔNG còn điểm nào chặn Phase 11 và Phase 12** — cả hai **đã xong**. B9 đã chốt, API báo cáo
+> backend đã có (BE9).
+>
+> ✅ **Phase 14 (Khuyến mại) ĐÃ MỞ KHOÁ (2026-09-07)** — backend lên **100 path**, đã cấp đủ
+> `/promotion/**` + `/coupon/**`. FE đã kiểm thử API thật (xem hộp đầu Phase 14). **Không còn điểm
+> chờ chốt nào cho Phase 14** — trừ 1 câu hỏi phạm vi ở **BE20** (có làm màn Quản lý giá không).
+>
+> ⛔ **Phase 13 (Đổi/Trả) và Phase 15 (Ca làm việc) vẫn bị chặn cứng** — rà soát lại
+> **2026-09-07**: backend vẫn **chưa có API nào**, xem **BE17** / **BE19**. Cần **chốt phạm vi với user**
+> + soạn yêu cầu API gửi backend trước khi bắt đầu.
 
 ### Việc chờ backend (FE không tự làm được)
 
@@ -164,6 +172,13 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | **BE14** | **Gom nhóm 2 chiều cho `/report/sales`** — `groupBy` chỉ nhận **một** giá trị nên biểu đồ "doanh thu theo tháng × chi nhánh" của mockup `01` phải gọi **1 request/chi nhánh** rồi ghép ở FE. | ⏳ Chờ backend. **Không chặn** (hiện 3 chi nhánh). Chuỗi mở rộng lên hàng chục chi nhánh thì phải xin `groupBy` 2 chiều hoặc endpoint riêng — **không** tăng số request. |
 | **BE13** | **Export Excel/PDF báo cáo** (`POST /report/{type}/export`) — backend ghi "đợt sau", hiện chỉ trả JSON. | ⏳ Chờ backend. FE **chưa dựng nút** "Xuất dữ liệu" của mockup `01` vì sẽ là nút chết. |
 | **BE10** | **`costPrice` trả về cho cả STAFF** — backend không lọc field theo role, STAFF `GET /product/{id}` vẫn đọc được giá vốn (đo thật 2026-08-29). FE đang giấu bằng gate `canWrite` ở UI ⇒ **che giao diện, không phải bảo mật**. | ⏳ Cần hỏi user: nếu giá vốn là số liệu nhạy cảm thật thì xin backend lọc field theo role. Không chặn việc gì. |
+| **BE17** | **API đổi/trả cho Phase 13** — chưa có gì: 0 endpoint, 0 entity, 0 DTO (rà soát lại **2026-09-07**: backend lên **100 path** nhưng **không có gì** cho đổi/trả — grep `refund|return|exchange` trên path: **0**; `domain/` không có entity nào). `EOrderType.REFUND` là enum chết (`OrderServiceImpl:259` set cứng `PURCHASE`); `STORE_CREDIT` không có ví/sổ số dư. **Kèm lỗ hổng nghiệp vụ**: đơn POS đã thu tiền là `COMPLETED` ⇒ `/cancel` trả `error.order.alreadyClosed` ⇒ **hiện không có cách nào trả hàng/hoàn tiền tại quầy**. | ⛔ **CHẶN CỨNG Phase 13.** Cần soạn yêu cầu API gửi backend (theo mẫu `phase-12-report-api-request.md` đã hiệu quả) + chốt phạm vi với user trước. |
+| **BE18** | **`POST /promotion/{id}/update-status` trả `data: null`** — api-docs khai trả `PromotionResDTO` nhưng JSON thật là `{"code":1,"message":"Thành công","data":null}` (đo thật 2026-09-07). Trạng thái **có lưu đúng** (`GET` lại thấy `RUNNING`). | ⏳ Nên xin backend trả đúng DTO cho khớp api-docs. **Không chặn** — FE **phải refetch** sau khi đổi trạng thái, không được tin response. |
+| **BE19** | **API ca làm việc cho Phase 15** — không có entity `WorkShift`, 0 endpoint khớp `shift`; `EShiftStatus` chỉ là file enum lẻ (3 giá trị `INCOMING·OPEN·CLOSED`). Backend xếp ở **P10, ưu tiên #11 — "sau khi có mặt bằng cửa hàng"**. | ⛔ **CHẶN CỨNG Phase 15.** Đúng bối cảnh (bán online tại nhà chưa cần ca) ⇒ không cần giục backend. |
+| **BE20** | **Quản lý giá (backend P8) đã xong nhưng FE không có màn** — 5 endpoint `/price/**` + `/price-change-log/search`. | ❌ **ĐÓNG (user chốt 2026-09-08): KHÔNG LÀM màn Quản lý giá.** Nhóm API này **cố ý bỏ trống**. Giá bán tiếp tục dùng `product.price`, backend tự fallback khi `sku_price` rỗng ⇒ không phải đổi gì ở FE. Xem hộp cuối Phase 17. |
+| **BE21** | **Promotion không có số đếm theo trạng thái** — `BaseListResponse<PromotionResDTO>` chỉ có `{total, data}`, **không** có `activeTotal`/`inactiveTotal` như staff/branch, và không có endpoint thống kê. ⇒ 3 thẻ "Đang chạy / Sắp chạy / Đã kết thúc" của mockup `16` **chỉ đếm được trên trang hiện tại**. | ⏳ Nên xin backend trả số đếm theo `EPromotionStatus` (hoặc thêm `BaseListResStatus`). **Không chặn** — 3 thẻ đã được gỡ bỏ (user chốt 2026-09-07). Có số đúng thì bàn lại ở **Phase 17 mục 17.2**. |
+| **BE22** | **Coupon sai không báo lỗi** — `couponCode` không tồn tại trả `200` với `{applied:false}`, y hệt ca không nhập mã. | ✅ **ĐÃ XONG (2026-09-08)** — backend chọn **Cách A**: trả **`400 error.promotion.codeInvalid`** khi có gửi mã mà mã không dùng được (đo thật ở `cart/preview`). FE đã nối ô nhập mã ở POS + bắt riêng mã lỗi này. |
+| **BE23** | **Không truy vết được khuyến mại trên đơn đã tạo** — `OrderResDTO`/`InvoiceResDTO` chỉ có một số `discountAmount` gộp. | ✅ **ĐÃ XONG (2026-09-08)** — backend thêm **`promotionId`/`promotionName`/`promotionCode`** vào cả hai DTO (+ response của create/update) và **`OrderSearchReqDTO.promotionId`** để lọc đơn theo chương trình. Đo thật đủ 5 endpoint. ⚠️ **`POST /order/search` vẫn trả `null`** cho 3 field (cố ý, tránh N+1) ⇒ không dựng cột KM ở bảng Đơn hàng. |
 | **BE7** | **`product/search?categoryId=` không roll-up lên danh mục cha** — lọc theo `AO` trả 0 dù có sản phẩm thuộc danh mục con `AO-SM`; lọc theo đúng danh mục lá thì trả đủ. | ⏳ **Phát hiện khi code Phase 11 (2026-08-18)**. FE tạm chỉ hiện **danh mục lá** ở hàng pill POS để không có pill bấm vào ra rỗng. |
 
 ---
@@ -205,20 +220,35 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **10** | ✅ Kho hàng: tồn kho · phiếu nhập/xuất/chuyển · kiểm kê (**API thật**) | 5, 6, 9 | `13`, `14`, `15` |
 | **11** | ✅ **Bán hàng + Đơn hàng** (POS không mở ca · danh sách & chi tiết đơn) | 5, 6, 9, 10 | `03`, `04`, `05` |
 | **12** | ✅ **Dashboard & Báo cáo doanh thu** (**API thật**) | 5, 11 | `01` |
-| **13** | ⛔ Đổi / Trả — *chờ backend* | 5, 6, 11 | `06` |
-| **14** | ⛔ Khuyến mại — *chờ backend* | 5, 6, 9 | `16` |
+| **13** | ⛔ Đổi / Trả — *chờ backend* (BE17) | 5, 6, 11 | `06` |
+| **14** | ✅ **Khuyến mại** (**API thật**) | 5, 6, 9, 11 | `16` |
 | **15** | ⛔ **Ca làm việc (mở ca / chốt ca)** — tách khỏi phase 11, *chờ backend* | 11 | `02` |
 | **16** | 🟢 Hoàn thiện: audit i18n · a11y · responsive · tài liệu — **làm được ngay** | tất cả | — |
+| **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 
-> ### ⛔ **CHỐT NGÀY 2026-08-29 — Phase 12–15 đều đang chờ backend**
+> ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
-> Khảo sát source backend: **không có** `ReportResource`/`DashboardResource`, **không có** entity
-> `Promotion`/`Shift`/`Return`, `EOrderType.REFUND` là enum chết. Chi tiết + bằng chứng ở hộp
-> "CHỐT LẠI TRƯỚC KHI BẮT ĐẦU" đầu Phase 12.
+> ~~Rà soát 2026-09-03: vẫn đúng 88 path, backend không thêm gì~~ — **không còn đúng**. Rà soát lại
+> `/v3/api-docs/api` **2026-09-07**: backend lên **100 path (+12)**, đã làm xong **2 phase**:
+> **P8 Quản lý giá** (`/price/**`, `/price-change-log/**` — 4 endpoint) và
+> **P9 Khuyến mại & Promotion Engine** (`/promotion/**` 5 + `/coupon/**` 2 — 7 endpoint).
+> Entity mới có thật: `Promotion`, `PromotionLog`, `SkuPrice`, `PriceChangeLog`.
+> Nguồn: `docs/api/khuyen-mai-p9.md` · `docs/api/quan-ly-gia-p8.md`. **FE đã kiểm thử API thật** —
+> xem hộp "Điều kiện khởi động" đầu Phase 14.
 >
-> ⇒ **Phase làm được ngay không cần backend: chỉ còn Phase 16.**
-> Backend đã có sẵn kế hoạch tương ứng (`35.1.eloria-backend/PLAN.md:298` — Phase 7 Dashboard &
-> Báo cáo, phase duy nhất chưa xong của backend).
+> **Vẫn CHƯA có** (đã grep lại source): entity `Return`/`Refund`/`WorkShift` — 0 file trong
+> `domain/`, 0 endpoint khớp `refund|return|exchange|shift`. `EOrderType.REFUND` **vẫn là enum
+> chết** (`OrderServiceImpl:259` set cứng `PURCHASE`); `EShiftStatus` chỉ là file enum lẻ.
+> Theo `35.1.eloria-backend/PLAN.md`, đổi/trả là **P11 (ưu tiên #12)** và ca làm việc là
+> **P10 (ưu tiên #11, "sau khi có mặt bằng cửa hàng")** ⇒ cả hai còn xa.
+>
+> ⇒ **Phase 14 ĐÃ XONG (2026-09-07)** — xem báo cáo cuối phase ở mục Phase 14.
+> **Phase làm được tiếp theo: chỉ còn Phase 16 (Hoàn thiện).**
+>
+> ⚠️ **Quản lý giá (backend P8) chưa có phase FE tương ứng** — PLAN này dựng từ 17 mockup, không có
+> màn "Bảng giá". Backend đã cấp 4 endpoint (`/price/search`, `/price`, `/price/bulk-adjust`,
+> `/price-change-log/search`). **Cần hỏi user** có làm màn quản lý giá không (sẽ là phase mới,
+> ví dụ Phase 14b) hay bỏ qua — hiện `Product.price` vẫn chạy được nhờ backend fallback.
 
 Thứ tự đề xuất chạy: **0 → 1 → 2 → 3 → 4 → 5 → 7** (Phase 7 đã có API thật, làm sớm để
 kiểm chứng toàn bộ hạ tầng trên dữ liệu thật), rồi **6** khi bắt đầu các màn cần mock,
@@ -2059,7 +2089,7 @@ chi nhánh đăng ký (kết quả nay là toàn chuỗi nên cần phân biệt
 
 ---
 
-## Phase 12 — Dashboard & Báo cáo doanh thu
+## Phase 12 — Dashboard & Báo cáo doanh thu ✅ **ĐÃ XONG (2026-08-30)**
 
 **Thiết kế:** `01-dashboard-bao-cao.png`. **Kéo từ Phase 15 lên** — user chốt làm **đầy đủ theo
 mockup**, không rút gọn.
@@ -2090,10 +2120,18 @@ mockup**, không rút gọn.
 > backend làm sẵn endpoint dạng `POST /report/revenue` (theo khoảng ngày + branchId, trả mảng đã
 > gộp theo ngày) và `GET /report/summary` cho hàng KPI. Đưa vào cùng đợt làm backend đơn hàng.
 
-### ⛔ **CHỐT LẠI TRƯỚC KHI BẮT ĐẦU — khảo sát backend 2026-08-29**
+### ✅ **ĐÃ GIẢI QUYẾT — khối khảo sát bên dưới là LỊCH SỬ, không còn đúng**
 
-**Backend KHÔNG có bất kỳ API tổng hợp/báo cáo nào.** `web/rest/` chỉ có 21 Resource, **không có**
-`ReportResource`/`DashboardResource`/`StatisticResource`. ⇒ **Phase 12 đang bị chặn một phần.**
+> **Cập nhật 2026-08-29 (chiều):** backend làm xong **Phase 7** ngay trong ngày ⇒ đã có đủ 5 endpoint
+> báo cáo (`ReportResource` + `DashboardResource`, api-docs lên **88 path**). Phase 12 **đã hết bị
+> chặn và đã code xong** (xem CLAUDE.md mục "Domain Dashboard & Báo cáo").
+>
+> Giữ lại khối dưới đây để **đọc lại lịch sử quyết định**, đừng dùng làm căn cứ cho việc mới.
+
+### ⛔ ~~**CHỐT LẠI TRƯỚC KHI BẮT ĐẦU — khảo sát backend 2026-08-29 (buổi sáng)**~~
+
+~~**Backend KHÔNG có bất kỳ API tổng hợp/báo cáo nào.**~~ `web/rest/` chỉ có 21 Resource, **không có**
+`ReportResource`/`DashboardResource`/`StatisticResource`. ⇒ ~~**Phase 12 đang bị chặn một phần.**~~
 
 **Thứ FE tự làm được ngay** (từ API sẵn có):
 
@@ -2146,25 +2184,63 @@ mockup**, không rút gọn.
 
 | Phase | Backend | Bằng chứng |
 |---|---|---|
-| **12** Dashboard | ❌ **Chưa có** | Không có `ReportResource`/`DashboardResource`; không `@Query` nào có `SUM`/`GROUP BY` |
+| **12** Dashboard | ✅ **ĐÃ CÓ** *(cập nhật chiều 2026-08-29)* | Backend làm xong Phase 7 trong ngày: `ReportResource` + `DashboardResource`, 5 endpoint, api-docs **88 path**. Dòng "❌ chưa có" của buổi sáng đã sai |
 | **13** Đổi/Trả | ❌ **Chưa có** | `EOrderType.REFUND` là **enum chết** — nơi ghi `type` duy nhất là `OrderServiceImpl:201` set cứng `PURCHASE`. `/cancel` chỉ đảo `paymentStatus`, **không phải** luồng trả hàng |
 | **14** Khuyến mại | ❌ **Chưa có** | 3 enum mồ côi + `OrderDetail.promotionId` luôn `null`; không bảng, không API |
 | **15** Ca làm việc | ❌ **Chưa có** | `EShiftStatus` không nơi nào dùng; `OrderSale.shiftId` luôn `null`; **không có bảng `work_shift`** (Liquibase chỉ tạo 18 bảng) |
 | **16** Hoàn thiện | ✅ **Làm được ngay** | Thuần FE: i18n · a11y · responsive · 3 việc hoãn từ Phase 11 |
 
-⚠️ **Kết luận: Phase 12–15 đều chờ backend. Phase duy nhất FE làm được ngay là Phase 16.**
+⚠️ ~~**Kết luận: Phase 12–15 đều chờ backend.**~~ → **Cập nhật 2026-09-03:** Phase 12 **đã xong**.
+**Phase 13/14/15 vẫn chờ backend** — khảo sát lại `/v3/api-docs/api` hôm nay xác nhận vẫn **đúng
+88 path, không thêm endpoint nào** cho đổi-trả / khuyến mại / ca làm việc.
 
 *(Ghi chú: backend hiện có **~103 endpoint** trong `*Resource.java`, so với 83 path ghi ở CLAUDE.md
-ngày 2026-08-21 — phần tăng thêm là Order/BankAccount/WarehouseLedger, **không có** endpoint báo cáo nào.)*
+ngày 2026-08-21 — phần tăng thêm là Order/BankAccount/WarehouseLedger, ~~**không có** endpoint báo cáo nào~~
+**và sau đó là 5 endpoint báo cáo của Phase 7 backend**.)*
 
-**B9 vẫn chưa chốt** (Dashboard `minRole = ADMIN` ⇒ STAFF không vào được, nhưng mô tả phase lại có
-nhánh STAFF) — cần trả lời trước khi code phase này.
+~~**B9 vẫn chưa chốt**~~ → ✅ **B9 ĐÃ CHỐT 2026-08-29**: giữ `minRole = ADMIN`, **bỏ nhánh STAFF**
+khỏi Phase 12 (xem mục B9 ở đầu file). Phase 12 chỉ còn 2 mức phạm vi: ADMIN = chi nhánh mình ·
+SUPER_ADMIN = toàn chuỗi.
 
 ---
 
-## Phase 13 — Đổi / Trả
+## Phase 13 — Đổi / Trả ⛔ **BỊ CHẶN — backend chưa có API** *(rà soát lại 2026-09-07)*
 
 **Thiết kế:** `06-doi-tra.png`. **Phụ thuộc Phase 11** (cần đơn hàng để trả).
+
+> ### ⛔ Kết quả rà soát điều kiện khởi động — **2026-09-03**, **rà lại 2026-09-07: KHÔNG ĐỔI**
+>
+> ⚠️ **Cập nhật 2026-09-07:** backend đã lên **100 path** (làm xong Quản lý giá + Khuyến mại)
+> nhưng **không thêm gì cho đổi/trả**: grep `refund|return|exchange` trên toàn bộ path vẫn **0 kết quả**,
+> `domain/` vẫn không có entity nào, `OrderServiceImpl:259` vẫn set cứng `PURCHASE`. Bảng bên dưới
+> **vẫn đúng nguyên văn**. Theo `35.1.eloria-backend/PLAN.md`, đổi/trả là **P11 — ưu tiên #12**
+> (phase gần cuối của backend) ⇒ còn lâu mới có.
+>
+> Đã fetch `/v3/api-docs/api` + đọc source backend. **Không đủ điều kiện bắt đầu.**
+>
+> | Kiểm tra | Kết quả |
+> |---|---|
+> | Số path api-docs | **88** — *y hệt* 2026-08-29, backend **không thêm gì** kể từ Phase 7 |
+> | Endpoint đổi/trả | ❌ **Không có** — grep `refund`/`return`/`exchange` trên toàn bộ path: **0 kết quả** |
+> | `RefundResource`/`ReturnResource` | ❌ **Không tồn tại** — `web/rest/` có 21 Resource, không cái nào cho đổi-trả |
+> | Entity | ❌ **Không có** `Refund`/`ReturnOrder`/`ReturnDetail` trong `domain/` (21 file, đã liệt kê hết) |
+> | Schema DTO | ❌ **0 schema** khớp `refund|return|exchange` trong `components.schemas` |
+> | `EOrderType.REFUND` | ⚠️ **Enum chết** — có trong enum `["PURCHASE","REFUND"]` nhưng `OrderServiceImpl` **set cứng `PURCHASE`** khi tạo đơn; không API nào tạo được đơn `REFUND` |
+> | `EPaymentStatus.REFUNDED` | ⚠️ **Chỉ dùng nội bộ** cho luồng *huỷ đơn đã thu* (`/order/{id}/cancel` tự sinh dòng hoàn tiền), **không phải** luồng trả hàng |
+> | `STORE_CREDIT` | ⚠️ Có trong `EPaymentMethod` nhưng **không có ví/sổ store-credit** — không bảng, không API cộng/trừ số dư |
+>
+> **⇒ Không có đường nào làm Phase 13 bằng API thật.** Mọi thứ phase này cần — phiếu trả, dòng hàng
+> trả, kho nhận hàng trả, luồng duyệt của ADMIN — đều **chưa tồn tại ở backend**.
+>
+> **Thêm một chặn nghiệp vụ (đã ghi ở CLAUDE.md):** đơn POS thu tiền xong **nhảy thẳng `COMPLETED`**
+> ⇒ `/order/{id}/cancel` trả `error.order.alreadyClosed` ⇒ **hiện không có cách nào hoàn tiền/trả
+> tồn cho đơn bán tại quầy**. Đây chính là lỗ hổng mà Phase 13 phải bịt, nhưng bịt bằng gì thì
+> backend chưa cấp.
+>
+> **Việc cần làm trước khi code:** soạn yêu cầu API gửi backend (giống
+> [`docs/handoff/phase-12-report-api-request.md`](docs/handoff/phase-12-report-api-request.md) đã
+> làm cho Phase 12 — cách này **đã chứng minh hiệu quả**, backend làm xong trong ngày). Cần chốt
+> với user: phạm vi đổi/trả (có cho trả không hoá đơn không · có store credit không · ai duyệt).
 
 - Tạo yêu cầu trả: có hoá đơn (quét/nhập mã) hoặc không (tìm theo khách).
 - Đổi cùng giá (size/màu) và **đổi khác giá** (tự tính thu thêm / trả lại).
@@ -2175,7 +2251,58 @@ nhánh STAFF) — cần trả lời trước khi code phase này.
 
 ---
 
-## Phase 14 — Khuyến mại
+## Phase 14 — Khuyến mại ✅ **ĐÃ XONG (2026-09-07)**
+
+> ### ✅ Kết quả rà soát điều kiện khởi động — **2026-09-07** (đã gọi API thật, không chỉ đọc docs)
+>
+> | Kiểm tra | Kết quả |
+> |---|---|
+> | Số path api-docs | **100** (+12 so với 2026-09-03) |
+> | Endpoint KM | ✅ **5** — `POST /promotion/search` · `GET /promotion/{id}` · `POST /promotion` · `PUT /promotion/{id}` · `POST /promotion/{id}/update-status` · `POST /promotion/preview` |
+> | Endpoint coupon | ✅ **2** — `POST /coupon/generate` · `GET /coupon/export` (CSV) |
+> | Entity | ✅ `Promotion` + `PromotionLog` có thật trong `domain/` |
+> | Tích hợp POS | ✅ `CreateOrderReqDTO`/`CartPreviewReqDTO` có **`couponCode`**; `CartPreviewResDTO` trả **`promotionDiscount`/`promotionId`/`promotionName`/`promotionCode`** |
+> | RBAC | ✅ **đo thật**: STAFF tạo KM ⇒ `403`, STAFF `search` ⇒ `200`, ADMIN tạo KM ⇒ `200`, ADMIN set giá ⇒ `403` — khớp handoff |
+>
+> **Nguồn:** [`35.1.eloria-backend/docs/api/khuyen-mai-p9.md`](../35.1.eloria-backend/docs/api/khuyen-mai-p9.md).
+>
+> **Đã chạy thử end-to-end (2026-09-07, dữ liệu test đã dọn sạch — 0 KM `RUNNING` còn lại):**
+> tạo KM `ALL 10%` ⇒ `status = DRAFT` · `update-status` → `RUNNING` · `promotion/preview` giỏ
+> 2×`SP006-NV-QU-32` ⇒ `discountAmount 116.000` · `order/cart/preview` cùng giỏ ⇒
+> `subtotal 1.160.000` · `promotionDiscount 116.000` · `totalAmount 1.044.000` ✓ ·
+> `coupon/generate` 3 mã ⇒ `TEST635DU22R…` · `coupon/export` ⇒ CSV thật.
+>
+> #### ⚠️ 4 điểm phải nhớ khi code (đo thật, **không có trong handoff**)
+>
+> 1. **`update-status` trả `data: null`** dù api-docs khai `PromotionResDTO` ⇒ **bắt buộc refetch**
+>    sau khi đổi trạng thái, đừng lấy response gán vào state. (**BE18**)
+> 2. **Coupon sai KHÔNG báo lỗi** — `couponCode` không tồn tại trả `200` với
+>    `{applied: false, discountAmount: 0}`, **y hệt** trường hợp không nhập mã. Backend không phân
+>    biệt hai ca này ⇒ **FE phải tự báo "mã không hợp lệ"**: nhập mã mà `applied === false`
+>    (hoặc `code` trả về khác mã đã nhập) ⇒ hiện lỗi, đừng im lặng.
+> 3. **`status` của KM là lifecycle enum `DRAFT|SCHEDULED|RUNNING|PAUSED|ENDED`, KHÔNG phải `0/1`**
+>    — khác hẳn quy ước `EStatus` của mọi module trước. `PromotionSearchReqDTO` có **cả hai**:
+>    `status` (integer 0/1) **và** `promotionStatus` (enum) — lọc theo vòng đời phải dùng
+>    **`promotionStatus`**. **Không có xoá mềm**, kết thúc KM = chuyển `ENDED`.
+> 4. **`GET /coupon/export` trả `text/csv` thuần, không bọc `BaseResponse`** ⇒ phải dùng
+>    `apiClient.getBlob()` (giống `sku/{id}/barcode` và `bank-account/order/{id}/qr`);
+>    `get()` sẽ hỏng vì `unwrap` đọc `body.code`.
+>
+> #### Phạm vi đã được backend chốt (khớp cảnh báo cũ của PLAN)
+>
+> **MVP: chỉ `PERCENT`/`FIXED`, KHÔNG chồng KM — best-one-wins, mỗi đơn tối đa 1 KM.**
+> ⇒ Mục *"quy tắc chồng khuyến mại, thứ tự ưu tiên, cộng dồn"* ở danh sách dưới **không còn áp dụng**
+> — engine tự chọn 1 KM giảm nhiều nhất. Đã **đo thật**: coupon `FIXED 50.000` thua auto-promo
+> `PERCENT 10% = 116.000` ⇒ backend chọn cái 116.000. Các loại *đồng giá / mua X tặng Y / combo /
+> flash sale* **vẫn không có** trong mô hình backend ⇒ ngoài phạm vi.
+>
+> **Một mô hình `promotion` gánh cả 3 vai** (đọc kỹ trước khi dựng UI):
+> `code = null` ⇒ **KM tự động** · `code` có giá trị + `customerId = null` ⇒ **coupon công khai** ·
+> `code` + `customerId` ⇒ **coupon cá nhân**. `branchId = null` ⇒ toàn chuỗi.
+>
+> **Giảm giá tay (Phase 11) và KM cộng dồn** — backend cộng cả hai vào `order_sale.discountAmount`,
+> cap ≤ `subtotal`. FE **không tự cộng lại**, đọc thẳng `discountAmount` header như quy ước cũ.
+
 
 **Thiết kế:** `16-khuyen-mai.png`.
 
@@ -2196,7 +2323,327 @@ cầu backend mở rộng).
 
 ---
 
-## Phase 15 — Ca làm việc (mở ca / chốt ca)
+
+### ✅ **ĐÃ XONG (2026-09-07)** — báo cáo cuối phase
+
+**File đã đổi:**
+
+| File | Việc |
+|---|---|
+| `src/types/promotion.ts` | **Viết lại toàn bộ** theo API thật (bản Phase 6 đoán sai gần hết) |
+| `src/api/promotion.ts` | **Viết lại**: `promotionApi` (6 hàm) + `couponApi` (2 hàm), gỡ hẳn nhánh mock |
+| `src/mocks/promotion.ts` | **Đã xoá** — type mock không còn tồn tại nên giữ lại là build fail |
+| `src/pages/promotion/PromotionListPage.tsx` | Màn danh sách: 3 thẻ thống kê · toolbar · bảng 9 cột · sort server |
+| `src/pages/promotion/components/promotion-form-dialog.tsx` | Form tạo/sửa, 3 nhóm field |
+| `src/pages/promotion/components/promotion-status-dialog.tsx` | Chuyển vòng đời, chỉ hiện bước hợp lệ |
+| `src/pages/promotion/components/coupon-generate-dialog.tsx` | Sinh mã hàng loạt + hiện danh sách mã |
+| `src/i18n/locales/{vi,en}/promotion.ts` | Namespace `promotion` (mới) |
+| `src/i18n/locales/{vi,en}/errors.ts` | 7 subKey `error.promotion.*` |
+| `src/i18n/index.ts` · `src/Router.tsx` | Đăng ký namespace · thay `Placeholder` bằng màn thật |
+
+**Đã kiểm thử thật** (Chrome headless + API thật, **dữ liệu test đã dọn về `ENDED`**):
+
+| Kịch bản | Kết quả |
+|---|---|
+| Danh sách + 3 thẻ thống kê | ✓ khớp mockup |
+| Tạo KM | ✓ hàng mới lên đầu, `Nháp`, "Tự động · Toàn chuỗi", 15% |
+| Chuyển trạng thái `DRAFT` | ✓ chỉ hiện đúng 3 bước hợp lệ (Sắp chạy/Đang chạy/Kết thúc) |
+| `DRAFT → RUNNING` | ✓ badge đổi + thẻ "Đang chạy" lên 1 (**chứng minh refetch vá được BE18**) |
+| Sinh mã hàng loạt | ✓ toast + dialog danh sách mã + bảng nạp lại |
+| Xuất CSV | ✓ tải file `coupons-2026-09-07.csv`, 106 dòng dữ liệu |
+| Lọc trạng thái + kênh | ✓ Online 104 + Tại quầy 5 = 109 |
+| Sort 9 field | ✓ **200 cả 9** (đã thử riêng bằng curl — không field nào gây 500) |
+| RBAC STAFF | ✓ menu ẩn + gõ thẳng `/promotions` → **403** |
+| RBAC ADMIN | ✓ có nút ghi, **không** có dropdown chi nhánh (backend ép chi nhánh mình) |
+| Empty state | ✓ "Chưa có chương trình khuyến mại nào" |
+| Số request khi vào màn | ✓ mỗi endpoint **đúng 1 lần** |
+| Responsive | ✓ 1024px và 390px đều **tràn ngang 0px** |
+
+**Quyết định kỹ thuật:**
+
+1. **Phân trang + sort phía SERVER** (khác màn Danh mục nạp trọn rồi cắt client): mỗi coupon là
+   **một dòng `promotion` riêng** nên sinh 5.000 mã ⇒ 5.000 dòng, nạp hết là không khả thi.
+   ⇒ 8 cột sort được đều khai `accessorKey` + `meta.sortField`, đẩy qua `toSearchSort`.
+2. **Thẻ thống kê đếm trên TRANG HIỆN TẠI**, không phải toàn bộ — `BaseListResponse` của promotion
+   **không có** `activeTotal`/`inactiveTotal` (khác staff/branch) và không có endpoint thống kê.
+   Gọi thêm 3 request chỉ để đếm là vi phạm rule "không gọi trùng API trong cùng màn".
+   ⇒ **Muốn số đúng toàn hệ thống phải xin backend** — xem **BE21**.
+3. **Dropdown chi nhánh chỉ hiện cho SUPER_ADMIN** — ADMIN bị backend ép về chi nhánh mình
+   (`error.promotion.branchForbidden`), bày ra là đánh lừa người dùng. Cùng lý lẽ đã áp ở Báo cáo.
+4. **Sau `update-status` luôn `reload()`** — API trả `data: null` (BE18), tin response là mất dữ liệu.
+
+**Lệch có chủ đích so với mockup `16-khuyen-mai.png`** (backend không có, không phải bỏ sót):
+
+- Mockup vẽ loại **"Mua X tặng Y"** ⇒ backend chỉ có `PERCENT`/`FIXED`. Không dựng UI cho loại không tồn tại.
+- Mockup có **icon thùng rác (xoá)** ⇒ **không có `DELETE /promotion/{id}`**. Thay bằng "Chuyển
+  trạng thái" (kết thúc KM = chuyển `ENDED`).
+- Mockup có kênh **"Tất cả"** ⇒ backend bắt buộc **đúng một** kênh. Bộ lọc vẫn có "Tất cả kênh"
+  (không gửi filter), nhưng **một KM không thể áp cho mọi kênh**.
+- **Thêm** dòng phụ "Hình thức · Chi nhánh" dưới tên chương trình — mockup không có, nhưng một bảng
+  `promotion` gánh **3 vai** (tự động / mã công khai / mã cá nhân) nên không phân biệt thì đọc bảng không hiểu.
+
+**Phần chưa làm (có lý do, không phải bỏ quên):**
+
+1. ⚠️ **Ô "Đối tượng áp dụng" là input id thô** khi `target !== ALL`. Backend nhận id cho 4 phạm vi
+   (PRODUCT/CATEGORY/BRAND/SKU) nhưng **không có API tra cứu chung** — mỗi phạm vi một endpoint.
+   Dựng `SearchSelect` đổi nguồn theo `target` là việc thật nhưng **vượt phạm vi một phase**;
+   hiện mặc định `ALL` (dùng được ngay, không cần gõ id). ⇒ **Cần chốt với user** có làm không.
+2. **Chưa nối KM vào màn POS** — `couponCode` đã có trong `CreateOrderReqDTO`/`CartPreviewReqDTO` và
+   `CartPreviewResDTO` đã trả `promotionDiscount`, nhưng **ô nhập mã giảm giá ở POS thuộc Phase 11**
+   (mockup `03-pos-ban-hang.png`), không phải mockup `16`. ⇒ Đề xuất làm ở lần rà Phase 16, kèm
+   **cảnh báo mã sai** (backend trả `applied:false` im lặng — xem BE22).
+3. **Không dựng UI cho `customerId`** (coupon cá nhân): cần bộ chọn khách, và chưa có mockup mô tả
+   luồng phát mã cho khách cụ thể. Type + API đã sẵn sàng, chỉ thiếu UI.
+4. **109 bản ghi KM test còn trong DB** ở trạng thái `ENDED` — backend **không có API xoá** nên
+   không dọn sạch được. Đã kiểm chứng **hoàn toàn vô hại**: `cart/preview` cả POS lẫn ONLINE đều trả
+   `promotionDiscount: 0`. Muốn xoá phải xoá trực tiếp dưới DB.
+
+---
+
+### Cập nhật sau review của user (2026-09-07) — 2 quy ước mới + rà lại toàn hệ thống
+
+User rà màn Khuyến mại và chốt thêm **2 luật chung**, kèm yêu cầu áp ngược lại mọi màn đã làm.
+
+**① Bỏ 3 thẻ thống kê "Đang chạy / Sắp chạy / Đã kết thúc"** khỏi màn Khuyến mại.
+Số này vốn chỉ đếm được **trên trang hiện tại** (backend không trả `activeTotal`/`inactiveTotal`
+cho promotion — xem **BE21**) nên vừa tốn chỗ vừa dễ gây hiểu nhầm. ⇒ Gỡ luôn cả `stats` và nhóm
+i18n `promotion.stats`. **BE21 vẫn giữ** trong danh sách chờ backend: có số đếm đúng thì bàn lại.
+
+**② Sửa lệch CSS ô "Giảm tối đa"** trong modal Tạo khuyến mại. Nguyên nhân: ô này có
+`FormDescription` mà ô "Giá trị đơn tối thiểu" cùng hàng lưới không có ⇒ 2 ô lệch chiều cao, đẩy
+hàng bên dưới lệch theo. ⇒ Chú thích tách khỏi `FormItem`, đặt thành dòng riêng **dưới cả hàng**.
+
+**③ CONVENTIONS mục 5.3 (mới) — cột THAO TÁC luôn có nút "Chi tiết", phần còn lại vào `(...)`.**
+Luật này thực ra đã chốt từ 2026-08-08 (xem "Cập nhật lần 2" ở Phase 7) nhưng **chỉ ghi trong PLAN**,
+nên các màn làm sau trôi mỗi nơi một kiểu. Nay viết hẳn vào CONVENTIONS.
+⚠️ Điểm mới so với bản 2026-08-08: **nút "Chi tiết" không gate theo quyền** (xem là quyền thấp nhất),
+chỉ các mục *trong* `(...)` mới gate — và `(...)` **tự ẩn khi rỗng**.
+
+**④ Rà lại toàn bộ bảng theo mục 5.3** — 7 bảng, **3 bảng vi phạm** đã sửa:
+
+| Màn | Trước | Sau |
+|---|---|---|
+| **Khuyến mại** | ✏️ Sửa + `(...)`; **không có Chi tiết** | 👁 Chi tiết + `(...)`{Sửa, Chuyển trạng thái} |
+| **Danh mục SP** | ✏️ Sửa + `(...)`; **không có Chi tiết** | 👁 Chi tiết + `(...)`{Sửa, Bật/tắt, Xoá} |
+| **Phiếu kho** | 👁 + Gửi duyệt + Duyệt + Từ chối — **tối đa 4 nút** trên cột | 👁 Chi tiết + `(...)`{Gửi duyệt, Duyệt, Từ chối} |
+| **Đơn hàng** | 👁 + 🖨 In hoá đơn (2 nút) | 👁 Chi tiết + `(...)`{In hoá đơn} |
+| Khách hàng · Nhân viên · Nhật ký | ✅ đã đúng sẵn | không đổi |
+| Sản phẩm | **card grid, không phải bảng** ⇒ ngoài phạm vi (mục 5.3 ghi rõ) | không đổi |
+
+**File mới:** `promotion-detail-modal.tsx` · `category-detail-modal.tsx` — cả hai **chỉ đọc**
+(`canEdit: false`), không inline edit như modal Nhân viên/Khách hàng. Lý do: form 2 màn này có
+**field phụ thuộc lẫn nhau** (`targetId` chỉ hiện khi `target !== ALL`; `maxDiscount` chỉ có nghĩa
+khi `type === PERCENT`; ô danh mục cha cần `SearchSelect` loại chính nó khỏi danh sách) mà
+`DetailModal` render field phẳng nên không diễn tả được ⇒ Sửa vẫn đi qua form dialog trong `(...)`.
+`DetailModal.onSave` vì vậy đổi thành **optional**.
+
+🐞 **Bug phát hiện khi rà:** nút In hoá đơn ở **danh sách** Đơn hàng **thiếu điều kiện `PAID`** —
+user đã chốt 2026-08-21 là chỉ in được khi đã thu tiền, dialog chi tiết chặn đúng nhưng danh sách
+thì không. Đã thêm `disabled` + hiện lý do (`order.detail.printBlocked`) ngay trong menu.
+
+**⑤ CONVENTIONS mục 5.4 (mới) — ngày `dd/MM/yyyy`, có giờ thì `HH:mm:ss dd/MM/yyyy`.**
+
+**⑥ Rà lại toàn hệ thống theo mục 5.4:**
+
+- `formatDateTime()` đổi từ `dd/MM/yyyy HH:mm` ⇒ **`HH:mm:ss dd/MM/yyyy`**. Mọi màn đều gọi qua
+  helper này nên sửa **một chỗ** là xong: Đơn hàng · Phiếu kho · Nhật ký · Dashboard · các modal chi tiết.
+  `formatInvoiceDateTime` nay **trùng hệt** ⇒ giữ lại làm alias cho `print-invoice.ts`.
+- ⚠️ **`<Input type="date">` bị cấm** — nó hiển thị theo **locale máy người dùng** (máy tiếng Anh ra
+  `mm/dd/yyyy`), **không** ép được bằng CSS hay thuộc tính HTML. Thay bằng
+  **`src/components/date-input.tsx`** (`DateInput`): ô text gõ `dd/MM/yyyy` tự chèn dấu `/`, chặn ký
+  tự không phải số, **loại ngày không có thật** (31/02 ⇒ trả rỗng), kèm nút lịch (Popover + `Calendar`).
+  **Giá trị `value`/`onChange` vẫn là `yyyy-MM-dd`** nên payload gửi API không phải đổi.
+- Đã thay ở **6 ô** `type="date"`: Khách hàng (`dob`) · Nhân viên (`dob`) · Khuyến mại (2 ô) ·
+  Báo cáo (picker kép). Cộng thêm `DetailModal` — field `type: 'date'` trước đây render thẳng
+  `<Input type="date">`, nay dùng `DateInput`.
+- Picker kép của Báo cáo có 2 ô **chung một khung viền** nên không lồng `<DateInput>` (có viền riêng)
+  vào được ⇒ tách phần logic gõ thành hook **`useDateTyping`** ở `src/lib/date-input-format.ts`.
+- **File mới:** `src/components/ui/calendar.tsx` (shadcn) + `react-day-picker`.
+  ⚠️ **`npx shadcn add calendar` đã ghi đè `button.tsx`** — làm mất fix `bg-card` (CONVENTIONS mục 5)
+  **và** sinh import hỏng (`from "cn"`, `from "radix-ui"`). Đã `git checkout` trả lại `button.tsx`
+  và sửa tay import của `calendar.tsx`. **Lần sau chạy `npx shadcn add` phải kiểm tra `git diff`
+  ngay sau đó**, đừng tin CLI chỉ đụng file mình xin.
+
+**Đã kiểm thử thật** (Chrome headless, API thật): 3 thẻ đã biến mất ✓ · ô "Giảm tối đa" hết lệch ✓ ·
+7/7 bảng đúng pattern 👁+`(...)` ✓ · modal chi tiết mở được, hiện `23:30:56 07/09/2026` ✓ ·
+**0 ô `input[type=date]` còn sót trên toàn app** ✓ · gõ `25122026` ⇒ `25/12/2026` ✓ ·
+gõ `31/02/2026` ⇒ ô trả rỗng ✓ · popover lịch mở ✓ · phiếu "Đã duyệt" ẩn `(...)`, "Chờ duyệt" hiện ✓ ·
+lint 0 lỗi, build sạch.
+
+---
+
+
+### Cập nhật sau review của user (2026-09-08) — đơn vị tiền tệ & ngăn cách hàng nghìn
+
+User hỏi *"Giá trị đơn tối thiểu và tối đa có phải đơn vị là đ không?"* — **đúng, cả hai là VNĐ**,
+nhưng UI cũ **không ghi đơn vị ở đâu cả**: ô trống chỉ có placeholder *"Để trống nếu không yêu cầu"*,
+người dùng không đoán được là **đồng** hay **nghìn đồng**. Nhập `50` để định giảm 50.000đ thì hệ
+thống hiểu là **50 đồng** — sai âm thầm, không có gì cảnh báo.
+
+**CONVENTIONS mục 5.5 (mới)** — 3 tầng tách bạch:
+
+| Tầng | Định dạng | Công cụ |
+|---|---|---|
+| Hiển thị (bảng, modal, hoá đơn) | `1.500.000đ` | `formatVnd()` |
+| **Ô nhập** | `1.500.000` + hậu tố **`đ`** trong ô | **`MoneyInput`** (mới) |
+| **Gửi backend** | **`1500000`** — số thuần | `Number(value)` |
+
+**File mới:** `src/components/money-input.tsx` + `src/lib/money-input-format.ts`.
+
+⚠️ **`<Input type="number">` không dùng được cho ô tiền**: trình duyệt coi mọi ký tự không phải số
+là giá trị rỗng ⇒ **không thể chèn dấu ngăn cách**. `MoneyInput` là input text tự kiểm soát hiển thị,
+`value`/`onChange` là **chuỗi chữ số thuần** nên payload gửi API không đổi.
+
+⚠️ **Dấu `.` trong tiếng Việt là ngăn cách hàng nghìn, KHÔNG phải dấu thập phân** ⇒ `parseMoneyInput`
+bỏ hẳn dấu chấm: `1.500` là *một nghìn năm trăm*. Tiền VNĐ không có phần lẻ.
+
+**Đã áp cho 8 ô tiền:**
+
+| Màn | Ô |
+|---|---|
+| Khuyến mại (form) | Mức giảm *(chế độ `đ`)* · Giá trị đơn tối thiểu · Giảm tối đa |
+| Sinh mã coupon | Mức giảm *(chế độ `đ`)* · Giá trị đơn tối thiểu |
+| Sản phẩm (form) | Giá bán · Giá vốn |
+| POS | Chiết khấu dòng *(chế độ `₫`)* · Chiết khấu cả đơn *(chế độ `₫`)* · Phí giao hàng |
+
+**Nhãn thêm đơn vị `(đ)`**: *Giá trị đơn tối thiểu (đ)* · *Giảm tối đa (đ)* · *Giá bán (đ)* ·
+*Giá vốn (đ)*.
+⚠️ **Chỉ thêm ở khối `form`**, KHÔNG thêm ở khối `detail`/header bảng — chỗ đó giá trị đã qua
+`formatVnd()` (đã kèm `đ`), thêm nữa thành *"Giá bán (đ): 500.000đ"*.
+
+**Ô `%` KHÔNG dùng `MoneyInput`** — giá trị ≤ 100, có thể có phần lẻ, không cần ngăn cách hàng nghìn.
+Giữ `<Input inputMode="decimal">` nhưng **vẫn thêm hậu tố `%`**. Ô POS đổi đơn vị theo nút gạt
+`%` ↔ `₫` nên component cũng đổi theo (`MoneyInput` khi `₫`, `Input` khi `%`).
+
+**Ô số lượng KHÔNG áp rule này** (SL phiếu kho, kiểm kê, thứ tự danh mục) — số nhỏ, không phải tiền,
+giữ `type="number"` để còn dùng nút tăng/giảm của trình duyệt.
+
+⚠️ **Cạm bẫy `costPrice` vẫn an toàn**: `0` phải khác rỗng (`0` là giá vốn hợp lệ, bỏ trống nghĩa là
+*giữ nguyên*). `parseMoneyInput` trả `'0'` chứ không phải `''` nên nhánh `trim() === ''` ở `onSubmit`
+vẫn phân biệt đúng — đã kiểm tra trước khi đổi.
+
+**Đã kiểm thử thật** (Chrome headless): nhãn hiện `(đ)` ✓ · gõ `1500000` ⇒ hiện **`1.500.000`** ✓ ·
+hậu tố `đ`/`%` hiện đúng theo loại ✓ · ký tự không phải số bị lọc ✓ · **payload bắt được trên
+tab Network: `"minAmount":15000001234` — số thuần, không dấu chấm** ✓ · POS chiết khấu chế độ `₫`
+⇒ `50.000`, chế độ `%` ⇒ giữ `50000` (đúng, % không ngăn cách) ✓ · 0 ô `input[type=number]` còn sót
+ở form Sản phẩm ✓ · lint 0 lỗi, build sạch.
+
+---
+
+
+### Rà soát FE sau khi backend xử lý yêu cầu truy vết KM (2026-09-08)
+
+Backend đã làm xong cả 3 mục của
+[`docs/handoff/promotion-order-traceability-request.md`](docs/handoff/promotion-order-traceability-request.md).
+FE **đã kiểm chứng bằng API thật** (không tin tài liệu) rồi mới nối UI.
+
+**Kiểm chứng backend — 7/7 PASS:**
+
+| # | Kiểm tra | Kết quả đo thật |
+|---|---|---|
+| 1 | `OrderResDTO` có 3 field | ✅ `promotionId/Name/Code` |
+| 2 | `InvoiceResDTO` có 3 field | ✅ |
+| 3 | `OrderSearchReqDTO.promotionId` | ✅ lọc đúng 1 đơn |
+| 4 | Mã sai ở `cart/preview` | ✅ **`400 error.promotion.codeInvalid`** (trước đây `200` im lặng) |
+| 5 | Mã hợp lệ | ✅ `promotionDiscount 100.000`, `totalAmount 1.200.000` |
+| 6 | Tạo đơn kèm mã | ✅ `discountAmount 100.000` + đủ 3 field truy vết |
+| 7 | `POST /order/search` | ⚠️ trả **`null`** cho 3 field — **đúng thiết kế** (tránh N+1), không phải bug |
+
+**FE đã làm:**
+
+| File | Việc |
+|---|---|
+| `types/order.ts` | `Order`/`Invoice` + 3 field truy vết · `CartPreview` + `promotionDiscount`/`promotionId`/`Name`/`Code` · `CreateOrderReq`/`CartPreviewReq` + `couponCode` (+ `channel` cho preview) · `OrderSearchReq` + `promotionId` |
+| `contexts/cart-context.ts` · `CartProvider.tsx` | State `couponCode` + `setCouponCode`, **tự chuẩn hoá `trim().toUpperCase()`** (backend so mã phân biệt hoa/thường) |
+| `pos/components/cart-panel.tsx` | **Ô nhập mã giảm giá** (Áp dụng / Bỏ mã, Enter để áp) · dòng **"Khuyến mại · <tên KM> −xxx"** trong khối tổng · gửi `channel: POS` + `couponCode` khi preview |
+| `pos/components/checkout-dialog.tsx` | Gửi `channel` + `couponCode` ở **cả** preview lẫn `POST /order` |
+| `orders/components/print-invoice.ts` | Dòng **"Khuyến mại: Tên (MÃ)"** trên hoá đơn in |
+| `pos/components/order-receipt-dialog.tsx` · `orders/components/order-detail-dialog.tsx` | Dòng KM tương ứng |
+| `i18n/{vi,en}/order.ts` · `errors.ts` | Key ô nhập mã, dòng KM, và `error.promotion.codeInvalid` |
+
+**Quyết định kỹ thuật:**
+
+1. ⚠️ **Mã sai làm hỏng CẢ request `cart/preview`** (backend trả 400 cho toàn bộ lời gọi) ⇒ gõ sai
+   1 ký tự là **mất luôn khối tính tiền**. FE bắt riêng `subKey === 'error.promotion.codeInvalid'`,
+   **giữ nguyên `preview` cũ**, chỉ bôi đỏ ô mã — nhân viên vẫn thấy tổng tiền để bán tiếp.
+2. **Ô mã chỉ gọi API khi bấm "Áp dụng"** (hoặc Enter), không gọi theo từng ký tự gõ — tránh spam
+   `cart/preview` và tránh nháy lỗi đỏ khi mới gõ được nửa mã.
+3. **`channel: POS` phải gửi kèm** ở preview: KM khai `channel: POS` **không áp** cho đơn ONLINE,
+   mà `CartPreviewReqDTO` mặc định `ONLINE` ⇒ không gửi thì giỏ POS mất KM của quầy.
+4. **Dòng KM là diễn giải, KHÔNG phải khoản trừ thêm** — `promotionDiscount` đã nằm trong
+   `discountAmount` của backend. Cộng lại lần nữa là trừ hai lần.
+5. **Không dựng cột KM ở bảng Đơn hàng** — `POST /order/search` trả `null` cho 3 field.
+
+🐞 **2 bug tự phát hiện khi rà và đã sửa:**
+
+- **Thiếu `couponCode` trong dep array** của effect preview (`cart-panel`) và của `useCallback`
+  submit (`checkout-dialog`) ⇒ áp mã xong không gọi lại preview, và đơn tạo ra dùng **mã cũ**
+  (stale closure). ESLint `exhaustive-deps` bắt được.
+- **Ô mã không rỗng sau khi tạo đơn / xoá giỏ** — `couponDraft` là state cục bộ của `CartPanel`,
+  `clear()` chỉ reset context. Hệ quả: **đơn kế tiếp vô tình dùng lại mã của khách trước**.
+  Đã thêm effect đồng bộ `couponDraft` theo `couponCode`.
+
+**Đã kiểm thử UI thật** (Chrome headless): ô mã hiện đúng ✓ · mã sai ⇒ báo "Mã không hợp lệ" tại ô
+**và giỏ vẫn giữ tổng tiền** ✓ · mã đúng ⇒ dòng *"Khuyến mại · RS Coupon −100.000đ"*,
+tổng `500.000 → 400.000` ✓ · payload `POST /order` có `"couponCode":"RSENUJNQ65"` ✓ ·
+phiếu sau khi tạo đơn hiện *"Khuyến mại: RS Coupon (RSENUJNQ65)"* ✓ · xoá giỏ ⇒ ô mã rỗng ✓ ·
+lint 0 lỗi, build sạch. **Dữ liệu test đã dọn** (đơn đã huỷ, coupon đã `ENDED`, tồn đã hoàn).
+
+**Phần chưa làm:** ô nhập `promotionId` để lọc đơn theo chương trình (BE23 mục 3.3) — backend đã cấp
+nhưng **chưa có chỗ nào trên UI cần**; sẽ làm khi có màn báo cáo hiệu quả KM. Coupon cá nhân
+(`customerId`) vẫn chưa có UI phát mã cho khách cụ thể.
+
+---
+
+### ✅ Rà soát đóng Phase 14 theo checklist CONVENTIONS mục 10 (2026-09-08)
+
+| # | Hạng mục | Kết quả |
+|---|---|---|
+| 1 | DTO/endpoint khớp api-docs | ✅ **5/5 DTO đủ field** (`PromotionResDTO` 21 · `CouponGenerateReqDTO` 15 · `CreatePromotionReqDTO` 15 · `PromotionSearchReqDTO` 5 · `PromotionResultDTO` 5) |
+| 2 | Chiến lược auth | ✅ không đụng tới |
+| 3 | `subKey` → i18n | ✅ 8 key `error.promotion.*` (7 + `codeInvalid`) ở cả vi/en |
+| 4 | Gọi qua api-client chung | ✅ không có `fetch`/`axios` trực tiếp |
+| 5 | UI/UX · i18n · loading/empty/error | ✅ **i18n cân bằng 136/136 key**; đủ 4 trạng thái |
+| 5.1 | Ghi xong nạp lại, giữ ngữ cảnh | ✅ 4/4 mutation đều `await reload()` |
+| 5.2 | Reload · bật/tắt cột · sort server | ✅ đủ 3; **8 cột sort đều là field thật** (curl 9/9 → 200), cột thao tác `enableSorting: false` |
+| 6 | Bám `design/` · route theo role | ✅ `RoleRoute minRole={ADMIN}`; STAFF gõ thắng ⇒ 403 |
+| 7 | Không `any` · không hardcode · lint/build sạch | ✅ sau khi sửa 1 vi phạm dưới đây |
+| 8 | Tài liệu đã cập nhật | ✅ CLAUDE.md · CONVENTIONS.md (mục 5.3/5.4/5.5) · PLAN.md |
+
+🐞 **1 vi phạm tìm được và đã sửa**: `date-input.tsx:95` hardcode `aria-label="Chọn ngày"` —
+vi phạm luật "mọi text hiển thị đi qua i18n" (CONVENTIONS mục 5). Đã chuyển sang
+`t('action.pickDate')` + thêm key vào `common.ts` cả 2 ngôn ngữ. Đo lại: chuyển EN ⇒ `"Pick a date"` ✓.
+
+**Kiểm tra chạy thật lần cuối**: đổi ngôn ngữ sang EN, quét toàn bộ form KM ⇒ chỉ còn
+*"Chi nhánh Trung tâm"*, *"HN - Hoàn Kiếm"* (**tên chi nhánh từ DB**, không dịch được) và ký hiệu
+`đ` (đúng — hệ thống chỉ bán ở VN) ⇒ **không có chuỗi nào chưa i18n**.
+Responsive 1024px & 390px **tràn ngang 0px**; 0 lỗi console; lint 0 lỗi; build sạch.
+**Dữ liệu test đã dọn**: 0 KM `RUNNING`, `cart/preview` về giá gốc.
+
+⇒ **PHASE 14 ĐỦ ĐIỀU KIỆN ĐÓNG.**
+
+⚠️ **4 việc ngoài phạm vi trước đây chưa được xếp vào phase nào** — đã xếp lịch khi đóng phase:
+
+| Việc | Xếp vào | Vì sao |
+|---|---|---|
+| Ô lọc `promotionId` | **Phase 16** mục ④ | FE tự làm được, không cần mockup mới |
+| A11y/i18n `MoneyInput`/`DateInput` | **Phase 16** mục ④ + "Rà a11y" | Component mới, rà chung với toàn hệ thống |
+| Bộ chọn `targetId` · UI coupon cá nhân | **Phase 17** | Để cuối — backend đáp ứng sau (user chốt 2026-09-08) |
+| Màn Quản lý giá (**BE20**) | ❌ **KHÔNG LÀM** | User chốt 2026-09-08 — giá vẫn dùng `product.price` |
+
+**BE21** (số đếm theo trạng thái) vẫn nằm ở bảng "Việc chờ backend" — không thuộc phase nào của FE.
+
+---
+
+## Phase 15 — Ca làm việc (mở ca / chốt ca) ⛔ **BỊ CHẶN — backend chưa có API** *(rà soát 2026-09-07)*
+
+> ⛔ **Điều kiện khởi động — chưa đủ (2026-09-07).** Không có entity `WorkShift` trong `domain/`,
+> **0 endpoint** khớp `shift` trên 100 path. `EShiftStatus` chỉ là **file enum lẻ** chưa ai dùng.
+> `OrderResDTO.shiftId` có sẵn field nhưng luôn `null`. Xem **BE19**.
+>
+> ℹ️ **Không cần giục backend** — họ xếp việc này ở **P10, ưu tiên #11, "sau khi có mặt bằng
+> cửa hàng"**, đúng với bối cảnh bán online tại nhà hiện tại (chưa có quầy thì chưa cần ca).
+
 
 **Thiết kế:** `02-pos-mo-ca.png` *(màn chốt ca chưa có mockup)*.
 
@@ -2251,6 +2698,17 @@ cầu backend mở rộng).
 > Rủi ro nếu bỏ qua: nhân viên giảm giá tuỳ ý không ai kiểm soát. Mức độ nghiêm trọng tuỳ quy mô
 > đội bán hàng — hiện đội mỏng nên chấp nhận được, cần xem lại khi mở cửa hàng/tuyển thêm người.
 
+> **④ Hai việc còn lại của Khuyến mại** *(hoãn từ Phase 14, 2026-09-08)*
+>
+> Cả hai **không bị chặn** — backend đã cấp đủ API, chỉ là chưa có nhu cầu thực tế nên không làm
+> trong phạm vi Phase 14:
+>
+> - **Ô lọc `promotionId` ở màn Đơn hàng** — `OrderSearchReqDTO.promotionId` đã có (BE23 mục 3.3,
+>   đo thật lọc đúng). Dùng để trả lời *"những đơn nào đã dùng chương trình X"*.
+>   ⚠️ **Phụ thuộc BE21**: chưa có số đếm theo trạng thái thì màn báo cáo hiệu quả KM cũng chưa đủ dữ liệu.
+> - **A11y/i18n của `MoneyInput`/`DateInput`** — 2 component mới của đợt 2026-09-07/08, cần rà chung
+>   với toàn hệ thống ở mục "Rà a11y" bên dưới (đã sửa 1 hardcode `aria-label` khi đóng Phase 14).
+
 > **③ Kiểm chứng sort phía server trên backend đang chạy** *(phát sinh 2026-08-28 khi làm
 > CONVENTIONS mục 5.2)*
 >
@@ -2269,6 +2727,33 @@ cầu backend mở rộng).
 - **Rà soát devDependency dùng để test thủ công qua các phase** (ví dụ `puppeteer-core` — cài từ
   Phase 7 để agent tự chạy UI thật qua trình duyệt headless, dùng Chrome hệ thống có sẵn nên không
   tự tải Chromium) — gỡ nếu không còn dùng, giữ lại nếu vẫn cần cho việc phát triển tiếp.
+
+---
+
+## Phase 17 — Mở rộng Khuyến mại ⏸️ **ĐỂ CUỐI — backend đáp ứng sau**
+
+> **Phase mới, lập 2026-09-08** khi đóng Phase 14. **User chốt: xếp vào nhóm phase cuối.**
+>
+> ⚠️ **Không chặn gì** — hệ thống chạy đủ mà không cần phase này. Đừng ưu tiên trước
+> Phase 13/15/16.
+
+| Việc | Hiện trạng | Chờ gì |
+|---|---|---|
+| **Bộ chọn "Đối tượng áp dụng"** (`targetId`) | Đang là **ô nhập id thô** khi `target ≠ ALL`; mặc định `ALL` nên **dùng được ngay** | Backend không có API tra cứu chung — mỗi phạm vi một endpoint ⇒ cần `SearchSelect` **đổi nguồn theo `target`** |
+| **Coupon cá nhân** (`customerId`) | Type + API đã sẵn, **chưa có UI** | Chưa rõ nghiệp vụ phát mã cho khách cụ thể (phát tay từng khách? sinh hàng loạt rồi gán?) ⇒ **hỏi user** |
+| **3 thẻ thống kê KM** | Đã **gỡ bỏ** (user chốt 2026-09-07) vì chỉ đếm được trang hiện tại | **BE21** — có số đúng thì bàn lại có dựng lại không |
+
+> ### ❌ **Màn Quản lý giá — KHÔNG LÀM** *(user chốt 2026-09-08)*
+>
+> Backend Phase 8 đã cấp 5 endpoint (`/price/**` + `/price-change-log/search`) nhưng **user quyết
+> định không làm màn này** ⇒ nhóm API trên **cố ý bỏ trống**, không phải thiếu sót.
+>
+> Giá bán tiếp tục dùng **`product.price`** (sửa ở form Sản phẩm), backend tự fallback khi
+> `sku_price` rỗng ⇒ **không phải đổi gì ở FE**.
+>
+> Hệ quả chấp nhận: không đặt được giá riêng theo kênh · không lên lịch đổi giá · không điều
+> chỉnh giá hàng loạt · **không có lịch sử đổi giá** (sửa là ghi đè). Cần lại thì mở lại phase này.
+
 
 ---
 

@@ -47,7 +47,16 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**, **2026-08-29**
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**, **2026-08-29**, **2026-09-07**
+
+> **Khảo sát lại 2026-09-07:** backend lên **100 path** (+12). Hai domain mới:
+> **Khuyến mại** (`/promotion/**` 5 + `/coupon/**` 2) và **Quản lý giá** (`/price/**` 3 +
+> `/price-change-log/search`). Entity mới: `Promotion`, `PromotionLog`, `SkuPrice`, `PriceChangeLog`.
+> Nguồn: `docs/api/khuyen-mai-p9.md` · `docs/api/quan-ly-gia-p8.md`. Xem mục
+> "Domain Khuyến mại & Coupon" ở cuối phần này.
+>
+> ⚠️ **Vẫn KHÔNG có** API đổi/trả (`refund|return|exchange`: 0 path) và ca làm việc
+> (`shift`: 0 path) ⇒ **Phase 13 và 15 vẫn bị chặn**.
 
 > **Khảo sát lại 2026-08-29 (lần 2 — backend đã làm xong Phase 7):** backend lên **88 path**
 > (+5). ⚠️ **Ghi chép buổi sáng cùng ngày ("vẫn 83 path, Phase 12 bị chặn") KHÔNG CÒN ĐÚNG** —
@@ -873,6 +882,104 @@ riêng), khuyến mại, ca làm việc (shift), giá theo kênh ⇒ Phase 13/14
 Ngoài bậc role, backend còn **tự giới hạn phạm vi dữ liệu** (ghi trong `description` từng endpoint):
 ADMIN chỉ thấy/tạo nhân viên chi nhánh mình và chỉ gán được role STAFF; điều chuyển chi nhánh chỉ SUPER_ADMIN.
 FE vẫn phải chặn ở UI nhưng **không được coi đó là lớp bảo mật duy nhất**.
+
+### Domain Khuyến mại & Coupon — **MỚI 2026-09-07** (100 path), đã kiểm thử API thật
+
+> Nguồn: `35.1.eloria-backend/docs/api/khuyen-mai-p9.md`. FE đã chạy thử end-to-end
+> (tạo KM → RUNNING → preview → cart/preview → coupon generate/export), dữ liệu test **đã dọn sạch**.
+
+| Nhóm | Role tối thiểu | Endpoint |
+|---|---|---|
+| Đọc KM | `STAFF` | `POST /promotion/search` · `GET /promotion/{id}` |
+| Thử áp KM cho giỏ | `STAFF` | `POST /promotion/preview` |
+| Ghi KM | `ADMIN` | `POST /promotion` · `PUT /promotion/{id}` · `POST /promotion/{id}/update-status` |
+| Coupon | `ADMIN` | `POST /coupon/generate` · `GET /coupon/export` (CSV) |
+
+**MVP: chỉ `PERCENT`/`FIXED`, KHÔNG chồng KM — best-one-wins, mỗi đơn tối đa 1 KM.**
+Engine chọn đúng 1 KM giảm nhiều nhất trong số KM tự động + coupon nhập.
+Đo thật: coupon `FIXED 50.000` **thua** auto-promo `PERCENT 10% = 116.000`.
+
+**Một bảng `promotion` gánh 3 vai** — đọc kỹ trước khi dựng UI:
+`code = null` ⇒ **KM tự động** · `code` + `customerId = null` ⇒ **coupon công khai** ·
+`code` + `customerId` ⇒ **coupon cá nhân**. `branchId = null` ⇒ toàn chuỗi.
+
+⚠️ **`status` của KM là lifecycle enum `DRAFT|SCHEDULED|RUNNING|PAUSED|ENDED`, KHÔNG phải `0/1`**
+— khác hẳn quy ước `EStatus` của mọi module trước. `PromotionSearchReqDTO` có **cả hai** field:
+`status` (integer 0/1) **và** `promotionStatus` (enum) ⇒ lọc theo vòng đời phải dùng
+**`promotionStatus`**, dùng nhầm `status` sẽ ra kết quả vô nghĩa.
+**Không có xoá mềm, không có `DELETE`** — kết thúc KM = chuyển sang `ENDED`.
+Tạo mới luôn ra `DRAFT`, phải `update-status` sang `RUNNING` mới có hiệu lực.
+Chuyển hợp lệ: `DRAFT→SCHEDULED|RUNNING|ENDED` · `SCHEDULED→RUNNING|PAUSED|ENDED` ·
+`RUNNING→PAUSED|ENDED` · `PAUSED→RUNNING|ENDED`; sai ⇒ `error.promotion.invalidStatus`.
+
+⚠️ **`POST /promotion/{id}/update-status` trả `data: null`** dù api-docs khai `PromotionResDTO`
+(đo thật). Trạng thái **có lưu đúng** (`GET` lại thấy `RUNNING`) ⇒ **bắt buộc refetch** sau khi đổi
+trạng thái, tuyệt đối không gán response vào state.
+
+⚠️ **Mã sai ⇒ `400 error.promotion.codeInvalid`** *(backend bổ sung 2026-09-08 theo yêu cầu của FE;
+trước đó bị **nuốt im lặng** — ghi chép cũ "coupon sai không báo lỗi" **không còn đúng**)*.
+Chỉ nổ khi **có gửi** `couponCode` mà mã không dùng được (không tồn tại / sai kênh / sai chi nhánh /
+ngoài khung thời gian / chưa đủ `minAmount` / hết lượt). Không gửi mã ⇒ giữ nguyên hành vi cũ
+(im lặng áp KM tự động). Mã **hợp lệ nhưng thua** best-one-wins một KM khác thì **không** bị coi là sai.
+Kiểm chứng ở cả 4 endpoint: `POST /order`, `PUT /order/{id}`, `cart/preview`, `promotion/preview`.
+
+⚠️ **Lỗi này làm hỏng CẢ request `cart/preview`** ⇒ gõ sai 1 ký tự là mất luôn khối tính tiền của giỏ.
+FE vì vậy bắt riêng `subKey === 'error.promotion.codeInvalid'`, **giữ nguyên `preview` cũ** và chỉ bôi đỏ
+ô mã (xem `cart-panel.tsx#couponError`) — nhân viên vẫn thấy tổng tiền để bán tiếp.
+
+**Truy vết KM trên đơn** *(bổ sung 2026-09-08)*: `OrderResDTO` và `InvoiceResDTO` nay có
+**`promotionId` · `promotionName` · `promotionCode`** ⇒ hoá đơn nói được **giảm vì đâu**.
+`OrderSearchReqDTO.promotionId` lọc "các đơn đã dùng chương trình X".
+⚠️ **`POST /order/search` trả `null`** cho cả 3 field (backend cố ý không join `promotion_log` ở danh
+sách để tránh N+1) ⇒ **không dựng cột KM ở bảng Đơn hàng**, chỉ hiện ở dialog chi tiết/hoá đơn.
+
+⚠️ **`GET /coupon/export` trả `text/csv` thuần, KHÔNG bọc `BaseResponse`** ⇒ phải dùng
+`apiClient.getBlob()` (giống `sku/{id}/barcode` và `bank-account/order/{id}/qr`); `get()` sẽ hỏng vì
+`unwrap` đọc `body.code`. `POST /coupon/generate` thì bọc bình thường, trả mảng chuỗi mã
+(`{total, data: string[]}`), `count` ≤ 5000, mỗi mã = `codePrefix` + 8 ký tự ngẫu nhiên,
+sinh ra đã ở `status = RUNNING` (**khác** KM thường sinh ra `DRAFT`).
+
+**Tích hợp bán hàng** — `CreateOrderReqDTO` và `CartPreviewReqDTO` có thêm **`couponCode`**;
+`CartPreviewResDTO` trả thêm **`promotionDiscount` · `promotionId` · `promotionName` ·
+`promotionCode`**. Đo thật giỏ 2×`SP006-NV-QU-32` kênh POS với KM `ALL 10%`:
+`subtotal 1.160.000` · `promotionDiscount 116.000` · `totalAmount 1.044.000`.
+KM và **giảm giá tay (2 tầng) cộng dồn**, backend gộp cả hai vào `order_sale.discountAmount`,
+cap ≤ `subtotal` ⇒ **FE không tự cộng lại**, đọc thẳng `discountAmount` header như quy ước cũ.
+`PUT /order/{id}` (đơn PENDING) tự `release` KM cũ rồi áp lại; `/cancel` cũng `release` (hoàn quota).
+
+**Branch scope:** non-SUPER_ADMIN **đọc** được KM toàn chuỗi + KM chi nhánh mình; **ADMIN tạo/sửa
+chỉ chi nhánh mình** (truyền `branchId` khác ⇒ `error.promotion.branchForbidden`).
+Đo thật RBAC: STAFF `POST /promotion` ⇒ **403**, STAFF `search` ⇒ **200**, ADMIN tạo ⇒ **200**.
+
+subKey lỗi: `error.promotion.{notExisted, codeExisted, invalidValue, targetRequired, invalidDate,
+invalidStatus, branchForbidden}`.
+
+### Domain Quản lý giá (`sku_price`) — **MỚI 2026-09-07**, chưa có phase FE
+
+> Nguồn: `35.1.eloria-backend/docs/api/quan-ly-gia-p8.md`.
+>
+> ❌ **USER CHỐT 2026-09-08: KHÔNG LÀM màn Quản lý giá.** Nhóm API này **cố ý bỏ trống**, không
+> phải thiếu sót — **đừng tự dựng màn cho nó**. Giá bán tiếp tục dùng **`product.price`** (sửa ở form
+> Sản phẩm); backend tự fallback khi `sku_price` rỗng nên **không phải đổi gì ở FE**.
+> Hệ quả đã chấp nhận: không đặt giá riêng theo kênh · không lên lịch đổi giá · không điều chỉnh
+> hàng loạt · **không có lịch sử đổi giá**. Xem PLAN mục **BE20** + hộp cuối Phase 17.
+
+| Nhóm | Role | Endpoint |
+|---|---|---|
+| Đọc | `STAFF` | `POST /price/search` · `POST /price-change-log/search` |
+| Ghi | `SUPER_ADMIN` | `POST /price` · `POST /price/bulk-adjust` · `DELETE /price/{id}` |
+
+- Một dòng `sku_price` = giá của **1 SKU × 1 kênh** trong `[effectiveFrom, effectiveTo)`;
+  `effectiveTo = null` ⇒ mở vô hạn. **Không chồng lấn**: set giá mới tự cắt `effectiveTo` dòng đang
+  mở; đè lên dòng tương lai ⇒ `error.price.overlap`.
+- **Không có branch data-scope** — giá dùng chung toàn chuỗi (giống catalog và bank account).
+- ⚠️ **Bảng `sku_price` hiện RỖNG** (đo thật `total: 0`) ⇒ mọi đơn vẫn **fallback `product.price`**
+  qua `SkuResDTO.unitPrice`. Hợp đồng API cũ **không đổi**, POS/đơn hàng chạy nguyên như trước.
+- `POST /price/bulk-adjust` nhận `target` (`ALL|PRODUCT|CATEGORY|BRAND|SKU`, tái dùng
+  `EPromotionTarget`) + `adjustType` (`PERCENT|FIXED`), trả **số SKU đã áp**; SKU không có base hoặc
+  bị chồng lịch thì **bỏ qua im lặng**, không tính vào count.
+- Đo thật RBAC: ADMIN `POST /price` ⇒ **403** (đúng, cần SUPER_ADMIN); STAFF `price/search` ⇒ **200**.
+- subKey lỗi: `error.price.{notExisted, invalidRange, overlap, targetRequired, noBase}`.
 
 ### Tài khoản test (môi trường dev local)
 
