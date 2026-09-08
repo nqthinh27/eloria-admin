@@ -28,6 +28,7 @@ export default {
         edit: 'Sửa',
         save: 'Lưu',
         detail: 'Chi tiết',
+        pickDate: 'Chọn ngày',
     },
     dataTable: {
         empty: 'Không có dữ liệu',

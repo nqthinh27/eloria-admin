@@ -27,6 +27,7 @@ export default {
         edit: 'Edit',
         save: 'Save',
         detail: 'Detail',
+        pickDate: 'Pick a date',
     },
     dataTable: {
         empty: 'No data',

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/date-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 /**
@@ -51,7 +52,8 @@ type DetailModalProps<TValues extends FieldValues> = {
     title: ReactNode
     fields: DetailField<TValues>[]
     values: TValues
-    onSave: (values: TValues) => Promise<void>
+    /** Bỏ trống khi modal chỉ đọc (`canEdit: false`) — không có gì để lưu. */
+    onSave?: (values: TValues) => Promise<void>
     /**
      * `false` ⇒ modal chỉ xem, ẩn hẳn nút "Sửa". Dùng khi role hiện tại không gọi được API cập nhật
      * (ví dụ STAFF ở màn Khách hàng — `PUT /customer/{id}` là `[ADMIN]`): để nút "Sửa" sẽ dẫn tới
@@ -93,7 +95,8 @@ export function DetailModal<TValues extends FieldValues>({
 
     const onSubmit = async (submitted: TValues) => {
         try {
-            await onSave(submitted)
+            /* Modal chỉ đọc không truyền `onSave` — không bao giờ vào được nhánh này. */
+            await onSave?.(submitted)
             setIsEditing(false)
         } catch {
             // api-client đã toast lỗi; giữ nguyên chế độ sửa để người dùng thử lại.
@@ -172,6 +175,18 @@ export function DetailModal<TValues extends FieldValues>({
                                                                         ))}
                                                                     </SelectContent>
                                                                 </Select>
+                                                            ) : field.type === 'date' ? (
+                                                                /*
+                                                                 * Ngày phải hiện `dd/MM/yyyy`
+                                                                 * (CONVENTIONS mục 5.4) —
+                                                                 * `<Input type="date">` hiển thị
+                                                                 * theo locale máy nên không ép được.
+                                                                 */
+                                                                <DateInput
+                                                                    value={rhfField.value ?? ''}
+                                                                    onChange={rhfField.onChange}
+                                                                    disabled={!field.editable}
+                                                                />
                                                             ) : (
                                                                 <Input
                                                                     {...rhfField}

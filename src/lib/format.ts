@@ -16,9 +16,15 @@ export function formatDate(value: string | Date): string {
     return format(new Date(value), 'dd/MM/yyyy')
 }
 
-/** `13/07/2024 14:32` (theo mockup cột "Thời gian"). */
+/**
+ * `14:32:07 13/07/2024` — **giờ đứng trước ngày**, có cả giây (CONVENTIONS mục 5.4, chốt 2026-09-07).
+ *
+ * ⚠️ Trước 2026-09-07 hàm này trả `dd/MM/yyyy HH:mm` — **không còn đúng**. User chốt thống nhất
+ * một định dạng ngày-giờ duy nhất cho toàn hệ thống, nên bản cũ và `formatInvoiceDateTime`
+ * (vốn riêng cho hoá đơn in) nay **gộp làm một**.
+ */
 export function formatDateTime(value: string | Date): string {
-    return format(new Date(value), 'dd/MM/yyyy HH:mm')
+    return format(new Date(value), 'HH:mm:ss dd/MM/yyyy')
 }
 
 /** "5 phút trước" — dùng cho log/thông báo tương đối thời gian. */
@@ -27,11 +33,8 @@ export function formatRelativeTime(value: string | Date): string {
 }
 
 /**
- * `14:32:07 13/07/2024` — **giờ trước, ngày sau**, có cả giây.
- *
- * Thứ tự ngược với `formatDateTime` là **cố ý**: đây là định dạng người dùng chốt riêng cho
- * dòng "Thời gian" trên hoá đơn in. Đừng dùng thay `formatDateTime` ở bảng/danh sách.
+ * Giữ lại cho hoá đơn in — nay **trùng hệt** `formatDateTime` sau khi user chốt một định dạng
+ * ngày-giờ duy nhất (CONVENTIONS mục 5.4). Không xoá để `print-invoice.ts` vẫn đọc đúng ngữ nghĩa
+ * "giờ in trên hoá đơn"; nếu sau này hoá đơn cần định dạng riêng thì sửa ở đây, không đụng hàm chung.
  */
-export function formatInvoiceDateTime(value: string | Date): string {
-    return format(new Date(value), 'HH:mm:ss dd/MM/yyyy')
-}
+export const formatInvoiceDateTime = formatDateTime
