@@ -30,6 +30,7 @@ const INITIAL_STATE: CartState = {
     description: '',
     guestName: '',
     guestPhone: '',
+    couponCode: '',
 }
 
 type CartAction =
@@ -47,6 +48,7 @@ type CartAction =
     | { type: 'setDescription'; value: string }
     | { type: 'setGuestName'; value: string }
     | { type: 'setGuestPhone'; value: string }
+    | { type: 'setCouponCode'; value: string }
 
 function reducer(state: CartState, action: CartAction): CartState {
     switch (action.type) {
@@ -136,6 +138,10 @@ function reducer(state: CartState, action: CartAction): CartState {
         case 'setGuestPhone':
             return { ...state, guestPhone: action.value }
 
+        case 'setCouponCode':
+            /* Chuẩn hoá ngay: backend so mã phân biệt hoa/thường, khách hay gõ thường + thừa khoảng trắng. */
+            return { ...state, couponCode: action.value.trim().toUpperCase() }
+
         default:
             return state
     }
@@ -189,6 +195,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         [],
     )
     const setGuestName = useCallback((value: string) => dispatch({ type: 'setGuestName', value }), [])
+    const setCouponCode = useCallback(
+        (value: string) => dispatch({ type: 'setCouponCode', value }),
+        [],
+    )
+
     const setGuestPhone = useCallback(
         (value: string) => dispatch({ type: 'setGuestPhone', value }),
         [],
@@ -255,6 +266,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setDescription,
             setGuestName,
             setGuestPhone,
+            setCouponCode,
             itemCount,
             subtotal,
             lineDiscountTotal,
@@ -278,6 +290,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setDescription,
             setGuestName,
             setGuestPhone,
+            setCouponCode,
             itemCount,
             subtotal,
             lineDiscountTotal,

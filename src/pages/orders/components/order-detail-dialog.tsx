@@ -394,6 +394,23 @@ export function OrderDetailDialog({
                                             </dd>
                                         </div>
                                     )}
+                                    {/*
+                                      Diễn giải KM đã áp — **không phải khoản trừ thêm**, số tiền đã
+                                      nằm trong `discountAmount` ở trên (backend bổ sung 2026-09-08).
+                                      ⚠️ Chỉ có ở `GET /order/{id}`; bảng danh sách trả `null`.
+                                    */}
+                                    {order.promotionName && (
+                                        <div className="flex justify-between gap-2">
+                                            <dt className="text-muted-foreground">
+                                                {t('order.invoice.promotion')}
+                                            </dt>
+                                            <dd className="truncate text-right">
+                                                {order.promotionCode
+                                                    ? `${order.promotionName} (${order.promotionCode})`
+                                                    : order.promotionName}
+                                            </dd>
+                                        </div>
+                                    )}
                                     {Boolean(order.shippingFee) && (
                                         <div className="flex justify-between">
                                             <dt className="text-muted-foreground">

@@ -53,6 +53,12 @@ export default {
                 emptyHint: 'Pick a product on the left to add it to the cart.',
 
                 discountPlaceholder: 'Order discount',
+                couponLabel: 'Discount code',
+                couponPlaceholder: 'Enter discount code',
+                couponApply: 'Apply',
+                couponClear: 'Remove',
+                couponInvalid: 'This code is invalid or does not apply to this order',
+                promotionDiscount: 'Promotion',
                 orderDiscountType: 'Order discount type',
                 lineDiscountType: 'Item discount type',
                 lineDiscountPlaceholder: 'Discount',
@@ -221,6 +227,7 @@ export default {
             orderCode: 'Order code',
             customer: 'Customer',
             phone: 'Phone',
+            promotion: 'Promotion',
             staff: 'Staff',
             /** Per-line discount (two-tier discount model). */
             lineDiscount: 'Discount',

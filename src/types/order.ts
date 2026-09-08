@@ -191,6 +191,21 @@ export type Order = {
     lines: OrderLine[] | null
     /** `null` ở `search`, có ở `GET /order/{id}`. Tối đa 2 phần tử. */
     payments: OrderPayment[] | null
+
+    /*
+     * ---- Truy vết khuyến mại (backend bổ sung 2026-09-08 theo yêu cầu của FE) ----
+     *
+     * ⚠️ **CHỈ có ở API chi tiết** (`GET /order/{id}`, `GET /order/{id}/invoice`, và response của
+     * create/update). `POST /order/search` trả **`null`** cho cả 3 — backend cố ý không join
+     * `promotion_log` ở danh sách để tránh N+1. ⇒ **Không dựng cột KM ở bảng Đơn hàng.**
+     */
+
+    /** Id chương trình KM đã áp; `null` khi đơn không có KM (hoặc đang ở API danh sách). */
+    promotionId: string | null
+    /** Tên chương trình — dùng in lên hoá đơn, vd "Flash Sale cuối tuần". */
+    promotionName: string | null
+    /** Mã khách đã nhập; `null` khi KM là loại **tự động** (khách không nhập gì). */
+    promotionCode: string | null
 }
 
 /** `CartPreviewLineResDTO` — 1 dòng trong kết quả tính tiền giỏ. */
@@ -219,11 +234,25 @@ export type CartPreviewLine = {
 
 /** `CartPreviewResDTO` — backend tính tiền, **không ghi DB, không giữ tồn**. */
 export type CartPreview = {
+    /** Tiền **gốc**, chưa trừ gì (xem quy ước giảm giá 2 tầng ở CLAUDE.md). */
     subtotal: number
+    /**
+     * Tổng giảm **đã gộp** giảm-tay (2 tầng) **và** `promotionDiscount`.
+     * ⚠️ **Đừng cộng thêm `promotionDiscount`** — backend đã gộp sẵn, cộng nữa là trừ hai lần.
+     */
     discountAmount: number
     shippingFee: number
     totalAmount: number
     lines: CartPreviewLine[]
+
+    /* ---- Khuyến mại tự động / coupon (backend Phase 9) ---- */
+
+    /** Phần giảm do **engine KM** (tách riêng để hiện dòng "Khuyến mại" trên giỏ). */
+    promotionDiscount: number | null
+    promotionId: string | null
+    promotionName: string | null
+    /** `null` khi KM được áp là loại tự động (không phải coupon nhập tay). */
+    promotionCode: string | null
 }
 
 /**
@@ -265,6 +294,15 @@ export type Invoice = {
     paymentStatus: EPaymentStatus
     paidAmount: number | null
     payments: OrderPayment[] | null
+
+    /*
+     * ---- Truy vết khuyến mại (backend bổ sung 2026-09-08) ----
+     * Nhờ 3 field này hoá đơn nói được **giảm vì đâu**, thay vì chỉ một con số `discountAmount`.
+     */
+    promotionId: string | null
+    promotionName: string | null
+    /** `null` khi KM là loại tự động — hoá đơn chỉ hiện tên chương trình, không có mã. */
+    promotionCode: string | null
 }
 
 /* ------------------------------------------------------------------ *
@@ -331,15 +369,35 @@ export type CreateOrderReq = {
     discountAmount?: number
     discountPercent?: number
     shippingFee?: number
+    /**
+     * Mã giảm giá khách nhập. Bỏ trống ⇒ backend vẫn tự tìm KM **tự động** khớp giỏ.
+     *
+     * ⚠️ **Mã sai ⇒ `400 error.promotion.codeInvalid`** (backend bổ sung 2026-09-08) — trước đây
+     * bị nuốt im lặng. Chỉ nổ khi **có gửi** mã mà mã không dùng được (không tồn tại / sai kênh /
+     * sai chi nhánh / ngoài khung thời gian / chưa đủ `minAmount` / hết lượt).
+     * Mã hợp lệ nhưng **thua** một KM khác ở best-one-wins thì **không** bị coi là sai.
+     */
+    couponCode?: string
     lines: OrderLineReq[]
 }
 
 /** `CartPreviewReqDTO` — cùng bộ field tính tiền của `CreateOrderReq`, bỏ phần thông tin khách. */
 export type CartPreviewReq = {
     branchId?: string
+    /** Kênh bán — ảnh hưởng KM nào được áp (KM khai `channel: POS` không áp cho đơn ONLINE). */
+    channel?: EOrderChannel
     discountAmount?: number
     discountPercent?: number
     shippingFee?: number
+    /**
+     * Mã giảm giá khách nhập. Bỏ trống ⇒ backend vẫn tự tìm KM **tự động** khớp giỏ.
+     *
+     * ⚠️ **Mã sai ⇒ `400 error.promotion.codeInvalid`** (backend bổ sung 2026-09-08) — trước đây
+     * bị nuốt im lặng. Chỉ nổ khi **có gửi** mã mà mã không dùng được (không tồn tại / sai kênh /
+     * sai chi nhánh / ngoài khung thời gian / chưa đủ `minAmount` / hết lượt).
+     * Mã hợp lệ nhưng **thua** một KM khác ở best-one-wins thì **không** bị coi là sai.
+     */
+    couponCode?: string
     lines: OrderLineReq[]
 }
 
@@ -379,4 +437,9 @@ export type OrderSearchReq = SearchReq & {
     /** ISO-8601, ví dụ `2026-08-01T00:00:00Z`. */
     fromDate?: string
     toDate?: string
+    /**
+     * Lọc "các đơn đã dùng chương trình X" (backend bổ sung 2026-09-08, subquery `promotion_log`).
+     * ⚠️ Kết quả trả về **vẫn không có** `promotionName`/`promotionCode` — chúng chỉ có ở API chi tiết.
+     */
+    promotionId?: string
 }

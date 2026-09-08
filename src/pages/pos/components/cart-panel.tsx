@@ -4,17 +4,19 @@ import { Loader2, Minus, Plus, ShoppingCart, Trash2, User, X } from 'lucide-reac
 
 import { customerApi } from '@/api/customer'
 import { orderApi } from '@/api/order'
+import { ApiError } from '@/lib/api-error'
 import { formatVnd } from '@/lib/format'
 import { toastWarning } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import type { Customer } from '@/types/customer'
-import type { CartPreview } from '@/types/order'
+import { EOrderChannel, type CartPreview } from '@/types/order'
 import { lineDiscountAmount, type DiscountType } from '@/contexts/cart-context'
 import { useCart } from '@/hooks/use-cart'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { MoneyInput } from '@/components/money-input'
 
 /** Chờ gõ xong mới gọi `cart/preview`. */
 const DEBOUNCE_MS = 400
@@ -122,10 +124,22 @@ export function CartPanel({
         setLineDiscount,
         setOrderDiscountType,
         setOrderDiscountValue,
+        couponCode,
+        setCouponCode,
     } = useCart()
 
     const [preview, setPreview] = useState<CartPreview | null>(null)
     const [previewing, setPreviewing] = useState(false)
+    /**
+     * Mã giảm giá sai — tách riêng khỏi lỗi chung của preview.
+     *
+     * ⚠️ Backend trả `400 error.promotion.codeInvalid` cho **cả request** `cart/preview`, nghĩa là
+     * gõ sai một ký tự thì **mất luôn khối tính tiền**. Vì vậy khi gặp đúng mã lỗi này, FE giữ
+     * nguyên `preview` cũ, chỉ bôi đỏ ô mã — nhân viên vẫn thấy tổng tiền để bán tiếp.
+     */
+    const [couponError, setCouponError] = useState(false)
+    /** Ô mã đang gõ; chỉ đẩy vào giỏ khi bấm "Áp dụng" để không gọi preview mỗi lần gõ 1 ký tự. */
+    const [couponDraft, setCouponDraft] = useState(couponCode)
     const [customerQuery, setCustomerQuery] = useState('')
     const [lookingUp, setLookingUp] = useState(false)
     const [candidates, setCandidates] = useState<Customer[] | null>(null)
@@ -135,6 +149,18 @@ export function CartPanel({
 
     /** Bỏ qua kết quả preview về muộn hơn lần gọi mới nhất (race giữa các lần gõ). */
     const previewSeq = useRef(0)
+
+    /*
+     * Đồng bộ ô nhập với mã đang áp trong giỏ.
+     *
+     * ⚠️ Cần thiết vì `couponDraft` là state **cục bộ** của component: tạo đơn xong giỏ được
+     * `clear()` (mã trong context về rỗng) nhưng ô nhập vẫn giữ mã cũ ⇒ đơn kế tiếp vô tình
+     * dùng lại mã của khách trước. Cũng xử lý luôn ca bấm "Xoá giỏ hàng".
+     */
+    useEffect(() => {
+        setCouponDraft(couponCode)
+        if (!couponCode) setCouponError(false)
+    }, [couponCode])
 
     /* ---------------- Tính tiền qua backend ---------------- */
     useEffect(() => {
@@ -159,6 +185,12 @@ export function CartPanel({
                          */
                         discountAmount: orderDiscountAmount || undefined,
                         shippingFee: shippingFee || undefined,
+                        /*
+                         * Kênh quyết định KM nào được áp: KM khai `channel: POS` không áp cho đơn
+                         * ONLINE. Không gửi ⇒ backend mặc định ONLINE ⇒ giỏ POS mất KM của quầy.
+                         */
+                        channel: EOrderChannel.POS,
+                        couponCode: couponCode || undefined,
                         lines: orderLines.map((line) => ({
                             skuId: line.skuId,
                             quantity: line.quantity,
@@ -168,11 +200,25 @@ export function CartPanel({
                     controller.signal,
                 )
                 .then((result) => {
-                    if (seq === previewSeq.current) setPreview(result)
+                    if (seq !== previewSeq.current) return
+                    setPreview(result)
+                    setCouponError(false)
                 })
-                .catch(() => {
+                .catch((error: unknown) => {
+                    if (controller.signal.aborted || seq !== previewSeq.current) return
+                    /*
+                     * Mã giảm giá sai: **không** xoá `preview` — giữ số tiền đang hiển thị và chỉ
+                     * báo lỗi ngay tại ô mã (xem ghi chú ở `couponError`).
+                     */
+                    if (
+                        error instanceof ApiError &&
+                        error.subKey === 'error.promotion.codeInvalid'
+                    ) {
+                        setCouponError(true)
+                        return
+                    }
                     // api-client đã toast. Giữ số tính tay để giỏ không nhảy về rỗng.
-                    if (!controller.signal.aborted && seq === previewSeq.current) setPreview(null)
+                    setPreview(null)
                 })
                 .finally(() => {
                     /*
@@ -189,7 +235,7 @@ export function CartPanel({
             clearTimeout(timer)
             controller.abort()
         }
-    }, [orderLines, orderDiscountAmount, shippingFee, branchId])
+    }, [orderLines, orderDiscountAmount, shippingFee, branchId, couponCode])
 
     /* ---------------- Tra khách theo SĐT hoặc tên ---------------- */
     useEffect(() => {
@@ -506,19 +552,49 @@ export function CartPanel({
                                                 setLineDiscount(line.skuId, type, 0)
                                             }
                                         />
-                                        <Input
-                                            value={line.discountValue || ''}
-                                            onChange={(event) =>
-                                                setLineDiscount(
-                                                    line.skuId,
-                                                    line.discountType,
-                                                    parseAmount(event.target.value),
-                                                )
-                                            }
-                                            placeholder={t('order.pos.cart.lineDiscountPlaceholder')}
-                                            inputMode="decimal"
-                                            className="h-7 flex-1 text-xs"
-                                        />
+                                        {/*
+                                          Chế độ `đ` dùng MoneyInput (ngăn cách hàng nghìn,
+                                          CONVENTIONS mục 5.5); chế độ `%` giữ Input thường vì
+                                          giá trị ≤ 100 và có thể có phần lẻ. Đơn vị đã hiện rõ
+                                          trên nút gạt bên trái nên không cần thêm hậu tố.
+                                        */}
+                                        {line.discountType === 'amount' ? (
+                                            <MoneyInput
+                                                value={
+                                                    line.discountValue
+                                                        ? String(line.discountValue)
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    setLineDiscount(
+                                                        line.skuId,
+                                                        line.discountType,
+                                                        value ? Number(value) : 0,
+                                                    )
+                                                }
+                                                suffix={null}
+                                                placeholder={t(
+                                                    'order.pos.cart.lineDiscountPlaceholder',
+                                                )}
+                                                className="h-7 flex-1 text-xs"
+                                            />
+                                        ) : (
+                                            <Input
+                                                value={line.discountValue || ''}
+                                                onChange={(event) =>
+                                                    setLineDiscount(
+                                                        line.skuId,
+                                                        line.discountType,
+                                                        parseAmount(event.target.value),
+                                                    )
+                                                }
+                                                placeholder={t(
+                                                    'order.pos.cart.lineDiscountPlaceholder',
+                                                )}
+                                                inputMode="decimal"
+                                                className="h-7 flex-1 text-xs"
+                                            />
+                                        )}
                                         {lineDiscount > 0 && (
                                             <span className="text-sm font-medium tabular-nums">
                                                 {formatVnd(gross - lineDiscount)}
@@ -549,14 +625,77 @@ export function CartPanel({
                         ariaLabel={t('order.pos.cart.orderDiscountType')}
                         onChange={setOrderDiscountType}
                     />
-                    <Input
-                        value={orderDiscountValue || ''}
-                        onChange={(event) => setOrderDiscountValue(parseAmount(event.target.value))}
-                        placeholder={t('order.pos.cart.discountPlaceholder')}
-                        inputMode="decimal"
-                        className="flex-1"
-                        disabled={lines.length === 0}
-                    />
+                    {orderDiscountType === 'amount' ? (
+                        <MoneyInput
+                            value={orderDiscountValue ? String(orderDiscountValue) : ''}
+                            onChange={(value) => setOrderDiscountValue(value ? Number(value) : 0)}
+                            suffix={null}
+                            placeholder={t('order.pos.cart.discountPlaceholder')}
+                            className="flex-1"
+                            disabled={lines.length === 0}
+                        />
+                    ) : (
+                        <Input
+                            value={orderDiscountValue || ''}
+                            onChange={(event) =>
+                                setOrderDiscountValue(parseAmount(event.target.value))
+                            }
+                            placeholder={t('order.pos.cart.discountPlaceholder')}
+                            inputMode="decimal"
+                            className="flex-1"
+                            disabled={lines.length === 0}
+                        />
+                    )}
+                </div>
+
+                {/* ---- Mã giảm giá (KM/coupon — backend Phase 9) ---- */}
+                <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                        <Input
+                            value={couponDraft}
+                            onChange={(event) => {
+                                setCouponDraft(event.target.value)
+                                /* Gõ lại ⇒ xoá cờ đỏ, chờ lần áp mới. */
+                                if (couponError) setCouponError(false)
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault()
+                                    setCouponCode(couponDraft)
+                                }
+                            }}
+                            placeholder={t('order.pos.cart.couponPlaceholder')}
+                            aria-invalid={couponError}
+                            aria-label={t('order.pos.cart.couponLabel')}
+                            className="flex-1 font-mono uppercase"
+                            disabled={lines.length === 0}
+                        />
+                        {couponCode ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setCouponDraft('')
+                                    setCouponCode('')
+                                    setCouponError(false)
+                                }}>
+                                {t('order.pos.cart.couponClear')}
+                            </Button>
+                        ) : (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={lines.length === 0 || couponDraft.trim() === ''}
+                                onClick={() => setCouponCode(couponDraft)}>
+                                {t('order.pos.cart.couponApply')}
+                            </Button>
+                        )}
+                    </div>
+                    {couponError && (
+                        <p className="text-destructive text-xs">
+                            {t('order.pos.cart.couponInvalid')}
+                        </p>
+                    )}
                 </div>
 
                 <dl className="space-y-1.5 text-sm">
@@ -594,6 +733,22 @@ export function CartPanel({
                             <dt className="text-muted-foreground">{t('order.pos.cart.discount')}</dt>
                             <dd className="text-destructive tabular-nums">
                                 −{formatVnd(shownDiscount)}
+                            </dd>
+                        </div>
+                    )}
+                    {/*
+                      * Dòng KM tách riêng khỏi chiết khấu tay để nhân viên biết **giảm vì đâu**.
+                      * `promotionDiscount` đã nằm TRONG `discountAmount` của backend — đây chỉ là
+                      * phần diễn giải, không phải khoản trừ thêm.
+                      */}
+                    {(preview?.promotionDiscount ?? 0) > 0 && (
+                        <div className="flex items-center justify-between">
+                            <dt className="text-muted-foreground truncate">
+                                {t('order.pos.cart.promotionDiscount')}
+                                {preview?.promotionName ? ` · ${preview.promotionName}` : ''}
+                            </dt>
+                            <dd className="text-destructive tabular-nums">
+                                −{formatVnd(preview?.promotionDiscount ?? 0)}
                             </dd>
                         </div>
                     )}

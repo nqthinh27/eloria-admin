@@ -141,6 +141,7 @@ export default {
         promotion: {
             notExisted: 'Promotion not found.',
             codeExisted: 'This promotion code already exists.',
+            codeInvalid: 'This discount code is invalid or does not apply to this order.',
             invalidValue: 'Invalid discount value. Percentage must be between 0 and 100; fixed amount must be greater than 0.',
             targetRequired: 'Please select a target for the chosen scope.',
             invalidDate: 'The promotion date range is invalid.',

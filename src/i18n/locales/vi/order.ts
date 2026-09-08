@@ -53,6 +53,12 @@ export default {
                 emptyHint: 'Chọn sản phẩm bên trái để thêm vào giỏ.',
 
                 discountPlaceholder: 'Chiết khấu cả đơn',
+                couponLabel: 'Mã giảm giá',
+                couponPlaceholder: 'Nhập mã giảm giá',
+                couponApply: 'Áp dụng',
+                couponClear: 'Bỏ mã',
+                couponInvalid: 'Mã không hợp lệ hoặc không áp dụng được cho đơn này',
+                promotionDiscount: 'Khuyến mại',
                 orderDiscountType: 'Kiểu chiết khấu cả đơn',
                 lineDiscountType: 'Kiểu chiết khấu sản phẩm',
                 lineDiscountPlaceholder: 'Chiết khấu',
@@ -221,6 +227,7 @@ export default {
             orderCode: 'Mã đơn',
             customer: 'Khách hàng',
             phone: 'SĐT',
+            promotion: 'Khuyến mại',
             staff: 'Nhân viên',
             /** Chiết khấu riêng của một dòng hàng (mô hình giảm giá 2 tầng). */
             lineDiscount: 'Chiết khấu',

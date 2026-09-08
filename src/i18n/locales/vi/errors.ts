@@ -161,6 +161,7 @@ export default {
         promotion: {
             notExisted: 'Không tìm thấy chương trình khuyến mại.',
             codeExisted: 'Mã khuyến mại này đã tồn tại.',
+            codeInvalid: 'Mã giảm giá không hợp lệ hoặc không áp dụng được cho đơn này.',
             invalidValue: 'Mức giảm không hợp lệ. Giảm theo % phải trong khoảng 0–100, giảm tiền phải lớn hơn 0.',
             targetRequired: 'Vui lòng chọn đối tượng áp dụng cho phạm vi đã chọn.',
             invalidDate: 'Khoảng thời gian áp dụng không hợp lệ.',

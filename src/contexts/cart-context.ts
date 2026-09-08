@@ -68,6 +68,13 @@ export type CartState = {
     /** Tên/SĐT khách vãng lai khi không gán `customer`. */
     guestName: string
     guestPhone: string
+    /**
+     * Mã giảm giá khách đưa. Bỏ trống ⇒ backend **vẫn** tự áp KM tự động nếu có.
+     *
+     * ⚠️ Mã sai ⇒ `400 error.promotion.codeInvalid` ngay ở bước `cart/preview`, nên ô nhập mã
+     * phải tự bắt lỗi này và **không** để nó làm hỏng cả khối tính tiền của giỏ.
+     */
+    couponCode: string
 }
 
 /** Một dòng giỏ kèm số tiền chiết khấu đã quy đổi — dạng sẵn sàng gửi lên backend. */
@@ -95,6 +102,7 @@ export type CartContextValue = CartState & {
     setDescription: (value: string) => void
     setGuestName: (value: string) => void
     setGuestPhone: (value: string) => void
+    setCouponCode: (value: string) => void
 
     /** Tổng số lượng sản phẩm (không phải số dòng). */
     itemCount: number

@@ -161,6 +161,20 @@ export function OrderReceiptDialog({
                                         </dd>
                                     </div>
                                 )}
+                                {/*
+                                  Diễn giải KM đã áp — số tiền đã nằm trong `discountAmount` ở trên,
+                                  dòng này chỉ nói **giảm vì đâu** (backend bổ sung 2026-09-08).
+                                */}
+                                {invoice.promotionName && (
+                                    <div className="text-muted-foreground flex justify-between gap-2">
+                                        <dt>{t('order.invoice.promotion')}</dt>
+                                        <dd className="truncate text-right">
+                                            {invoice.promotionCode
+                                                ? `${invoice.promotionName} (${invoice.promotionCode})`
+                                                : invoice.promotionName}
+                                        </dd>
+                                    </div>
+                                )}
                                 {!!invoice.shippingFee && (
                                     <div className="text-muted-foreground flex justify-between gap-2">
                                         <dt>{t('order.detail.shippingFee')}</dt>

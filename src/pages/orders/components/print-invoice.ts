@@ -292,6 +292,23 @@ export function printInvoice(invoice: Invoice): boolean {
         /* Con số backend trả về ĐÃ gộp chiết khấu dòng + chiết khấu chung — không cộng lại. */
         optionalRow(tr('order.detail.discount'), invoice.discountAmount, true)
     }
+    ${
+        /*
+         * Dòng diễn giải **khuyến mại nào** đã áp (backend bổ sung 3 field 2026-09-08).
+         * ⚠️ **Không phải khoản trừ thêm** — số tiền đã nằm trong `discountAmount` ở trên; đây chỉ
+         * trả lời câu hỏi "giảm vì đâu" mà trước đây hoá đơn không nói được.
+         * KM tự động thì `promotionCode` là `null` ⇒ chỉ in tên chương trình.
+         */
+        invoice.promotionName
+            ? `<div class="info"><span class="info-label">${escapeHtml(
+                  tr('order.invoice.promotion'),
+              )}</span><span class="info-value">${escapeHtml(
+                  invoice.promotionCode
+                      ? `${invoice.promotionName} (${invoice.promotionCode})`
+                      : invoice.promotionName,
+              )}</span></div>`
+            : ''
+    }
     ${optionalRow(tr('order.detail.shippingFee'), invoice.shippingFee)}
     <div class="row total"><span>${escapeHtml(tr('order.detail.total'))}</span><span>${formatVnd(
         invoice.totalAmount,

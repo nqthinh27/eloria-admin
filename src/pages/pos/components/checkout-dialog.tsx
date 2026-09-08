@@ -23,6 +23,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { MoneyInput } from '@/components/money-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -85,6 +86,7 @@ export function CheckoutDialog({
         setGuestName,
         setGuestPhone,
         setPaymentMethod,
+        couponCode,
     } = useCart()
 
     /**
@@ -116,6 +118,12 @@ export function CheckoutDialog({
                     /* Gửi TÁCH 2 tầng, giống hệt `CartPanel` — xem `cart-context`. */
                     discountAmount: orderDiscountAmount || undefined,
                     shippingFee: shippingFee || undefined,
+                    /*
+                     * ⚠️ `channel` + `couponCode` phải **giống hệt** `CartPanel`, nếu không số xem
+                     * trước ở giỏ khác số trong dialog này (KM theo kênh, và mã giảm giá).
+                     */
+                    channel: EOrderChannel.POS,
+                    couponCode: couponCode || undefined,
                     lines: orderLines.map((line) => ({
                         skuId: line.skuId,
                         quantity: line.quantity,
@@ -129,7 +137,7 @@ export function CheckoutDialog({
                 if (!controller.signal.aborted) setPreview(null)
             })
         return () => controller.abort()
-    }, [open, orderLines, orderDiscountAmount, shippingFee, branchId])
+    }, [open, orderLines, orderDiscountAmount, shippingFee, branchId, couponCode])
 
     const total = preview?.totalAmount ?? 0
 
@@ -192,6 +200,8 @@ export function CheckoutDialog({
                 /* Giảm giá 2 tầng — phải khớp đúng thứ đã gửi ở `cartPreview` phía trên. */
                 discountAmount: orderDiscountAmount || undefined,
                 shippingFee: shippingFee || undefined,
+                /* Mã giảm giá đã áp ở giỏ — không gửi lại thì đơn thật mất KM so với bản xem trước. */
+                couponCode: couponCode || undefined,
                 lines: orderLines.map((line) => ({
                     skuId: line.skuId,
                     quantity: line.quantity,
@@ -229,6 +239,7 @@ export function CheckoutDialog({
         paymentMethod,
         orderDiscountAmount,
         shippingFee,
+        couponCode,
         onCreated,
     ])
 
@@ -332,15 +343,9 @@ export function CheckoutDialog({
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label>{t('order.pos.checkout.shippingFee')}</Label>
-                            <Input
-                                value={shippingFee || ''}
-                                onChange={(event) => {
-                                    const parsed = Number(event.target.value)
-                                    setShippingFee(
-                                        Number.isFinite(parsed) && parsed > 0 ? parsed : 0,
-                                    )
-                                }}
-                                inputMode="numeric"
+                            <MoneyInput
+                                value={shippingFee ? String(shippingFee) : ''}
+                                onChange={(value) => setShippingFee(value ? Number(value) : 0)}
                                 placeholder="0"
                             />
                         </div>
