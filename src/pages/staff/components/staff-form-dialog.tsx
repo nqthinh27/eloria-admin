@@ -29,6 +29,7 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/date-input'
 import { Textarea } from '@/components/ui/textarea'
 import {
     Select,
@@ -330,7 +331,7 @@ export function StaffFormDialog({
                                     <FormItem>
                                         <FormLabel>{t('staff.form.dob')}</FormLabel>
                                         <FormControl>
-                                            <Input {...field} type="date" />
+                                            <DateInput value={field.value ?? ""} onChange={field.onChange} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

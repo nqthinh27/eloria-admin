@@ -26,6 +26,7 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/date-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 /** Chờ gõ xong SĐT rồi mới tra trùng, tránh gọi API mỗi lần gõ 1 ký tự. */
@@ -317,7 +318,10 @@ export function CustomerFormDialog({
                                     <FormItem>
                                         <FormLabel>{t('customer.form.dob')}</FormLabel>
                                         <FormControl>
-                                            <Input {...field} value={field.value ?? ''} type="date" />
+                                            <DateInput
+                                                value={field.value ?? ''}
+                                                onChange={field.onChange}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

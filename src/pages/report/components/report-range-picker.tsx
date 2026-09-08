@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { CalendarDays } from 'lucide-react'
+import { useDateTyping } from '@/lib/date-input-format'
 
 import { cn } from '@/lib/utils'
 import {
@@ -62,6 +62,14 @@ export function ReportRangePicker({
     const { t } = useTranslation('report')
     const invalid = rangeError !== null
 
+    /*
+     * Ô nhập gõ `dd/MM/yyyy` (CONVENTIONS mục 5.4). Không dùng `<DateInput>` được vì 2 ô ở đây nằm
+     * chung MỘT khung viền — lồng `<Input>` có viền riêng vào sẽ thành "hộp trong hộp".
+     * Giá trị `customFrom`/`customTo` vẫn là `yyyy-MM-dd`, phần còn lại của màn không phải đổi.
+     */
+    const fromTyping = useDateTyping(customFrom, onCustomFromChange)
+    const toTyping = useDateTyping(customTo, onCustomToChange)
+
     return (
         <div className="flex flex-wrap items-center gap-2">
             {/* Đơn vị thống kê đứng trước vì nó quyết định trần độ dài của ô kỳ bên cạnh. */}
@@ -104,17 +112,17 @@ export function ReportRangePicker({
                         'border-input bg-card focus-within:border-ring focus-within:ring-ring/50 flex h-9 items-center rounded-md border shadow-xs transition-[color,box-shadow] focus-within:ring-[3px]',
                         invalid && 'border-destructive focus-within:ring-destructive/20',
                     )}>
-                    <CalendarDays className="text-muted-foreground ml-2.5 size-4 shrink-0" />
                     <label htmlFor="report-from" className="sr-only">
                         {t('report.range.from')}
                     </label>
                     <input
                         id="report-from"
-                        type="date"
-                        value={customFrom}
-                        max={customTo || undefined}
-                        onChange={(e) => onCustomFromChange(e.target.value)}
-                        className="w-[118px] bg-transparent px-2 py-1 text-sm outline-none"
+                        inputMode="numeric"
+                        placeholder="dd/mm/yyyy"
+                        value={fromTyping.display}
+                        onChange={(e) => fromTyping.onType(e.target.value)}
+                        onBlur={fromTyping.onBlur}
+                        className="w-[104px] bg-transparent px-2 py-1 text-sm outline-none"
                     />
                     <span aria-hidden className="text-muted-foreground text-sm">
                         →
@@ -124,11 +132,12 @@ export function ReportRangePicker({
                     </label>
                     <input
                         id="report-to"
-                        type="date"
-                        value={customTo}
-                        min={customFrom || undefined}
-                        onChange={(e) => onCustomToChange(e.target.value)}
-                        className="w-[118px] bg-transparent px-2 py-1 text-sm outline-none"
+                        inputMode="numeric"
+                        placeholder="dd/mm/yyyy"
+                        value={toTyping.display}
+                        onChange={(e) => toTyping.onType(e.target.value)}
+                        onBlur={toTyping.onBlur}
+                        className="w-[104px] bg-transparent px-2 py-1 text-sm outline-none"
                     />
                 </div>
             )}

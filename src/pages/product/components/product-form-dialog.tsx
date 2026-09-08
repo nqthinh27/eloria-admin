@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { MoneyInput } from '@/components/money-input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchSelect } from '@/components/search-select'
@@ -212,10 +213,9 @@ export function ProductFormDialog({
                                             <span className="text-destructive">*</span>
                                         </FormLabel>
                                         <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="number"
-                                                min={0}
+                                            <MoneyInput
+                                                value={field.value}
+                                                onChange={field.onChange}
                                                 placeholder={t('product.form.pricePlaceholder')}
                                             />
                                         </FormControl>
@@ -234,10 +234,15 @@ export function ProductFormDialog({
                                     <FormItem>
                                         <FormLabel>{t('product.form.costPrice')}</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="number"
-                                                min={0}
+                                            {/*
+                                              ⚠️ `0` KHÁC rỗng: `0` là giá vốn hợp lệ và backend lưu
+                                              đúng `0`, còn bỏ trống nghĩa là "giữ nguyên giá cũ".
+                                              `parseMoneyInput` trả `'0'` (không phải `''`) nên
+                                              nhánh `trim() === ''` ở `onSubmit` vẫn phân biệt đúng.
+                                            */}
+                                            <MoneyInput
+                                                value={field.value}
+                                                onChange={field.onChange}
                                                 placeholder={t('product.form.costPricePlaceholder')}
                                             />
                                         </FormControl>
