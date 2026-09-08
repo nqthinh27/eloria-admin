@@ -55,7 +55,8 @@ export type CartState = {
      * Chiết khấu **chung cho cả đơn**, nhập theo % hoặc theo tiền (người dùng tự chọn bằng
      * nút gạt). Luôn được quy đổi ra tiền trước khi gửi lên backend.
      *
-     * ⚠️ **Không ràng buộc ngưỡng** — B8 hoãn sang Phase 16 (user chốt 2026-08-15).
+     * **Không ràng buộc ngưỡng** — đúng thiết kế, không phải việc còn thiếu (user chốt 2026-09-08:
+     * hệ thống **chưa có quy định** giới hạn chiết khấu của STAFF).
      */
     orderDiscountType: DiscountType
     /** Giá trị theo `orderDiscountType`: `percent` ⇒ 0–100, `amount` ⇒ VND. */

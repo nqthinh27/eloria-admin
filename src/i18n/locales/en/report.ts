@@ -44,6 +44,17 @@ export default {
 
 
         /* ---------------- Cost warning ---------------- */
+        /*
+          Cảnh báo đơn PENDING treo giam tồn. Backend trừ tồn ngay khi tạo đơn và không có cơ chế
+          tự huỷ ⇒ đơn bỏ quên giữ hàng vô thời hạn. Xem `lib/stale-order.ts` + PLAN Phase 16 mục ①.
+        */
+        stalePending: {
+            title: 'Stale orders are holding stock',
+            description:
+                '{{count}} orders have been pending for more than {{days}} days. Stock was deducted when each order was created, so these items cannot be sold to anyone else. Cancel the orders that are no longer valid on the Orders page to return the items to inventory.',
+            action: 'View orders',
+        },
+
         missingCost: {
             title: 'Gross profit is not accurate',
             description:

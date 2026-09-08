@@ -426,6 +426,7 @@ export function ProductPicker({
                             }
                         }}
                         placeholder={t('order.pos.searchPlaceholder')}
+                        aria-label={t('order.pos.searchPlaceholder')}
                         className="pl-9"
                         autoFocus
                     />
@@ -507,11 +508,27 @@ export function ProductPicker({
                             visible.map((item) => {
                                 const soldOut = item.available <= 0
                                 return (
+                                    /*
+                                      Hàng bảng là **thao tác chính** của màn POS (thêm hàng vào
+                                      giỏ) nên phải bấm được bằng bàn phím: `role="button"` +
+                                      `tabIndex` đưa hàng vào tab order, `Enter`/`Space` kích hoạt
+                                      như chuột. Hàng hết tồn không nhận focus (`tabIndex={-1}`).
+                                    */
                                     <tr
                                         key={item.id}
+                                        role="button"
+                                        tabIndex={soldOut ? -1 : 0}
+                                        aria-disabled={soldOut || undefined}
                                         onClick={(event) => handleAdd(item, event.currentTarget)}
+                                        onKeyDown={(event) => {
+                                            if (event.key !== 'Enter' && event.key !== ' ') return
+                                            // Space cuộn trang nếu không chặn.
+                                            event.preventDefault()
+                                            handleAdd(item, event.currentTarget)
+                                        }}
                                         className={cn(
                                             'border-b transition-colors',
+                                            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
                                             soldOut
                                                 ? 'cursor-not-allowed opacity-50'
                                                 : 'hover:bg-muted/60 cursor-pointer',

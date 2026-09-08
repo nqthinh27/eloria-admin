@@ -128,6 +128,7 @@ export default function BranchListPage() {
                         value={keyword}
                         onChange={(e) => setKeyword(e.target.value)}
                         placeholder={t('staff.branch.searchPlaceholder')}
+                        aria-label={t('staff.branch.searchPlaceholder')}
                         className="sm:max-w-xs"
                     />
                     {/*

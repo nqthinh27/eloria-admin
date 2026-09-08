@@ -364,7 +364,7 @@ export default function CategoryListPage() {
                         <Select
                             value={levelFilter}
                             onValueChange={(v) => table.resetTo(() => setLevelFilter(v))}>
-                            <SelectTrigger className="w-full sm:w-44">
+                            <SelectTrigger aria-label={t('product.list.allStatuses')} className="w-full sm:w-44">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

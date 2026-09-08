@@ -300,16 +300,22 @@ export function CheckoutDialog({
                         <div className="space-y-1.5">
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <div className="space-y-1.5">
-                                    <Label>{t('order.pos.checkout.customerName')}</Label>
+                                    <Label htmlFor="checkout-customer-name">
+                                        {t('order.pos.checkout.customerName')}
+                                    </Label>
                                     <Input
+                                        id="checkout-customer-name"
                                         value={guestName}
                                         onChange={(event) => setGuestName(event.target.value)}
                                         placeholder={t('order.pos.checkout.customerNamePlaceholder')}
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label>{t('order.pos.checkout.customerPhone')}</Label>
+                                    <Label htmlFor="checkout-customer-phone">
+                                        {t('order.pos.checkout.customerPhone')}
+                                    </Label>
                                     <Input
+                                        id="checkout-customer-phone"
                                         value={guestPhone}
                                         onChange={(event) => setGuestPhone(event.target.value)}
                                         placeholder={t('order.pos.checkout.customerPhonePlaceholder')}
@@ -328,8 +334,11 @@ export function CheckoutDialog({
                     )}
 
                     <div className="space-y-1.5">
-                        <Label>{t('order.pos.checkout.shippingAddress')}</Label>
+                        <Label htmlFor="checkout-shipping-address">
+                            {t('order.pos.checkout.shippingAddress')}
+                        </Label>
                         <Textarea
+                            id="checkout-shipping-address"
                             value={shippingAddress}
                             onChange={(event) => setShippingAddress(event.target.value)}
                             placeholder={t('order.pos.checkout.shippingAddressPlaceholder')}
@@ -342,21 +351,26 @@ export function CheckoutDialog({
 
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div className="space-y-1.5">
-                            <Label>{t('order.pos.checkout.shippingFee')}</Label>
+                            <Label htmlFor="checkout-shipping-fee">
+                                {t('order.pos.checkout.shippingFee')}
+                            </Label>
                             <MoneyInput
+                                id="checkout-shipping-fee"
                                 value={shippingFee ? String(shippingFee) : ''}
                                 onChange={(value) => setShippingFee(value ? Number(value) : 0)}
                                 placeholder="0"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label>{t('order.pos.checkout.paymentMethod')}</Label>
+                            <Label htmlFor="checkout-payment-method">
+                                {t('order.pos.checkout.paymentMethod')}
+                            </Label>
                             <Select
                                 value={paymentMethod}
                                 onValueChange={(value) =>
                                     setPaymentMethod(value as EPaymentMethod)
                                 }>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id="checkout-payment-method" className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -371,8 +385,9 @@ export function CheckoutDialog({
                     </div>
 
                     <div className="space-y-1.5">
-                        <Label>{t('order.pos.checkout.noteSection')}</Label>
+                        <Label htmlFor="checkout-note">{t('order.pos.checkout.noteSection')}</Label>
                         <Textarea
+                            id="checkout-note"
                             value={description}
                             onChange={(event) => setDescription(event.target.value)}
                             placeholder={t('order.pos.checkout.notePlaceholder')}

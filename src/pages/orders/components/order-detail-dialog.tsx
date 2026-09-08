@@ -507,6 +507,7 @@ export function OrderDetailDialog({
                                             value={note}
                                             onChange={(event) => setNote(event.target.value)}
                                             placeholder={t('order.detail.notePlaceholder')}
+                                            aria-label={t('order.detail.notePlaceholder')}
                                             rows={3}
                                             className="bg-card"
                                         />
@@ -646,8 +647,9 @@ export function OrderDetailDialog({
                         {t('order.action.cancelDescription')}
                     </p>
                     <div className="space-y-1.5">
-                        <Label>{t('order.action.cancelReason')}</Label>
+                        <Label htmlFor="order-cancel-reason">{t('order.action.cancelReason')}</Label>
                         <Textarea
+                            id="order-cancel-reason"
                             value={cancelReason}
                             onChange={(event) => setCancelReason(event.target.value)}
                             placeholder={t('order.action.cancelReasonPlaceholder')}
@@ -698,11 +700,11 @@ export function OrderDetailDialog({
                         {t('order.action.payDescription')}
                     </p>
                     <div className="space-y-1.5">
-                        <Label>{t('order.pos.checkout.paymentMethod')}</Label>
+                        <Label htmlFor="order-pay-method">{t('order.pos.checkout.paymentMethod')}</Label>
                         <Select
                             value={payMethod}
                             onValueChange={(value) => setPayMethod(value as EPaymentMethod)}>
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger id="order-pay-method" className="w-full">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>

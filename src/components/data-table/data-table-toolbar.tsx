@@ -47,6 +47,7 @@ export function DataTableToolbar({
                         value={searchValue}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder={searchPlaceholder ?? t('dataTable.searchPlaceholder')}
+                        aria-label={searchPlaceholder ?? t('dataTable.searchPlaceholder')}
                         className="pl-9"
                     />
                 </div>

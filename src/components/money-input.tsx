@@ -26,6 +26,7 @@ export function MoneyInput({
     /** Hậu tố hiển thị bên phải ô. `đ` cho tiền; truyền `%` khi ô đang ở chế độ phần trăm. */
     suffix = 'đ',
     'aria-invalid': ariaInvalid,
+    'aria-label': ariaLabel,
     onBlur,
 }: {
     /** Chuỗi chữ số thuần (`"1500000"`) hoặc `''`. */
@@ -38,6 +39,11 @@ export function MoneyInput({
     placeholder?: string
     suffix?: string | null
     'aria-invalid'?: boolean
+    /**
+     * Tên đọc được cho trình đọc màn hình. **Bắt buộc truyền** khi ô không có `<Label htmlFor>`
+     * đi kèm (ô lọc, ô trong bảng) — nếu không, trình đọc chỉ đọc được giá trị chứ không biết ô là gì.
+     */
+    'aria-label'?: string
     onBlur?: () => void
 }) {
     /*
@@ -66,6 +72,7 @@ export function MoneyInput({
                 placeholder={placeholder}
                 inputMode="numeric"
                 aria-invalid={ariaInvalid}
+                aria-label={ariaLabel}
                 className={cn('tabular-nums', suffix && 'pr-8')}
                 onChange={(event) => handleChange(event.target.value)}
                 onBlur={onBlur}

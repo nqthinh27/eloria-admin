@@ -40,6 +40,7 @@ import { StatusBadge, type StatusTone } from '@/components/status-badge'
 import { ReportRangePicker } from './report/components/report-range-picker'
 import { ReportErrorState } from './report/components/report-error-state'
 import { RecentOrdersCard } from './report/components/recent-orders-card'
+import { StaleOrdersAlert } from './report/components/stale-orders-alert'
 import { TopProductsCard } from './report/components/top-products-card'
 import { BranchMonthChart } from './report/components/branch-month-chart'
 
@@ -212,7 +213,7 @@ export default function Dashboard() {
 
                         {canFilterBranch && (
                             <Select value={branchId} onValueChange={setBranchId}>
-                                <SelectTrigger className="w-[190px]">
+                                <SelectTrigger aria-label={t('report.common.allBranches')} className="w-[190px]">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -256,6 +257,12 @@ export default function Dashboard() {
                      * Cảnh báo giá vốn thiếu — bắt buộc theo tài liệu backend: `missingCostQty > 0`
                      * nghĩa là COGS bị hụt ⇒ lãi gộp đang **cao hơn thực tế**.
                      */}
+                    {/*
+                     * Cảnh báo đơn treo giam tồn — độc lập với `data` (tự nạp `/order/search`)
+                     * vì `/dashboard/summary` không trả số đơn treo. PLAN Phase 16 mục ①.
+                     */}
+                    <StaleOrdersAlert branchId={scopedBranchId} />
+
                     {data.missingCostQty > 0 && (
                         <Alert>
                             <AlertTriangle className="text-warning" />

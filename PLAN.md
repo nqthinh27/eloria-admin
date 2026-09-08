@@ -4,7 +4,7 @@
 > agent **chỉ thực hiện đúng phase được chỉ định**, không tự làm lấn sang phase khác.
 > Đọc [CONVENTIONS.md](CONVENTIONS.md) trước khi bắt đầu bất kỳ phase nào.
 
-Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**). **Phase 14 (Khuyến mại) đã xong 2026-09-07.** Phase 13 & 15 vẫn chờ backend ⇒ **phase làm được tiếp theo là Phase 16 (Hoàn thiện)**.
+Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**). **Phase 14 (Khuyến mại) đã xong 2026-09-07.** **Phase 16 (Hoàn thiện) đã xong 2026-09-08.** Phase 13 & 15 vẫn chờ backend ⇒ **chỉ còn Phase 17 (Mở rộng Khuyến mại) là làm được**.
 
 > ## ✅ **PHASE 11 ĐÃ XONG (2026-08-18)** — Bán hàng & Đơn hàng
 >
@@ -137,10 +137,10 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | B5 | Bộ chọn chi nhánh trên top bar chưa có API. | ✅ **Đã xong** — dùng `POST /v1.0/api/branch/search` (backend tự giới hạn: STAFF/ADMIN chỉ thấy chi nhánh được gán). |
 | B6 | Backend chỉ set cookie `refresh_token` khi login gửi `rememberMe: true`. | ✅ **Đã chốt** — **luôn gửi `rememberMe: true`**, **không** hiển thị checkbox "Ghi nhớ đăng nhập". |
 | **B7** | **Trạng thái đơn hàng lệch 3 nơi.** BE `EOrderStatus` = `PENDING/SHIPPING/SHIPPED/REJECTED` (4, thiên giao hàng) · mockup `04` vẽ 5 trạng thái (*Chờ thanh toán · Đang xử lý · Đang giao · Hoàn thành · Đã huỷ*) · FE Phase 6 dựng 5 giá trị khác nữa. Ngoài ra BE **không có** `channel` (Online/Tại quầy) mà mockup có 1 cột + 3 tab. | ✅ **ĐÃ CHỐT XONG (2026-08-15)** — backend có **8** giá trị `PENDING\|CONFIRMED\|PACKED\|SHIPPING\|SHIPPED\|COMPLETED\|CANCELLED\|REJECTED` và **`channel` ĐÃ CÓ** (`ONLINE\|POS\|OTHER`). **User chốt: làm ĐÚNG theo quy ước backend** — dùng thẳng 8 trạng thái, không map ngầm về 5 trạng thái mockup. Xem hộp "3 quyết định" đầu Phase 11. |
-| **B8** | **Cơ chế "chờ ADMIN duyệt" khi chiết khấu vượt ngưỡng** (mockup POS ghi *"tối đa 10% cho STAFF"*): ngưỡng lưu ở đâu, ai duyệt, duyệt bằng mã hay bằng trạng thái đơn? | 🕐 **HOÃN sang Phase 16 (user chốt 2026-08-15)** — "thông luồng trước, rà lại sau". Backend **không có cơ chế ngưỡng/duyệt nào** (`CreateOrderReqDTO` chỉ có `discountAmount`/`discountPercent` trần trụi) ⇒ Phase 11 làm giảm giá tay không ràng buộc. Xem hộp đầu Phase 16. |
+| **B8** | **Cơ chế "chờ ADMIN duyệt" khi chiết khấu vượt ngưỡng** (mockup POS ghi *"tối đa 10% cho STAFF"*): ngưỡng lưu ở đâu, ai duyệt, duyệt bằng mã hay bằng trạng thái đơn? | ❌ **ĐÓNG — KHÔNG LÀM (user chốt 2026-09-08).** Truy nguồn: con số 10% **chỉ là chữ trong ảnh minh hoạ** `03-pos-ban-hang.png` (placeholder của ô chiết khấu), **không phải quy định nghiệp vụ** — user xác nhận *"đây chỉ là ảnh minh họa UI thôi, không phải luồng chính của hệ thống. tôi chưa quy định cái đó"*. ⇒ Chiết khấu tay **không ràng buộc ngưỡng** là **đúng thiết kế**, không phải việc còn thiếu. Backend cũng không có ngưỡng/trạng thái/endpoint duyệt. Cần giới hạn thật thì phải **chốt lại ngưỡng + cách tính** rồi xin backend, mở lại mục này. |
 | **B9** | Phase 4 đặt menu Dashboard `minRole = ADMIN` ⇒ **STAFF không vào được**, nhưng Phase 12 lại mô tả "STAFF xem số liệu của mình". | ✅ **ĐÃ CHỐT (2026-08-29)** — **giữ `minRole = ADMIN`**, **bỏ nhánh STAFF** khỏi Phase 12. Dashboard là công cụ quản lý; STAFF bán hàng không cần xem doanh thu chi nhánh/toàn chuỗi. ⇒ Phase 12 chỉ còn 2 mức phạm vi: **ADMIN = chi nhánh mình · SUPER_ADMIN = toàn chuỗi**. |
 
-**✅ Không còn điểm chờ chốt nào** *(B7 + B8 chốt 2026-08-15, B9 chốt 2026-08-29)*.
+**✅ Không còn điểm chờ chốt nào** *(B7 chốt 2026-08-15 · B9 chốt 2026-08-29 · **B8 đóng 2026-09-08** — ngưỡng chiết khấu chỉ là chữ minh hoạ trong mockup, chưa từng là quy định)*.
 
 > ✅ **KHÔNG còn điểm nào chặn Phase 11 và Phase 12** — cả hai **đã xong**. B9 đã chốt, API báo cáo
 > backend đã có (BE9).
@@ -223,7 +223,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **13** | ⛔ Đổi / Trả — *chờ backend* (BE17) | 5, 6, 11 | `06` |
 | **14** | ✅ **Khuyến mại** (**API thật**) | 5, 6, 9, 11 | `16` |
 | **15** | ⛔ **Ca làm việc (mở ca / chốt ca)** — tách khỏi phase 11, *chờ backend* | 11 | `02` |
-| **16** | 🟢 Hoàn thiện: audit i18n · a11y · responsive · tài liệu — **làm được ngay** | tất cả | — |
+| **16** | ✅ Hoàn thiện: audit i18n · a11y · responsive · tài liệu | tất cả | — |
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
@@ -1936,14 +1936,13 @@ và **kiểm thử API thật từng kịch bản**.
 > ⇒ Điều này **thay thế** đề xuất "chuyển `SearchSelect` sang tìm kiếm phía server" tôi nêu trước đó
 > — user chọn hướng nâng trần thay vì đổi component.
 >
-> **④ Duyệt chiết khấu vượt ngưỡng (B8) — HOÃN sang phase cuối**
+> **④ Duyệt chiết khấu vượt ngưỡng (B8) — ❌ ĐÓNG, KHÔNG LÀM (user chốt 2026-09-08)**
 >
-> Mockup `03-pos-ban-hang.png` ghi *"tối đa 10% cho STAFF"*, nhưng backend **không có ngưỡng,
-> không có trạng thái chờ duyệt, không có endpoint duyệt** (`CreateOrderReqDTO` chỉ có
-> `discountAmount`/`discountPercent`; backend chỉ clamp giảm ≤ `subtotal`).
+> Mockup `03-pos-ban-hang.png` ghi *"tối đa 10% cho STAFF"* — nhưng đó **chỉ là chữ minh hoạ trong
+> ảnh thiết kế**, không phải quy định nghiệp vụ. User xác nhận **chưa từng quy định** ngưỡng này.
 >
-> ⇒ **Phase 11 làm ô giảm giá tay KHÔNG ràng buộc** — không chặn, không cảnh báo, không dựng luồng
-> duyệt. Bỏ qua dòng "tối đa 10% cho STAFF" của mockup. Rà lại ở Phase 16.
+> ⇒ **Ô giảm giá tay KHÔNG ràng buộc là ĐÚNG THIẾT KẾ** — không chặn, không cảnh báo, không luồng
+> duyệt. Backend cũng không có ngưỡng/trạng thái/endpoint duyệt. **Không phải việc còn nợ.**
 
 **Thiết kế:** `03-pos-ban-hang.png`, `04-don-hang.png`, `05-don-hang-chi-tiet.png`.
 *(`02-pos-mo-ca.png` **đã chuyển sang Phase 15** — giai đoạn bán online tại nhà chưa cần ca làm việc.)*
@@ -1989,8 +1988,8 @@ cột và 3 tab. Phải chốt trước khi code, **không tự map ngầm**.
 - Cột phải (giỏ hàng): ô **gán khách hàng theo SĐT** (dùng `customer/search` + `customer/duplicates`
   đã có từ Phase 8, cho phép tạo nhanh khách mới ngay tại chỗ), danh sách dòng hàng, chọn size–màu,
   sửa số lượng, **empty state "Giỏ hàng trống"** đúng mockup.
-- Ô **chiết khấu** — ⚠️ **KHÔNG ràng buộc ngưỡng, KHÔNG badge "Chờ ADMIN duyệt"** *(B8 hoãn sang
-  Phase 16, user chốt 2026-08-15)*. Bỏ qua dòng *"tối đa 10% cho STAFF"* của mockup.
+- Ô **chiết khấu** — **KHÔNG ràng buộc ngưỡng, KHÔNG badge "Chờ ADMIN duyệt"** *(đúng thiết kế —
+  B8 đóng 2026-09-08)*. Dòng *"tối đa 10% cho STAFF"* trong mockup chỉ là chữ minh hoạ.
   Gửi `discountAmount` **hoặc** `discountPercent` (gửi cả hai thì backend ưu tiên **phần trăm**);
   backend tự clamp giảm ≤ `subtotal`.
 - Khối tổng: **Tạm tính** → **Tổng cộng** → nút **Thanh toán** + **Xoá giỏ hàng**.
@@ -2188,7 +2187,7 @@ mockup**, không rút gọn.
 | **13** Đổi/Trả | ❌ **Chưa có** | `EOrderType.REFUND` là **enum chết** — nơi ghi `type` duy nhất là `OrderServiceImpl:201` set cứng `PURCHASE`. `/cancel` chỉ đảo `paymentStatus`, **không phải** luồng trả hàng |
 | **14** Khuyến mại | ❌ **Chưa có** | 3 enum mồ côi + `OrderDetail.promotionId` luôn `null`; không bảng, không API |
 | **15** Ca làm việc | ❌ **Chưa có** | `EShiftStatus` không nơi nào dùng; `OrderSale.shiftId` luôn `null`; **không có bảng `work_shift`** (Liquibase chỉ tạo 18 bảng) |
-| **16** Hoàn thiện | ✅ **Làm được ngay** | Thuần FE: i18n · a11y · responsive · 3 việc hoãn từ Phase 11 |
+| **16** Hoàn thiện | ✅ **ĐÃ XONG (2026-09-08)** — trừ mục **②** (duyệt chiết khấu) user hoãn để trao đổi riêng |
 
 ⚠️ ~~**Kết luận: Phase 12–15 đều chờ backend.**~~ → **Cập nhật 2026-09-03:** Phase 12 **đã xong**.
 **Phase 13/14/15 vẫn chờ backend** — khảo sát lại `/v3/api-docs/api` hôm nay xác nhận vẫn **đúng
@@ -2661,7 +2660,65 @@ Responsive 1024px & 390px **tràn ngang 0px**; 0 lỗi console; lint 0 lỗi; bu
 
 ---
 
-## Phase 16 — Hoàn thiện
+## Phase 16 — Hoàn thiện ✅ **ĐÃ XONG (2026-09-08)**
+
+> ### ✅ Kết quả đợt này
+>
+> | Mục | Kết quả |
+> |---|---|
+> | **① Đơn PENDING giam tồn** | ✅ **Cảnh báo phía FE** (user chốt: không xin backend đợt này). Đo thật: **37 đơn PENDING**, 34 đơn tuổi 15–30 ngày, giữ **~238,9tr đ** tồn kho — nhiều hơn cả số đơn `COMPLETED` (21). |
+> | **② Duyệt chiết khấu vượt ngưỡng (B8)** | ❌ **ĐÓNG — KHÔNG LÀM.** Ngưỡng "10%" hoá ra **chỉ là chữ minh hoạ trong mockup**, user **chưa từng quy định**. ⇒ Không ràng buộc là **đúng thiết kế**, không phải việc còn nợ. |
+> | **③ Kiểm chứng sort thật** | ✅ **60/60 request `200`** + 5 case âm đúng 500. Phát hiện tài liệu ghi sai `branchName` — xem CLAUDE.md. |
+> | **④ i18n + a11y** | ✅ Đã sửa (chi tiết dưới) |
+> | Responsive · dọn dẹp · tài liệu | ✅ Đã rà |
+>
+> #### ① Cảnh báo đơn treo giam tồn — **chỉ cảnh báo, không tự huỷ**
+>
+> Backend trừ tồn **ngay khi tạo đơn** và **không có cơ chế tự huỷ** ⇒ đơn `PENDING` bỏ quên giam
+> hàng vô thời hạn. Không có API nào dọn hộ, nên FE chỉ **chỉ ra** để nhân viên huỷ tay.
+>
+> - [src/lib/stale-order.ts](src/lib/stale-order.ts) — ngưỡng `STALE_PENDING_DAYS = 7` + `isStalePending()`.
+> - **Màn Đơn hàng**: badge đỏ *"Treo N ngày"* ở cột THỜI GIAN + banner đếm đơn treo **trong trang đang xem**.
+> - **Dashboard**: `StaleOrdersAlert` — nạp riêng `/order/search` (vì `/dashboard/summary` không
+>   trả số này), kèm nút sang màn Đơn hàng. Kiểm chứng thật: hiện đúng **37 đơn**.
+>
+> ⚠️ **Cố ý nói "trong trang này"** ở banner màn Đơn hàng: `OrderSearchReq` **không có filter theo
+> tuổi đơn** nên không lọc được phía server. Nói "toàn hệ thống" sẽ là số sai.
+> `StaleOrdersAlert` nạp `size: 200` rồi so `data.length` với `total`, bị cắt thì thêm dấu `≥`.
+>
+> #### ③ Kiểm chứng sort — **60/60 PASS**, và tài liệu có 1 chỗ sai
+>
+> Gọi thật mọi cặp `(endpoint, sortField)` UI có thể phát sinh × ASC/DESC trên 7 bảng có sort
+> server. Case âm (`stock-item.skuCode|productName|available`, `order.paidAmount`,
+> `audit-log.status`) đúng là **500** ⇒ `enableSorting: false` đang khoá đúng chỗ.
+>
+> ⚠️ **`branchName` thật ra SORT ĐƯỢC** (200 + thứ tự đúng ở cả `staff`/`customer`/`order`/
+> `warehouse-ledger`) — Hibernate tự join sang `branch`. Bảng trong CLAUDE.md xếp nhầm nó vào
+> DTO-only. **Không sửa code** (khoá sort là bảo thủ, không phải lỗi); đã sửa **tài liệu**.
+>
+> #### ④ i18n + a11y
+>
+> - **i18n**: `vi`/`en` **cùng bộ key 100%** (có script đối chiếu). Gỡ chuỗi cứng ở
+>   [NotMatch.tsx](src/pages/NotMatch.tsx) (cả trang chưa hề dùng `useTranslation`) và nhãn giới
+>   tính ở 2 file module Nhân viên → dùng chung khoá mới `gender.*`.
+> - **a11y**: thêm tên đọc được cho **18 `SelectTrigger` bộ lọc** (trước đây trình đọc màn hình chỉ
+>   đọc được *giá trị*, không biết ô là gì), 4 ô tìm kiếm, 5 ô nhập trong giỏ POS; nối
+>   `<Label htmlFor>` ↔ `id` cho **11 ô** ở checkout/đơn hàng/kho; **`MoneyInput` nay nhận
+>   `aria-label`** (trước đây prop type không cho truyền ⇒ không thể đặt tên từ chỗ gọi).
+> - **Bàn phím**: hàng bảng POS (thao tác *chính* — thêm hàng vào giỏ) và card sản phẩm trước đây
+>   **chỉ bấm được bằng chuột** ⇒ thêm `role="button"` + `tabIndex` + `Enter`/`Space` + focus ring.
+>
+> #### Đã rà, không phải sửa
+>
+> - **Responsive**: 8 route × 2 khổ (375px, 768px) — **không route nào tràn ngang**.
+> - **`console.*`**: chỉ còn 1 chỗ ở `api-client.ts` (log lỗi có chủ đích), không phải rác.
+> - **Mock thừa**: `src/mocks/{return,shift}.ts` **giữ lại** — phục vụ Phase 13/15 đang bị chặn.
+> - **`puppeteer-core`**: **giữ** — không import vào `src/`, nhưng là công cụ tự kiểm thử UI thật,
+>   vừa dùng để nghiệm thu chính phase này.
+> - **Cổng kiểm tra**: `npm run lint` **0 error** (5 warning `react-refresh` trong
+>   `components/ui/*` của shadcn, không đụng tới) · `npm run build` sạch.
+> - **`README.md`**: đã thay README template `react-shadcn-starter` bằng README thật của dự án.
+
 
 > ### 🔴 **Việc HOÃN từ phase trước — phải rà lại ở đây**
 >
@@ -2681,22 +2738,25 @@ Responsive 1024px & 390px **tràn ngang 0px**; 0 lỗi console; lint 0 lỗi; bu
 >
 > Kiểm tra khi rà: lọc đơn `PENDING` có `createdDate` cũ trên dữ liệu thật xem có tồn đọng không.
 >
-> **② Cơ chế duyệt chiết khấu vượt ngưỡng** *(hoãn từ Phase 11 — **B8**, user chốt 2026-08-15:
-> "thông luồng trước, rà lại sau")*
+> **② Cơ chế duyệt chiết khấu vượt ngưỡng (B8) — ❌ ĐÓNG, KHÔNG LÀM** *(user chốt 2026-09-08)*
 >
-> Mockup `03-pos-ban-hang.png` ghi *"tối đa 10% cho STAFF"*, hàm ý STAFF giảm quá ngưỡng thì phải
-> chờ ADMIN duyệt. **Backend không có gì cho việc này**: `CreateOrderReqDTO` chỉ có
-> `discountAmount`/`discountPercent` trần trụi, không có ngưỡng, không có trạng thái chờ duyệt,
-> không có endpoint duyệt. Backend chỉ clamp giảm giá ≤ `subtotal`.
+> **Truy nguồn con số "10%":** nó đến từ **placeholder của ô chiết khấu trong ảnh mockup**
+> `03-pos-ban-hang.png` — nguyên văn *"Chiết khấu % (tối đa 10% cho STAFF)"*. Chuỗi này đi qua
+> mockup → PLAN B8 → các ghi chú trong code, dần bị đọc như một **ràng buộc nghiệp vụ có sẵn**.
 >
-> ⇒ **Phase 11 làm giảm giá tay không ràng buộc** (ai cũng nhập được bao nhiêu tuỳ ý).
-> Khi rà lại ở phase này cần chốt với user:
-> - **Bỏ hẳn** cơ chế duyệt (đơn giản nhất, hợp bối cảnh bán online tại nhà — đội mỏng, STAFF tự chạy trọn luồng), hoặc
-> - **Chỉ cảnh báo ở UI** khi vượt 10% mà vẫn cho lưu (FE làm được ngay, không cần BE), hoặc
-> - **Dựng cơ chế duyệt thật** ⇒ **phải xin backend** thêm ngưỡng + trạng thái + endpoint duyệt.
+> ⚠️ **Nó chưa bao giờ là quy định.** User xác nhận 2026-09-08: *"đây chỉ là ảnh minh họa UI thôi,
+> không phải luồng chính của hệ thống. tôi chưa quy định cái đó"*.
 >
-> Rủi ro nếu bỏ qua: nhân viên giảm giá tuỳ ý không ai kiểm soát. Mức độ nghiêm trọng tuỳ quy mô
-> đội bán hàng — hiện đội mỏng nên chấp nhận được, cần xem lại khi mở cửa hàng/tuyển thêm người.
+> ⇒ **Chiết khấu tay không ràng buộc ngưỡng là ĐÚNG THIẾT KẾ** — không chặn, không cảnh báo, không
+> luồng duyệt, **không phải việc còn nợ**. UI hiện cũng **không hiển thị** dòng "tối đa 10%" ở đâu
+> (placeholder thật chỉ là *"Chiết khấu cả đơn"* / *"Chiết khấu"*). Đã dọn 3 ghi chú trong code
+> (`cart-context.ts` · `types/order.ts` · `cart-panel.tsx`) cho khỏi hiểu nhầm là việc dang dở.
+>
+> **Nếu sau này thật sự cần giới hạn** thì phải chốt lại từ đầu, và lưu ý 2 điểm kỹ thuật:
+> - Ngưỡng phải tính trên **tổng giảm tay của cả 2 tầng ÷ `subtotal`** — chỉ chặn ô `%` thì nhập
+>   bằng `đ` là lách được (mockup vẽ thời còn **1 tầng**, hệ thống thật nay có **2 tầng**).
+> - **Không tính khuyến mại tự động vào ngưỡng** — KM `PERCENT 15%` sẽ khiến mọi đơn "vượt ngưỡng"
+>   dù nhân viên không giảm đồng nào (backend gộp cả hai vào `discountAmount`).
 
 > **④ Hai việc còn lại của Khuyến mại** *(hoãn từ Phase 14, 2026-09-08)*
 >

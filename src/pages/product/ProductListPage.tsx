@@ -229,7 +229,7 @@ export default function ProductListPage() {
                             <Select
                                 value={statusFilter}
                                 onValueChange={(v) => table.resetTo(() => setStatusFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-44">
+                                <SelectTrigger aria-label={t('product.list.allStatuses')} className="w-full sm:w-44">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -297,10 +297,22 @@ export default function ProductListPage() {
                         {refreshing && <RefreshingOverlay />}
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {data.map((product) => (
+                            /*
+                              `Card` render ra `<div>` nên phải tự khai `role`/`tabIndex` +
+                              `Enter`/`Space` thì mới mở được chi tiết bằng bàn phím.
+                            */
                             <Card
                                 key={product.id}
-                                className="cursor-pointer gap-0 overflow-hidden p-0 transition-shadow hover:shadow-md"
-                                onClick={() => setDetailProduct(product)}>
+                                role="button"
+                                tabIndex={0}
+                                aria-label={product.name}
+                                className="focus-visible:ring-ring cursor-pointer gap-0 overflow-hidden p-0 transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
+                                onClick={() => setDetailProduct(product)}
+                                onKeyDown={(event) => {
+                                    if (event.key !== 'Enter' && event.key !== ' ') return
+                                    event.preventDefault()
+                                    setDetailProduct(product)
+                                }}>
                                 <div className="bg-muted relative flex aspect-square items-center justify-center">
                                     {product.images[0] ? (
                                         <img

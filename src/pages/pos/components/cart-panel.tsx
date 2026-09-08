@@ -91,8 +91,10 @@ function parseAmount(raw: string): number {
  * giá do server chốt theo `product.price`, và backend còn tự clamp giảm giá ≤ tạm tính.
  * Tổng tính tay ở client chỉ dùng làm giá trị tạm trong lúc chờ preview.
  *
- * ⚠️ **Chiết khấu KHÔNG ràng buộc ngưỡng** — bỏ qua dòng *"tối đa 10% cho STAFF"* của mockup
- * (B8 hoãn sang Phase 16, user chốt 2026-08-15).
+ * **Chiết khấu KHÔNG ràng buộc ngưỡng — đúng thiết kế, đừng thêm.** Dòng *"tối đa 10% cho STAFF"*
+ * trong mockup `03` chỉ là **chữ minh hoạ trong ảnh**, không phải quy định nghiệp vụ
+ * (user chốt 2026-09-08: *"tôi chưa quy định cái đó"*). Cần giới hạn thật thì phải chốt lại
+ * ngưỡng + cách tính, và xin backend cơ chế duyệt — xem PLAN mục B8.
  */
 export function CartPanel({
     branchId,
@@ -381,6 +383,7 @@ export function CartPanel({
                                 value={customerQuery}
                                 onChange={(event) => setCustomerQuery(event.target.value)}
                                 placeholder={t('order.pos.cart.customerPlaceholder')}
+                                aria-label={t('order.pos.cart.customerPlaceholder')}
                                 className="pl-9"
                             />
                             {lookingUp && (
@@ -576,6 +579,9 @@ export function CartPanel({
                                                 placeholder={t(
                                                     'order.pos.cart.lineDiscountPlaceholder',
                                                 )}
+                                                aria-label={t('order.pos.cart.lineDiscountValue', {
+                                                    name: line.productName,
+                                                })}
                                                 className="h-7 flex-1 text-xs"
                                             />
                                         ) : (
@@ -591,6 +597,9 @@ export function CartPanel({
                                                 placeholder={t(
                                                     'order.pos.cart.lineDiscountPlaceholder',
                                                 )}
+                                                aria-label={t('order.pos.cart.lineDiscountValue', {
+                                                    name: line.productName,
+                                                })}
                                                 inputMode="decimal"
                                                 className="h-7 flex-1 text-xs"
                                             />
@@ -631,6 +640,7 @@ export function CartPanel({
                             onChange={(value) => setOrderDiscountValue(value ? Number(value) : 0)}
                             suffix={null}
                             placeholder={t('order.pos.cart.discountPlaceholder')}
+                            aria-label={t('order.pos.cart.discountPlaceholder')}
                             className="flex-1"
                             disabled={lines.length === 0}
                         />
@@ -641,6 +651,7 @@ export function CartPanel({
                                 setOrderDiscountValue(parseAmount(event.target.value))
                             }
                             placeholder={t('order.pos.cart.discountPlaceholder')}
+                            aria-label={t('order.pos.cart.discountPlaceholder')}
                             inputMode="decimal"
                             className="flex-1"
                             disabled={lines.length === 0}

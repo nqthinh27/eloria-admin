@@ -52,6 +52,18 @@ export default {
         selectedCount: '{{count}} selected',
         removeItem: 'Remove {{name}}',
     },
+    /** Trang 404 — route không khớp. */
+    notFound: {
+        title: 'Page not found',
+        description: 'The page you requested does not exist or has been moved.',
+        backHome: 'Back to home',
+    },
+    /** Nhãn giới tính dùng chung cho nhân viên + khách hàng (enum `EGender`). */
+    gender: {
+        MALE: 'Male',
+        FEMALE: 'Female',
+        OTHER: 'Other',
+    },
     confirmDialog: {
         auditNotice: 'This action will be recorded in the audit log.',
     },

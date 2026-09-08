@@ -56,7 +56,7 @@ export function AssignRoleDialog({ staff, onOpenChange, onSubmit }: AssignRoleDi
                 </DialogHeader>
 
                 <Select value={role} onValueChange={(v) => setRole(v as ERole)}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger aria-label={t('staff.assignRole.title')} className="w-full">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

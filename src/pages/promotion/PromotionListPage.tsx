@@ -468,7 +468,7 @@ export default function PromotionListPage() {
                             <Select
                                 value={statusFilter}
                                 onValueChange={(v) => table.resetTo(() => setStatusFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-44">
+                                <SelectTrigger aria-label={t('promotion.list.allStatuses')} className="w-full sm:w-44">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -486,7 +486,7 @@ export default function PromotionListPage() {
                             <Select
                                 value={channelFilter}
                                 onValueChange={(v) => table.resetTo(() => setChannelFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-40">
+                                <SelectTrigger aria-label={t('promotion.list.allChannels')} className="w-full sm:w-40">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

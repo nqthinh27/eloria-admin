@@ -207,7 +207,7 @@ export default function CustomerListPage() {
                             <Select
                                 value={statusFilter}
                                 onValueChange={(v) => table.resetTo(() => setStatusFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-44">
+                                <SelectTrigger aria-label={t('customer.list.allStatuses')} className="w-full sm:w-44">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -230,7 +230,7 @@ export default function CustomerListPage() {
                             <Select
                                 value={branchFilter}
                                 onValueChange={(v) => table.resetTo(() => setBranchFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-48">
+                                <SelectTrigger aria-label={t('customer.list.allBranches')} className="w-full sm:w-48">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

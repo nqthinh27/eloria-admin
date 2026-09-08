@@ -350,9 +350,9 @@ export function StaffFormDialog({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value={EGender.MALE}>Nam</SelectItem>
-                                                <SelectItem value={EGender.FEMALE}>Nữ</SelectItem>
-                                                <SelectItem value={EGender.OTHER}>Khác</SelectItem>
+                                                <SelectItem value={EGender.MALE}>{t('gender.MALE')}</SelectItem>
+                                                <SelectItem value={EGender.FEMALE}>{t('gender.FEMALE')}</SelectItem>
+                                                <SelectItem value={EGender.OTHER}>{t('gender.OTHER')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />

@@ -160,6 +160,7 @@ export function SearchSelect({
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
                             placeholder={t('searchSelect.searchPlaceholder')}
+                            aria-label={t('searchSelect.searchPlaceholder')}
                             className="rounded-none border-0 pl-9 shadow-none focus-visible:ring-0"
                         />
                         {keyword && (

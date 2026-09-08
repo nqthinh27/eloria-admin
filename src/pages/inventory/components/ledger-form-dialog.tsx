@@ -215,14 +215,14 @@ export function LedgerFormDialog({
                 <div className="space-y-4">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label>
+                            <Label htmlFor="ledger-type">
                                 {t('inventory.form.type')}{' '}
                                 <span className="text-destructive">*</span>
                             </Label>
                             <Select
                                 value={type}
                                 onValueChange={(v) => setType(v as LedgerType)}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger id="ledger-type" className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -251,12 +251,12 @@ export function LedgerFormDialog({
 
                         {canChooseBranch && (
                             <div className="space-y-2">
-                                <Label>
+                                <Label htmlFor="ledger-branch">
                                     {t('inventory.form.branch')}{' '}
                                     <span className="text-destructive">*</span>
                                 </Label>
                                 <Select value={branchId} onValueChange={setBranchId}>
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger id="ledger-branch" className="w-full">
                                         <SelectValue
                                             placeholder={t('inventory.form.branchPlaceholder')}
                                         />
@@ -277,12 +277,12 @@ export function LedgerFormDialog({
 
                         {isTransfer && (
                             <div className="space-y-2">
-                                <Label>
+                                <Label htmlFor="ledger-to-branch">
                                     {t('inventory.form.toBranch')}{' '}
                                     <span className="text-destructive">*</span>
                                 </Label>
                                 <Select value={toBranchId} onValueChange={setToBranchId}>
-                                    <SelectTrigger className="w-full">
+                                    <SelectTrigger id="ledger-to-branch" className="w-full">
                                         <SelectValue
                                             placeholder={t('inventory.form.toBranchPlaceholder')}
                                         />

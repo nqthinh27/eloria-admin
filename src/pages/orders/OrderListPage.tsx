@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Eye, MoreHorizontal, Printer, ShoppingCart } from 'lucide-react'
+import { AlertTriangle, Eye, MoreHorizontal, Printer, ShoppingCart } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { orderApi } from '@/api/order'
 import { hasRole } from '@/config/roles'
 import { formatDateTime, formatVnd } from '@/lib/format'
 import { toastError, toastInfo } from '@/lib/toast'
+import { STALE_PENDING_DAYS, daysSince, isStalePending } from '@/lib/stale-order'
 import { ERole } from '@/types/common'
 import {
     EOrderChannel,
@@ -100,6 +101,15 @@ export default function OrderListPage() {
     const [paymentFilter, setPaymentFilter] = useState<string>(ALL)
     const [branchFilter, setBranchFilter] = useState<string>(ALL)
     const [detailId, setDetailId] = useState<string | null>(null)
+
+    /*
+      Đếm đơn treo **trong trang đang xem**. Backend không có filter "đơn treo" nên không lọc được
+      phía server; nói rõ "trong trang này" để không ngụ ý đây là con số toàn hệ thống.
+    */
+    const staleCount = useMemo(
+        () => data.filter((order) => isStalePending(order.status, order.createdDate)).length,
+        [data],
+    )
 
     /* page · sort · cột ẩn/hiện · nonce tải lại — xem `use-table-state`. */
     const table = useTableState()
@@ -220,11 +230,32 @@ export default function OrderListPage() {
                     sortField: 'createdDate',
                     columnLabel: t('order.list.column.createdDate'),
                 },
-                cell: ({ row }) => (
-                    <span className="text-muted-foreground text-xs whitespace-nowrap">
-                        {formatDateTime(row.original.createdDate)}
-                    </span>
-                ),
+                /*
+                  Kèm cảnh báo **đơn treo giam tồn**: backend trừ tồn ngay khi tạo đơn và không có
+                  cơ chế tự huỷ ⇒ đơn `PENDING` bỏ quên giữ hàng vô thời hạn (PLAN Phase 16 mục ①).
+                  Badge chỉ hiện ở đơn quá ngưỡng nên bảng thường ngày không bị nhiễu.
+                */
+                cell: ({ row }) => {
+                    const { createdDate, status } = row.original
+                    const stale = isStalePending(status, createdDate)
+                    const age = stale ? daysSince(createdDate) : null
+
+                    return (
+                        <div className="flex flex-col gap-1">
+                            <span className="text-muted-foreground text-xs whitespace-nowrap">
+                                {formatDateTime(createdDate)}
+                            </span>
+                            {stale && age !== null && (
+                                <span
+                                    title={t('order.list.stale.tooltip', { days: age })}
+                                    className="text-destructive border-destructive/30 bg-destructive/5 inline-flex w-fit items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap">
+                                    <AlertTriangle className="size-3 shrink-0" aria-hidden />
+                                    {t('order.list.stale.badge', { days: age })}
+                                </span>
+                            )}
+                        </div>
+                    )
+                },
             },
             {
                 id: 'actions',
@@ -409,7 +440,7 @@ export default function OrderListPage() {
                                     onValueChange={(value) =>
                                         table.resetTo(() => setStatusFilter(value))
                                     }>
-                                    <SelectTrigger className="w-full sm:w-48">
+                                    <SelectTrigger aria-label={t('order.list.allStatuses')} className="w-full sm:w-48">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -429,7 +460,7 @@ export default function OrderListPage() {
                                     onValueChange={(value) =>
                                         table.resetTo(() => setPaymentFilter(value))
                                     }>
-                                    <SelectTrigger className="w-full sm:w-48">
+                                    <SelectTrigger aria-label={t('order.list.allPaymentStatuses')} className="w-full sm:w-48">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -450,7 +481,7 @@ export default function OrderListPage() {
                                         onValueChange={(value) =>
                                             table.resetTo(() => setBranchFilter(value))
                                         }>
-                                        <SelectTrigger className="w-full sm:w-52">
+                                        <SelectTrigger aria-label={t('order.list.allBranches')} className="w-full sm:w-52">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -477,6 +508,20 @@ export default function OrderListPage() {
                             />
                         }
                     />
+
+                    {staleCount > 0 && (
+                        <div
+                            role="status"
+                            className="text-destructive border-destructive/30 bg-destructive/5 mb-3 flex items-start gap-2 rounded-md border px-3 py-2 text-sm">
+                            <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                            <span>
+                                {t('order.list.stale.banner', {
+                                    count: staleCount,
+                                    days: STALE_PENDING_DAYS,
+                                })}
+                            </span>
+                        </div>
+                    )}
 
                     <DataTable
                         columns={columns}

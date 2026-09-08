@@ -44,6 +44,17 @@ export default {
 
 
         /* ---------------- Cảnh báo giá vốn ---------------- */
+        /*
+          Cảnh báo đơn PENDING treo giam tồn. Backend trừ tồn ngay khi tạo đơn và không có cơ chế
+          tự huỷ ⇒ đơn bỏ quên giữ hàng vô thời hạn. Xem `lib/stale-order.ts` + PLAN Phase 16 mục ①.
+        */
+        stalePending: {
+            title: 'Đơn treo đang giam tồn kho',
+            description:
+                'Có {{count}} đơn ở trạng thái "Chờ xác nhận" quá {{days}} ngày. Tồn kho đã bị trừ ngay khi tạo đơn nên số hàng này không bán được cho khách khác. Vào màn Đơn hàng huỷ các đơn không còn hiệu lực để trả hàng về kho.',
+            action: 'Xem đơn hàng',
+        },
+
         missingCost: {
             title: 'Lãi gộp chưa chính xác',
             description:

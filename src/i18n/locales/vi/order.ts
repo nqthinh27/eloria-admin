@@ -62,6 +62,8 @@ export default {
                 orderDiscountType: 'Kiểu chiết khấu cả đơn',
                 lineDiscountType: 'Kiểu chiết khấu sản phẩm',
                 lineDiscountPlaceholder: 'Chiết khấu',
+                /** Tên đọc được cho ô nhập chiết khấu của từng dòng hàng (ô không có <Label>). */
+                lineDiscountValue: 'Chiết khấu sản phẩm {{name}}',
                 lineDiscountTotal: 'Chiết khấu sản phẩm',
                 orderDiscount: 'Chiết khấu cả đơn',
                 subtotal: 'Tạm tính',
@@ -155,6 +157,21 @@ export default {
 
             empty: 'Chưa có đơn hàng nào',
             emptyHint: 'Tạo đơn ở màn Bán hàng (POS) để bắt đầu.',
+
+            /*
+              Cảnh báo đơn PENDING treo lâu — backend trừ tồn ngay khi tạo đơn và không tự huỷ,
+              nên đơn bỏ quên sẽ giam hàng. Xem `lib/stale-order.ts` + PLAN Phase 16 mục ①.
+            */
+            stale: {
+                badge: 'Treo {{days}} ngày',
+                tooltip:
+                    'Đơn đã chờ {{days}} ngày và vẫn đang giữ tồn kho. Huỷ đơn để trả hàng về kho nếu khách không còn mua.',
+                filter: 'Đơn treo quá {{days}} ngày',
+                banner_one:
+                    '{{count}} đơn trong trang này đã chờ quá {{days}} ngày và vẫn đang giữ tồn kho.',
+                banner_other:
+                    '{{count}} đơn trong trang này đã chờ quá {{days}} ngày và vẫn đang giữ tồn kho.',
+            },
 
             tab: {
                 all: 'Tất cả',

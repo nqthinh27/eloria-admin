@@ -347,7 +347,8 @@ export type OrderLineReq = {
  * ≤ `subtotal` ⇒ **FE không cộng lại**, cứ hiển thị thẳng con số backend trả về.
  *
  * ⚠️ `subtotal` trả về là **giá gốc**, không phải "tạm tính sau giảm dòng".
- * ⚠️ **Không ràng buộc ngưỡng chiết khấu** ở FE — B8 hoãn sang Phase 16 (user chốt 2026-08-15).
+ * **Không ràng buộc ngưỡng chiết khấu** ở FE — đúng thiết kế (user chốt 2026-09-08: chưa có quy
+ * định giới hạn chiết khấu). Backend cũng không có ngưỡng, chỉ cap tổng giảm ≤ `subtotal`.
  */
 export type CreateOrderReq = {
     /** **Bắt buộc với SUPER_ADMIN** (thiếu ⇒ `error.branch.required`); STAFF/ADMIN bị ép về CN mình. */

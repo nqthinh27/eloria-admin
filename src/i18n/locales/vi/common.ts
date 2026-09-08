@@ -53,6 +53,18 @@ export default {
         selectedCount: 'Đã chọn {{count}}',
         removeItem: 'Bỏ chọn {{name}}',
     },
+    /** Trang 404 — route không khớp. */
+    notFound: {
+        title: 'Không tìm thấy trang',
+        description: 'Trang bạn truy cập không tồn tại hoặc đã bị di chuyển.',
+        backHome: 'Về trang chủ',
+    },
+    /** Nhãn giới tính dùng chung cho nhân viên + khách hàng (enum `EGender`). */
+    gender: {
+        MALE: 'Nam',
+        FEMALE: 'Nữ',
+        OTHER: 'Khác',
+    },
     confirmDialog: {
         auditNotice: 'Hành động này sẽ được lưu vào nhật ký (audit log).',
     },

@@ -414,7 +414,7 @@ export function LedgerTab() {
                         <Select
                             value={typeFilter}
                             onValueChange={(v) => table.resetTo(() => setTypeFilter(v))}>
-                            <SelectTrigger className="w-full sm:w-44">
+                            <SelectTrigger aria-label={t('inventory.ledger.allTypes')} className="w-full sm:w-44">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -430,7 +430,7 @@ export function LedgerTab() {
                         <Select
                             value={statusFilter}
                             onValueChange={(v) => table.resetTo(() => setStatusFilter(v))}>
-                            <SelectTrigger className="w-full sm:w-44">
+                            <SelectTrigger aria-label={t('inventory.ledger.allStatuses')} className="w-full sm:w-44">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -449,7 +449,7 @@ export function LedgerTab() {
                             <Select
                                 value={branchFilter}
                                 onValueChange={(v) => table.resetTo(() => setBranchFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-52">
+                                <SelectTrigger aria-label={t('inventory.stock.allBranches')} className="w-full sm:w-52">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

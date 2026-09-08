@@ -375,7 +375,7 @@ export function StockTab() {
                             <Select
                                 value={branchFilter}
                                 onValueChange={(v) => table.resetTo(() => setBranchFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-52">
+                                <SelectTrigger aria-label={t('inventory.stock.allBranches')} className="w-full sm:w-52">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

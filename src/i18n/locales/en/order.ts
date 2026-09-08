@@ -62,6 +62,8 @@ export default {
                 orderDiscountType: 'Order discount type',
                 lineDiscountType: 'Item discount type',
                 lineDiscountPlaceholder: 'Discount',
+                /** Tên đọc được cho ô nhập chiết khấu của từng dòng hàng (ô không có <Label>). */
+                lineDiscountValue: 'Discount for {{name}}',
                 lineDiscountTotal: 'Item discounts',
                 orderDiscount: 'Order discount',
                 subtotal: 'Subtotal',
@@ -152,6 +154,21 @@ export default {
             allPaymentStatuses: 'All payment statuses',
             allBranches: 'All branches',
             resultLabel: 'orders',
+
+            /*
+              Cảnh báo đơn PENDING treo lâu — backend trừ tồn ngay khi tạo đơn và không tự huỷ,
+              nên đơn bỏ quên sẽ giam hàng. Xem `lib/stale-order.ts` + PLAN Phase 16 mục ①.
+            */
+            stale: {
+                badge: 'Pending {{days}}d',
+                tooltip:
+                    'This order has been waiting {{days}} days and is still holding stock. Cancel it to return the items to inventory if the customer is no longer buying.',
+                filter: 'Pending over {{days}} days',
+                banner_one:
+                    '{{count}} order on this page has been waiting over {{days}} days and is still holding stock.',
+                banner_other:
+                    '{{count}} orders on this page have been waiting over {{days}} days and are still holding stock.',
+            },
 
             empty: 'No orders yet',
             emptyHint: 'Create one from the Point of Sale screen to get started.',

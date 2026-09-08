@@ -221,7 +221,7 @@ export default function StaffListPage() {
                             <Select
                                 value={roleFilter}
                                 onValueChange={(v) => table.resetTo(() => setRoleFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-44">
+                                <SelectTrigger aria-label={t('staff.list.allRoles')} className="w-full sm:w-44">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -234,7 +234,7 @@ export default function StaffListPage() {
                             <Select
                                 value={branchFilter}
                                 onValueChange={(v) => table.resetTo(() => setBranchFilter(v))}>
-                                <SelectTrigger className="w-full sm:w-48">
+                                <SelectTrigger aria-label={t('staff.list.allBranches')} className="w-full sm:w-48">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

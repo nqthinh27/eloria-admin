@@ -231,7 +231,7 @@ function PosScreen() {
                         <div className="flex items-center gap-2">
                             <Building2 className="text-muted-foreground size-4 shrink-0" />
                             <Select value={branchId ?? undefined} onValueChange={handleBranchChange}>
-                                <SelectTrigger className="bg-card w-full sm:w-64">
+                                <SelectTrigger aria-label={t('order.pos.branchGateTitle')} className="bg-card w-full sm:w-64">
                                     <SelectValue placeholder={t('order.pos.branchPlaceholder')} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -274,7 +274,7 @@ function PosScreen() {
                         {t('order.pos.branchGateHint')}
                     </p>
                     <Select value={branchId ?? undefined} onValueChange={handleBranchChange}>
-                        <SelectTrigger className="bg-card w-64">
+                        <SelectTrigger aria-label={t('order.pos.branchGateTitle')} className="bg-card w-64">
                             <SelectValue placeholder={t('order.pos.branchPlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>

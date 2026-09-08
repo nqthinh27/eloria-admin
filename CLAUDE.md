@@ -206,6 +206,27 @@ Field **sort được** hay dùng, theo module: `staff`/`customer` (`SysUser`): 
 *(Sort theo đường dẫn lồng như `branch.name` về lý thuyết chạy được — Hibernate tự tạo left join —
 nhưng **chưa nơi nào dùng và chưa test**, đừng tự ý dùng.)*
 
+#### ✅ Kiểm chứng bằng API thật — **2026-09-08 (Phase 16 mục ③)**
+
+Danh sách trên trước đây **đọc từ source JPA entity, chưa gọi thử**. Đã gọi thật **toàn bộ 30 cặp
+`(endpoint, sortField)` mà UI có thể phát sinh × 2 chiều ASC/DESC = 60 request**, tài khoản
+`superadmin`, body `{}`:
+
+**60/60 trả `200`** — 7 bảng có sort server (`customer` · `staff` · `audit-log` ·
+`warehouse-ledger` · `stock-item` · `order` · `promotion`). *(`CategoryListPage` sort phía client,
+`ProductListPage` là lưới card ⇒ không phát sinh `sort` lên server.)*
+
+**Kiểm chứng chiều ngược lại** — field DTO-only **đúng là trả 500** như dự đoán:
+`stock-item`: `skuCode` · `productName` · `available` · `order`: `paidAmount` ·
+`audit-log`: `status` ⇒ đều **HTTP 500 `error.other`**. Xác nhận `enableSorting: false` đang khoá
+đúng chỗ.
+
+⚠️ **Một điểm bảng trên GHI SAI: `branchName` sort được, không phải DTO-only.** Đo thật trả
+**`200` và sắp xếp đúng** (ASC/DESC đảo ngược nhau, `null` về một đầu) ở **cả 4** module
+`staff` · `customer` · `order` · `warehouse-ledger` — Hibernate tự join sang `branch` để giải
+`branchName`. FE hiện vẫn khai `enableSorting: false` cho các cột này ⇒ **an toàn, chỉ là bảo thủ
+hơn mức cần**; muốn mở sort cột CHI NHÁNH thì mở được, không phải xin backend.
+
 ### Quy ước `status` 3 giá trị — **rule chung toàn hệ thống** (chốt với user 2026-08-09)
 
 `EStatus` phía backend có **3** giá trị, áp dụng cho *mọi* entity có cột `status`:

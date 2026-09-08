@@ -86,9 +86,9 @@ export function StaffDetailModal({ staff, onOpenChange, onSave }: StaffDetailMod
             editable: true,
             type: 'select',
             options: [
-                { value: EGender.MALE, label: 'Nam' },
-                { value: EGender.FEMALE, label: 'Nữ' },
-                { value: EGender.OTHER, label: 'Khác' },
+                { value: EGender.MALE, label: t('gender.MALE') },
+                { value: EGender.FEMALE, label: t('gender.FEMALE') },
+                { value: EGender.OTHER, label: t('gender.OTHER') },
             ],
         },
         { name: 'dob', label: t('staff.form.dob'), editable: true, type: 'date' },
