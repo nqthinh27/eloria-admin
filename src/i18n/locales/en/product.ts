@@ -164,10 +164,16 @@ export default {
                 status: 'STATUS',
                 actions: 'ACTIONS',
             },
+            actionView: 'Details',
             actionEdit: 'Edit category',
             actionActivate: 'Activate',
             actionDeactivate: 'Deactivate',
             actionDelete: 'Delete category',
+        },
+
+        detail: {
+            createdDate: 'Created',
+            lastModifiedDate: 'Last updated',
         },
 
         form: {

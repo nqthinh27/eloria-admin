@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Boxes, MoreHorizontal, Pencil, Plus, Power, Trash2 } from 'lucide-react'
+import { Boxes, Eye, MoreHorizontal, Pencil, Plus, Power, Trash2 } from 'lucide-react'
 
 import { categoryApi } from '@/api/product'
 import { toastSuccess } from '@/lib/toast'
@@ -25,6 +25,7 @@ import { DataTable } from '@/components/data-table/data-table'
 import { DataTableToolbar } from '@/components/data-table/data-table-toolbar'
 import { DataTableControls } from '@/components/data-table/data-table-view-options'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { CategoryDetailModal } from './components/category-detail-modal'
 import { CategoryFormDialog } from './components/category-form-dialog'
 
 const ALL_LEVELS = 'ALL'
@@ -66,6 +67,7 @@ export default function CategoryListPage() {
     const { page, setPage, columnVisibility, setColumnVisibility } = table
 
     const [formCategory, setFormCategory] = useState<Category | null | 'new'>(null)
+    const [detailCategory, setDetailCategory] = useState<Category | null>(null)
     const [deleteCategory, setDeleteCategory] = useState<Category | null>(null)
     const [statusCategory, setStatusCategory] = useState<Category | null>(null)
 
@@ -276,44 +278,54 @@ export default function CategoryListPage() {
                 meta: { columnLabel: t('category.list.column.actions') },
                 cell: ({ row }) => {
                     const category = row.original
-                    if (!canWrite) return null
                     const isActive = category.status === EntityStatus.ACTIVE
                     return (
                         <div className="flex items-center gap-1">
+                            {/* Nut Chi tiet LUON hien, khong gate theo quyen (CONVENTIONS muc 5.3). */}
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 className="size-8 shrink-0"
-                                title={t('category.list.actionEdit')}
-                                aria-label={t('category.list.actionEdit')}
-                                onClick={() => setFormCategory(category)}>
-                                <Pencil className="size-4" />
+                                title={t('category.list.actionView')}
+                                aria-label={t('category.list.actionView')}
+                                onClick={() => setDetailCategory(category)}>
+                                <Eye className="size-4" />
                             </Button>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="size-8 shrink-0"
-                                        aria-label={t('category.list.column.actions')}>
-                                        <MoreHorizontal className="size-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => setStatusCategory(category)}>
-                                        <Power className="size-4" />
-                                        {isActive
-                                            ? t('category.list.actionDeactivate')
-                                            : t('category.list.actionActivate')}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        variant="destructive"
-                                        onSelect={() => setDeleteCategory(category)}>
-                                        <Trash2 className="size-4" />
-                                        {t('category.list.actionDelete')}
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+
+                            {/* Chi role ghi moi co hanh dong => menu tu an voi nguoi chi xem. */}
+                            {canWrite && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="size-8 shrink-0"
+                                            aria-label={t('category.list.column.actions')}>
+                                            <MoreHorizontal className="size-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                            onSelect={() => setFormCategory(category)}>
+                                            <Pencil className="size-4" />
+                                            {t('category.list.actionEdit')}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onSelect={() => setStatusCategory(category)}>
+                                            <Power className="size-4" />
+                                            {isActive
+                                                ? t('category.list.actionDeactivate')
+                                                : t('category.list.actionActivate')}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            variant="destructive"
+                                            onSelect={() => setDeleteCategory(category)}>
+                                            <Trash2 className="size-4" />
+                                            {t('category.list.actionDelete')}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
                         </div>
                     )
                 },
@@ -404,6 +416,11 @@ export default function CategoryListPage() {
                     unitLabel={t('category.list.resultLabel')}
                     emptyState={t('category.list.empty')}
                     pagination={{ page, size: PAGE_SIZE, total, onPageChange: setPage }}
+                />
+
+                <CategoryDetailModal
+                    category={detailCategory}
+                    onOpenChange={(open) => !open && setDetailCategory(null)}
                 />
 
                 <CategoryFormDialog

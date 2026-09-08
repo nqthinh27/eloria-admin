@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Eye, Printer, ShoppingCart } from 'lucide-react'
+import { Eye, MoreHorizontal, Printer, ShoppingCart } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { orderApi } from '@/api/order'
@@ -28,7 +28,12 @@ import { ExportButton } from '@/components/export-button'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { OrderDetailDialog } from './components/order-detail-dialog'
 import { printInvoice } from './components/print-invoice'
 
@@ -228,34 +233,51 @@ export default function OrderListPage() {
                 enableHiding: false,
                 enableSorting: false,
                 meta: { columnLabel: t('order.list.column.actions') },
-                cell: ({ row }) => (
-                    <div className="flex justify-end gap-1">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setDetailId(row.original.id)}
-                                    aria-label={t('order.action.view')}>
-                                    <Eye className="size-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>{t('order.action.view')}</TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => void handlePrint(row.original)}
-                                    aria-label={t('order.action.print')}>
-                                    <Printer className="size-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>{t('order.action.print')}</TooltipContent>
-                        </Tooltip>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const order = row.original
+                    /* Hoa don chi in duoc khi da thu tien (user chot 2026-08-21) — chan o ca 2 noi. */
+                    const canPrint = order.paymentStatus === EPaymentStatus.PAID
+                    return (
+                        <div className="flex justify-end gap-1">
+                            {/* Nut Chi tiet LUON hien (CONVENTIONS muc 5.3). */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 shrink-0"
+                                title={t('order.action.view')}
+                                aria-label={t('order.action.view')}
+                                onClick={() => setDetailId(order.id)}>
+                                <Eye className="size-4" />
+                            </Button>
+
+                            {/* In hoa don chuyen vao `(...)` theo CONVENTIONS muc 5.3. */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="size-8 shrink-0"
+                                        aria-label={t('order.list.column.actions')}>
+                                        <MoreHorizontal className="size-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                        disabled={!canPrint}
+                                        onSelect={() => void handlePrint(order)}>
+                                        <Printer className="size-4" />
+                                        {t('order.action.print')}
+                                    </DropdownMenuItem>
+                                    {!canPrint && (
+                                        <p className="text-muted-foreground max-w-56 px-2 py-1 text-xs">
+                                            {t('order.detail.printBlocked')}
+                                        </p>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )
+                },
             },
         ],
         [t, handlePrint],

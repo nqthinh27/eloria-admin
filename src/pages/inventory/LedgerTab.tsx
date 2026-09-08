@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Eye, FileStack, Plus, Send, X } from 'lucide-react'
+import { Check, Eye, FileStack, MoreHorizontal, Plus, Send, X } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { warehouseLedgerApi } from '@/api/inventory'
@@ -23,7 +23,12 @@ import { StatusBadge, type StatusTone } from '@/components/status-badge'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { LedgerFormDialog } from './components/ledger-form-dialog'
 import { LedgerDetailDialog } from './components/ledger-detail-dialog'
 import { LedgerRejectDialog } from './components/ledger-reject-dialog'
@@ -223,64 +228,67 @@ export function LedgerTab() {
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                className="size-8 shrink-0"
+                                title={t('inventory.ledger.action.view')}
                                 aria-label={t('inventory.ledger.action.view')}
                                 onClick={() => setDetailId(ledger.id)}>
                                 <Eye className="size-4" />
                             </Button>
 
-                            {ledger.status === EWarehouseLedgerStatus.DRAFT && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label={t('inventory.ledger.action.submit')}
-                                    onClick={() => setSubmitLedger(ledger)}>
-                                    <Send className="size-4" />
-                                </Button>
-                            )}
-
-                            {canApprove && waiting && (
-                                <>
-                                    {own ? (
-                                        /*
-                                         * Nút bị khoá vẫn phải nhận được hover để hiện tooltip lý do —
-                                         * button `disabled` không phát sự kiện chuột, nên bọc trong <span>.
-                                         */
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <span className="inline-flex">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        disabled
-                                                        aria-label={t('inventory.ledger.action.approve')}>
-                                                        <Check className="size-4" />
-                                                    </Button>
-                                                </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                {t('inventory.ledger.cannotApproveOwnHint')}
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    ) : (
+                            {/*
+                              Gửi duyệt / Duyệt / Từ chối dồn vào `(...)` theo CONVENTIONS mục 5.3
+                              (trước đây nằm thẳng trên cột, tối đa 4 nút làm cột phình ra).
+                              Không có hành động nào khả dụng ⇒ ẩn hẳn menu.
+                            */}
+                            {(ledger.status === EWarehouseLedgerStatus.DRAFT ||
+                                (canApprove && waiting)) && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="text-success"
-                                            aria-label={t('inventory.ledger.action.approve')}
-                                            onClick={() => setApproveLedger(ledger)}>
-                                            <Check className="size-4" />
+                                            className="size-8 shrink-0"
+                                            aria-label={t('inventory.ledger.column.actions')}>
+                                            <MoreHorizontal className="size-4" />
                                         </Button>
-                                    )}
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {ledger.status === EWarehouseLedgerStatus.DRAFT && (
+                                            <DropdownMenuItem
+                                                onSelect={() => setSubmitLedger(ledger)}>
+                                                <Send className="size-4" />
+                                                {t('inventory.ledger.action.submit')}
+                                            </DropdownMenuItem>
+                                        )}
 
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive"
-                                        aria-label={t('inventory.ledger.action.reject')}
-                                        onClick={() => setRejectLedger(ledger)}>
-                                        <X className="size-4" />
-                                    </Button>
-                                </>
+                                        {canApprove && waiting && (
+                                            <>
+                                                {/*
+                                                  Backend chặn tự duyệt phiếu do chính mình tạo
+                                                  (`error.warehouseLedger.cannotApproveOwn`) ⇒ khoá
+                                                  mục và nói rõ lý do ngay trong menu.
+                                                */}
+                                                <DropdownMenuItem
+                                                    disabled={own}
+                                                    onSelect={() => setApproveLedger(ledger)}>
+                                                    <Check className="size-4" />
+                                                    {t('inventory.ledger.action.approve')}
+                                                </DropdownMenuItem>
+                                                {own && (
+                                                    <p className="text-muted-foreground px-2 py-1 text-xs">
+                                                        {t('inventory.ledger.cannotApproveOwnHint')}
+                                                    </p>
+                                                )}
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    onSelect={() => setRejectLedger(ledger)}>
+                                                    <X className="size-4" />
+                                                    {t('inventory.ledger.action.reject')}
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             )}
                         </div>
                     )

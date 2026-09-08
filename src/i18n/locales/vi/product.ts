@@ -166,10 +166,16 @@ export default {
                 status: 'TRẠNG THÁI',
                 actions: 'THAO TÁC',
             },
+            actionView: 'Chi tiết',
             actionEdit: 'Sửa danh mục',
             actionActivate: 'Bật hoạt động',
             actionDeactivate: 'Ngừng hoạt động',
             actionDelete: 'Xoá danh mục',
+        },
+
+        detail: {
+            createdDate: 'Ngày tạo',
+            lastModifiedDate: 'Cập nhật lần cuối',
         },
 
         form: {
