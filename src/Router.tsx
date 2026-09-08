@@ -17,6 +17,7 @@ import CategoryListPage from './pages/product/CategoryListPage'
 import InventoryPage from './pages/inventory/InventoryPage'
 import PosPage from './pages/pos/PosPage'
 import OrderListPage from './pages/orders/OrderListPage'
+import PromotionListPage from './pages/promotion/PromotionListPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
@@ -64,10 +65,7 @@ export default function Router() {
                         <Route path="staff" element={<StaffListPage />} />
                         <Route path="branch" element={<BranchListPage />} />
                         <Route path="audit-log" element={<AuditLogPage />} />
-                        <Route
-                            path="promotions"
-                            element={<Placeholder titleKey="menu.promotions" phase={14} />}
-                        />
+                        <Route path="promotions" element={<PromotionListPage />} />
                     </Route>
 
                     <Route path="403" element={<Forbidden />} />

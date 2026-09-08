@@ -154,6 +154,19 @@ export default {
         report: {
             rangeTooLong: 'Kỳ báo cáo quá dài so với đơn vị thống kê đang chọn. Vui lòng thu hẹp khoảng thời gian.',
         },
+        /**
+         * Khuyến mại (backend Phase 9). Lưu ý `invalidStatus` là chuyển **vòng đời KM**
+         * không hợp lệ (`DRAFT→PAUSED`…), không phải `status` 0/1 của bản ghi.
+         */
+        promotion: {
+            notExisted: 'Không tìm thấy chương trình khuyến mại.',
+            codeExisted: 'Mã khuyến mại này đã tồn tại.',
+            invalidValue: 'Mức giảm không hợp lệ. Giảm theo % phải trong khoảng 0–100, giảm tiền phải lớn hơn 0.',
+            targetRequired: 'Vui lòng chọn đối tượng áp dụng cho phạm vi đã chọn.',
+            invalidDate: 'Khoảng thời gian áp dụng không hợp lệ.',
+            invalidStatus: 'Không thể chuyển sang trạng thái này từ trạng thái hiện tại.',
+            branchForbidden: 'Bạn chỉ được tạo/sửa khuyến mại cho chi nhánh của mình.',
+        },
         validation: 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường đã nhập.',
         dataIntegrity: {
             violation: 'Dữ liệu đang được sử dụng ở nơi khác, không thể thực hiện thao tác.',

@@ -12,6 +12,7 @@ import viProduct from './locales/vi/product'
 import viInventory from './locales/vi/inventory'
 import viOrder from './locales/vi/order'
 import viReport from './locales/vi/report'
+import viPromotion from './locales/vi/promotion'
 import enCommon from './locales/en/common'
 import enErrors from './locales/en/errors'
 import enAuth from './locales/en/auth'
@@ -22,6 +23,7 @@ import enProduct from './locales/en/product'
 import enInventory from './locales/en/inventory'
 import enOrder from './locales/en/order'
 import enReport from './locales/en/report'
+import enPromotion from './locales/en/promotion'
 
 export const SUPPORTED_LANGUAGES = ['vi', 'en'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
@@ -43,6 +45,7 @@ const resources = {
         inventory: viInventory,
         order: viOrder,
         report: viReport,
+        promotion: viPromotion,
     },
     en: {
         common: enCommon,
@@ -55,6 +58,7 @@ const resources = {
         inventory: enInventory,
         order: enOrder,
         report: enReport,
+        promotion: enPromotion,
     },
 }
 

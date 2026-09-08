@@ -1,92 +1,86 @@
-import { useMock } from '@/config/app'
 import { apiClient, search } from '@/lib/api-client'
-import { mockPromotions } from '@/mocks/promotion'
-import { mockDelay, paginateMock } from '@/mocks/mock-utils'
 import type { BaseListRes, SearchPagination } from '@/types/common'
 import type {
-    GeneratePromoCodesPayload,
-    PromoCode,
+    CouponExportQuery,
+    CouponGenerateReq,
+    CreatePromotionReq,
+    EPromotionStatus,
     Promotion,
-    PromotionPayload,
+    PromotionPreviewReq,
+    PromotionResult,
     PromotionSearchReq,
+    UpdatePromotionReq,
 } from '@/types/promotion'
 
-/** Service khuyến mại — CHƯA có API thật (PLAN Phase 6), theo `16-khuyen-mai.png`. */
+/**
+ * Service khuyến mại & coupon — **API thật** (backend Phase 9, khảo sát 2026-09-07).
+ * Nhánh mock của Phase 6 đã bị gỡ: `src/mocks/promotion.ts` hết vai trò, và các type mock
+ * (`PromoCode`, `stackable`, `FLASH_SALE`…) **không tồn tại ở backend**.
+ *
+ * Phân quyền: **đọc `[STAFF]`, ghi `[ADMIN]`** (khác nhóm sản phẩm là `[SUPER_ADMIN]`).
+ * Branch scope: non-SUPER_ADMIN đọc được KM toàn chuỗi + KM chi nhánh mình;
+ * **ADMIN chỉ tạo/sửa cho chi nhánh mình** (truyền `branchId` khác ⇒ `error.promotion.branchForbidden`).
+ */
 export const promotionApi = {
-    async search(
-        body: PromotionSearchReq,
-        pagination?: SearchPagination,
-    ): Promise<BaseListRes<Promotion>> {
-        if (useMock) {
-            await mockDelay()
-            return paginateMock(
-                mockPromotions,
-                body,
-                (item, keyword) =>
-                    item.name.toLowerCase().includes(keyword) || item.code.toLowerCase().includes(keyword),
-                pagination,
-            )
-        }
-        return search<BaseListRes<Promotion>>('/promotion/search', body, pagination)
+    /** `[STAFF] POST /promotion/search` — lọc vòng đời bằng `promotionStatus`, không phải `status`. */
+    search(body: PromotionSearchReq, pagination?: SearchPagination, signal?: AbortSignal) {
+        return search<BaseListRes<Promotion>>('/promotion/search', body, pagination, { signal })
     },
 
-    async create(payload: PromotionPayload): Promise<Promotion> {
-        if (useMock) {
-            await mockDelay()
-            const created: Promotion = {
-                id: `promo-mock-${Date.now()}`,
-                code: `KM${String(mockPromotions.length + 1).padStart(3, '0')}`,
-                name: payload.name,
-                type: payload.type,
-                discountValue: payload.discountValue ?? null,
-                channel: payload.channel,
-                startDate: payload.startDate,
-                endDate: payload.endDate,
-                usageCount: 0,
-                stackable: payload.stackable,
-                priority: payload.priority,
-                status: 'UPCOMING',
-            }
-            mockPromotions.unshift(created)
-            return created
-        }
+    /** `[STAFF] GET /promotion/{id}`. */
+    getById(id: string, signal?: AbortSignal) {
+        return apiClient.get<Promotion>(`/promotion/${id}`, { signal })
+    },
+
+    /** `[ADMIN] POST /promotion` — backend **luôn tạo ở `DRAFT`**, phải `updateStatus` mới chạy. */
+    create(payload: CreatePromotionReq) {
         return apiClient.post<Promotion>('/promotion', payload)
     },
 
-    async update(id: string, payload: PromotionPayload): Promise<Promotion> {
-        if (useMock) {
-            await mockDelay()
-            const found = mockPromotions.find((p) => p.id === id)
-            if (!found) throw new Error(`Mock: không tìm thấy khuyến mại ${id}`)
-            Object.assign(found, payload)
-            return found
-        }
+    /** `[ADMIN] PUT /promotion/{id}` — cùng bộ field với create (sửa được cả `code`). */
+    update(id: string, payload: UpdatePromotionReq) {
         return apiClient.put<Promotion>(`/promotion/${id}`, payload)
     },
 
-    async remove(id: string): Promise<null> {
-        if (useMock) {
-            await mockDelay()
-            const index = mockPromotions.findIndex((p) => p.id === id)
-            if (index >= 0) mockPromotions.splice(index, 1)
-            return null
-        }
-        return apiClient.delete<null>(`/promotion/${id}`)
+    /**
+     * `[ADMIN] POST /promotion/{id}/update-status` — chuyển vòng đời KM.
+     *
+     * ⚠️ **Trả `data: null`** dù api-docs khai `PromotionResDTO` (đo thật 2026-09-07). Trạng thái
+     * **có lưu đúng**, nhưng caller **bắt buộc nạp lại danh sách/chi tiết** thay vì dùng giá trị
+     * trả về. Vì vậy kiểu trả về khai là `null`, không phải `Promotion` — xem PLAN **BE18**.
+     */
+    updateStatus(id: string, status: EPromotionStatus) {
+        return apiClient.post<null>(`/promotion/${id}/update-status`, { status })
     },
 
-    /** Sinh mã giảm giá hàng loạt (PLAN Phase 14 "Quản lý mã giảm giá"). */
-    async generateCodes(payload: GeneratePromoCodesPayload): Promise<PromoCode[]> {
-        if (useMock) {
-            await mockDelay()
-            return Array.from({ length: payload.quantity }, (_, i) => ({
-                id: `code-mock-${Date.now()}-${i}`,
-                promotionId: payload.promotionId,
-                code: `${payload.promotionId.slice(-4).toUpperCase()}-${String(i + 1).padStart(4, '0')}`,
-                usageLimit: payload.usageLimit,
-                usedCount: 0,
-                expiryDate: payload.expiryDate,
-            }))
-        }
-        return apiClient.post<PromoCode[]>('/promotion/generate-codes', payload)
+    /**
+     * `[STAFF] POST /promotion/preview` — thử áp KM cho giỏ, **không tiêu thụ quota**.
+     *
+     * ⚠️ Mã coupon sai vẫn trả `200` với `applied: false` (không phân biệt được với "không nhập
+     * mã") ⇒ caller phải tự báo "mã không hợp lệ". Xem `types/promotion.ts#PromotionResult`.
+     */
+    preview(body: PromotionPreviewReq, signal?: AbortSignal) {
+        return apiClient.post<PromotionResult>('/promotion/preview', body, { signal })
+    },
+}
+
+export const couponApi = {
+    /**
+     * `[ADMIN] POST /coupon/generate` — sinh hàng loạt, trả **mảng mã** đã sinh.
+     * Mỗi mã là một dòng `promotion` riêng, sinh ra đã ở `RUNNING` (khác KM thường là `DRAFT`).
+     */
+    generate(payload: CouponGenerateReq) {
+        return apiClient.post<BaseListRes<string>>('/coupon/generate', payload)
+    },
+
+    /**
+     * `[ADMIN] GET /coupon/export` — **trả `text/csv` thuần, KHÔNG bọc `BaseResponse`**
+     * ⇒ bắt buộc `getBlob()`; `get()` sẽ hỏng vì `unwrap` đọc `body.code`
+     * (cùng kiểu với `sku/{id}/barcode` và `bank-account/order/{id}/qr`).
+     *
+     * Caller nhận `Blob` và tự lo tải file + `URL.revokeObjectURL`.
+     */
+    exportCsv(query: CouponExportQuery, signal?: AbortSignal) {
+        return apiClient.getBlob('/coupon/export', { params: query, signal })
     },
 }

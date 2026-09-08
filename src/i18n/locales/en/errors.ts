@@ -137,6 +137,16 @@ export default {
         report: {
             rangeTooLong: 'The report period is too long for the selected granularity. Please narrow the date range.',
         },
+        /** Promotions (backend Phase 9). `invalidStatus` = illegal lifecycle transition. */
+        promotion: {
+            notExisted: 'Promotion not found.',
+            codeExisted: 'This promotion code already exists.',
+            invalidValue: 'Invalid discount value. Percentage must be between 0 and 100; fixed amount must be greater than 0.',
+            targetRequired: 'Please select a target for the chosen scope.',
+            invalidDate: 'The promotion date range is invalid.',
+            invalidStatus: 'This status transition is not allowed from the current status.',
+            branchForbidden: 'You can only create or edit promotions for your own branch.',
+        },
         validation: 'Invalid data. Please review the fields you entered.',
         dataIntegrity: {
             violation: 'This record is in use elsewhere and the action cannot be completed.',
