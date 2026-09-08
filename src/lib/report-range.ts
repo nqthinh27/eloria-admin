@@ -1,4 +1,7 @@
 import {
+    addDays,
+    addMonths,
+    addYears,
     differenceInCalendarDays,
     differenceInCalendarMonths,
     differenceInCalendarYears,
@@ -46,6 +49,39 @@ export function spanOf(from: Date, to: Date, granularity: ReportGranularity): nu
             return differenceInCalendarMonths(to, from) + 1
         case 'YEAR':
             return differenceInCalendarYears(to, from) + 1
+    }
+}
+
+/**
+ * Kéo `movedDate` (ô vừa sửa, `yyyy-MM-dd`) lại gần `anchorDate` (ô còn lại) sao cho khoảng vừa
+ * đúng bằng trần của `granularity` — dùng khi user sửa 1 ô hoặc đổi đơn vị thống kê khiến khoảng
+ * hiện tại vượt trần. `direction` cho biết `movedDate` đứng trước hay sau `anchorDate` trong cặp
+ * from/to, để biết cộng hay trừ.
+ */
+export function clampDateToMaxSpan(
+    anchorDate: string,
+    granularity: ReportGranularity,
+    direction: 'before' | 'after',
+): string {
+    const anchor = new Date(`${anchorDate}T00:00:00`)
+    const maxSpan = GRANULARITY_MAX_SPAN[granularity]
+    // span đếm cả hai đầu mút (xem spanOf) ⇒ độ lệch giữa 2 mốc là (maxSpan - 1) đơn vị.
+    const offset = maxSpan - 1
+    const clamped =
+        direction === 'after'
+            ? addByGranularity(anchor, granularity, offset)
+            : addByGranularity(anchor, granularity, -offset)
+    return toDateInputValue(clamped)
+}
+
+function addByGranularity(date: Date, granularity: ReportGranularity, amount: number): Date {
+    switch (granularity) {
+        case 'DAY':
+            return addDays(date, amount)
+        case 'MONTH':
+            return addMonths(date, amount)
+        case 'YEAR':
+            return addYears(date, amount)
     }
 }
 

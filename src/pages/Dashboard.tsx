@@ -208,7 +208,6 @@ export default function Dashboard() {
                             onCustomFromChange={range.setCustomFrom}
                             onCustomToChange={range.setCustomTo}
                             rangeError={range.rangeError}
-                            maxSpan={range.maxSpan}
                         />
 
                         {canFilterBranch && (

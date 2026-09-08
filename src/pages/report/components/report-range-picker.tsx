@@ -34,8 +34,9 @@ import {
  *
  * ## Trần độ dài kỳ
  *
- * Ngày ≤ 30 · Tháng ≤ 24 · Năm ≤ 10. Vượt trần ⇒ viền đỏ + thông báo nói rõ con số, và màn cha
- * **không gọi API** (xem `useReportRange`).
+ * Ngày ≤ 30 · Tháng ≤ 24 · Năm ≤ 10. Sửa ô ngày (hoặc đổi đơn vị thống kê) khiến khoảng vượt trần
+ * ⇒ **`useReportRange` tự kéo ô vừa đổi về vừa đúng trần** và bắn toast báo con số — picker này
+ * không tự validate/thông báo, chỉ còn hiện viền đỏ khi `rangeError` là `incomplete`/`reversed`.
  */
 export function ReportRangePicker({
     period,
@@ -47,7 +48,6 @@ export function ReportRangePicker({
     onCustomFromChange,
     onCustomToChange,
     rangeError,
-    maxSpan,
 }: {
     period: ReportPeriod
     onPeriodChange: (value: ReportPeriod) => void
@@ -58,7 +58,6 @@ export function ReportRangePicker({
     onCustomFromChange: (value: string) => void
     onCustomToChange: (value: string) => void
     rangeError: RangeError | null
-    maxSpan: number
 }) {
     const { t } = useTranslation('report')
     const invalid = rangeError !== null
@@ -132,17 +131,6 @@ export function ReportRangePicker({
                         className="w-[118px] bg-transparent px-2 py-1 text-sm outline-none"
                     />
                 </div>
-            )}
-
-            {invalid && (
-                <p className="text-destructive text-xs">
-                    {rangeError === 'tooLong'
-                        ? t('report.range.tooLong', {
-                              max: maxSpan,
-                              unit: t(`report.granularity.unit.${granularity}`),
-                          })
-                        : t('report.range.invalid')}
-                </p>
             )}
         </div>
     )
