@@ -443,4 +443,11 @@ export type OrderSearchReq = SearchReq & {
      * ⚠️ Kết quả trả về **vẫn không có** `promotionName`/`promotionCode` — chúng chỉ có ở API chi tiết.
      */
     promotionId?: string
+    /**
+     * Lọc **các đơn thuộc một ca làm việc** (backend bổ sung 2026-09-09 lần 2, PLAN Phase 15).
+     *
+     * ⚠️ Đơn chỉ có `shiftId` khi **STAFF** tạo với `channel = POS` (backend tự gắn ca đang mở);
+     * đơn của ADMIN/SUPER_ADMIN và đơn `ONLINE` đều `null` ⇒ lọc theo ca không ra chúng.
+     */
+    shiftId?: string
 }

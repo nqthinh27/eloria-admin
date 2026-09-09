@@ -8,6 +8,7 @@ export default {
         },
         dashboard: 'Dashboard & Báo cáo',
         pos: 'Bán hàng (POS)',
+        shifts: 'Ca làm việc',
         orders: 'Đơn hàng',
         returns: 'Đổi / Trả',
         staff: 'Nhân viên',

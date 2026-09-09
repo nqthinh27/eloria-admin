@@ -3,6 +3,7 @@ import {
     Boxes,
     Building2,
     ClipboardList,
+    Clock,
     LayoutGrid,
     LayoutDashboard,
     Package,
@@ -54,6 +55,7 @@ export const mainMenu: MenuGroupType[] = [
         titleKey: 'menu.group.sales',
         items: [
             { titleKey: 'menu.pos', url: '/pos', icon: Store, minRole: ERole.STAFF },
+            { titleKey: 'menu.shifts', url: '/shifts', icon: Clock, minRole: ERole.STAFF },
             { titleKey: 'menu.orders', url: '/orders', icon: ShoppingCart, minRole: ERole.STAFF },
             {
                 titleKey: 'menu.returns',

@@ -94,6 +94,14 @@ export default {
             transferSameBranch: 'Source and destination branches must be different.',
             cannotApproveOwn: 'You cannot approve a slip you created yourself.',
         },
+        // Work shift domain (Phase 15).
+        workShift: {
+            alreadyOpen: 'You already have a pending or open shift. Handle it first.',
+            notOpen: 'You have no open shift (a shift must be approved before selling).',
+            notFound: 'Shift not found.',
+            invalidStatus: 'This action is not valid for the current shift status.',
+            branchForbidden: 'You do not have permission for this shift.',
+        },
         stock: {
             insufficient: 'Not enough available stock to issue/transfer.',
             countNoDiff: 'The stock count shows no difference from system stock.',

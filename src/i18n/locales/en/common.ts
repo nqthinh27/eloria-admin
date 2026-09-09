@@ -26,6 +26,7 @@ export default {
         exportPdf: 'Export PDF',
         edit: 'Edit',
         save: 'Save',
+        submitting: 'Processing…',
         detail: 'Detail',
         pickDate: 'Pick a date',
     },

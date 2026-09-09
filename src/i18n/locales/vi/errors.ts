@@ -104,6 +104,15 @@ export default {
             transferSameBranch: 'Chi nhánh nguồn và chi nhánh đích không được trùng nhau.',
             cannotApproveOwn: 'Không thể tự duyệt phiếu do chính mình tạo.',
         },
+        // Domain ca làm việc (Phase 15) — key trích từ `docs/api/ca-lam-viec-p10.md`.
+        workShift: {
+            alreadyOpen: 'Bạn đang có ca chờ duyệt hoặc đang mở. Hãy xử lý ca đó trước.',
+            /** Gồm cả ca đã gửi yêu cầu nhưng **chưa được duyệt**. */
+            notOpen: 'Bạn chưa có ca làm việc đang mở (ca phải được duyệt mới bán được).',
+            notFound: 'Ca làm việc không tồn tại.',
+            invalidStatus: 'Thao tác không hợp lệ với trạng thái ca hiện tại.',
+            branchForbidden: 'Bạn không có quyền với ca này.',
+        },
         stock: {
             insufficient: 'Không đủ tồn khả dụng để xuất/chuyển.',
             countNoDiff: 'Kiểm kê không có chênh lệch nào so với tồn hệ thống.',

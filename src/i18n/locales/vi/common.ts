@@ -27,6 +27,7 @@ export default {
         exportPdf: 'Xuất PDF',
         edit: 'Sửa',
         save: 'Lưu',
+        submitting: 'Đang xử lý…',
         detail: 'Chi tiết',
         pickDate: 'Chọn ngày',
     },

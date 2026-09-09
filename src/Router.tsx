@@ -16,6 +16,7 @@ import ProductListPage from './pages/product/ProductListPage'
 import CategoryListPage from './pages/product/CategoryListPage'
 import InventoryPage from './pages/inventory/InventoryPage'
 import PosPage from './pages/pos/PosPage'
+import ShiftListPage from './pages/shift/ShiftListPage'
 import OrderListPage from './pages/orders/OrderListPage'
 import PromotionListPage from './pages/promotion/PromotionListPage'
 import Login from './pages/auth/Login'
@@ -50,6 +51,11 @@ export default function Router() {
 
                     <Route element={<RoleRoute minRole={ERole.STAFF} />}>
                         <Route path="pos" element={<PosPage />} />
+                        {/*
+                          `[STAFF]` — backend cho STAFF tra **ca của chính mình** (data-scope tự
+                          lọc); các nút duyệt/từ chối/chốt hộ mới gate `[ADMIN]` bên trong màn.
+                        */}
+                        <Route path="shifts" element={<ShiftListPage />} />
                         <Route path="orders" element={<OrderListPage />} />
                         <Route
                             path="returns"

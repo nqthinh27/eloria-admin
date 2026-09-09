@@ -345,6 +345,119 @@ export default {
         },
 
         /* ================= Thông báo ================= */
+        /* ================= Ca làm việc (`02-pos-mo-ca.png`) — PLAN Phase 15 ================= */
+        shift: {
+            open: {
+                title: 'Mở ca bán hàng',
+                subtitle: 'Nhập số tiền đầu ca để bắt đầu',
+                branch: 'Chi nhánh bán hàng',
+                /** Chỉ SUPER_ADMIN thấy ô này — backend bắt buộc chọn (`error.branch.required`). */
+                branchHint: 'Ca làm việc và tồn kho tính theo từng chi nhánh.',
+                openingCash: 'Tiền mặt đầu ca (đ)',
+                openingCashPlaceholder: 'VD: 2000000',
+                note: 'Ghi chú',
+                notePlaceholder: 'Nhập ghi chú nếu có',
+                submit: 'Mở ca',
+            },
+            /* Thanh trạng thái khi đã mở ca (FE thiết kế — mockup chỉ vẽ lúc chưa mở ca). */
+            bar: {
+                open: 'Đang mở ca {{code}}',
+                openedAt: 'Mở lúc {{time}}',
+                openingCash: 'Đầu ca {{amount}}',
+                closeShift: 'Chốt ca',
+            },
+            close: {
+                title: 'Chốt ca & kiểm quỹ',
+                subtitle: 'Đếm tiền mặt thực tế trong két rồi nhập vào ô bên dưới.',
+                closingCash: 'Tiền mặt đếm được (đ)',
+                closingCashPlaceholder: 'VD: 2350000',
+                closingCashHint: 'Nhập đúng số đếm được, hệ thống sẽ tự đối chiếu với số kỳ vọng.',
+                note: 'Ghi chú',
+                notePlaceholder: 'VD: lệch do trả lẻ',
+                submit: 'Chốt ca',
+                doneTitle: 'Đã chốt ca',
+                doneSubtitle: 'Kết quả kiểm quỹ ca {{code}}',
+                balanced: 'Quỹ khớp với số kỳ vọng.',
+                short: 'Thiếu {{amount}} so với số kỳ vọng.',
+                over: 'Thừa {{amount}} so với số kỳ vọng.',
+                finish: 'Xong',
+            },
+            /* Màn chờ duyệt (quy trình duyệt ca, backend 2026-09-09 lần 2). */
+            pending: {
+                title: 'Ca đang chờ duyệt',
+                subtitle:
+                    'Yêu cầu mở ca đã được gửi. Quản lý duyệt xong bạn mới bắt đầu bán được.',
+                refresh: 'Kiểm tra lại',
+            },
+            /* ---- Màn Ca làm việc (danh sách + duyệt ca) — PLAN Phase 15 ---- */
+            list: {
+                pageTitle: 'Ca làm việc',
+                pageDescription: 'Duyệt yêu cầu mở ca và tra cứu lịch sử kiểm quỹ',
+                searchPlaceholder: 'Tìm theo mã ca hoặc tên nhân viên…',
+                allStatuses: 'Tất cả trạng thái',
+                allBranches: 'Tất cả chi nhánh',
+                resultLabel: 'ca',
+                empty: 'Chưa có ca làm việc nào',
+                approve: 'Duyệt ca',
+                reject: 'Từ chối',
+                closeForStaff: 'Chốt ca hộ',
+                column: {
+                    code: 'MÃ CA',
+                    staff: 'NHÂN VIÊN',
+                    branch: 'CHI NHÁNH',
+                    status: 'TRẠNG THÁI',
+                    openedAt: 'GIỜ MỞ',
+                    openingCash: 'TIỀN ĐẦU CA',
+                    expectedCash: 'TIỀN KỲ VỌNG',
+                    cashDifference: 'LỆCH QUỸ',
+                },
+            },
+            status: {
+                INCOMING: 'Ca đặt trước',
+                WAITING_APPROVAL: 'Chờ duyệt',
+                OPEN: 'Đang mở',
+                CLOSED: 'Đã chốt',
+                REJECTED: 'Bị từ chối',
+            },
+            detail: {
+                orders: 'Đơn trong ca ({{count}})',
+                noOrders: 'Ca này chưa có đơn nào.',
+                ordersTruncated:
+                    'Chỉ hiển thị {{shown}} trong tổng số {{total}} đơn của ca.',
+            },
+            reject: {
+                title: 'Từ chối yêu cầu mở ca',
+                subtitle: '{{code}} · {{staff}} · tiền đầu ca {{amount}}',
+                reason: 'Lý do từ chối',
+                reasonPlaceholder: 'VD: tiền đầu ca không khớp với bàn giao',
+                /** Ca REJECTED là ngõ cụt — không duyệt lại được. */
+                hint: 'Ca bị từ chối không duyệt lại được; nhân viên phải gửi yêu cầu mở ca mới.',
+                submit: 'Từ chối ca',
+            },
+            closeForStaff: {
+                title: 'Chốt ca hộ nhân viên',
+                subtitle: '{{code}} · {{staff}}',
+            },
+            field: {
+                code: 'Mã ca',
+                branch: 'Chi nhánh',
+                openedAt: 'Giờ mở ca',
+                closedAt: 'Giờ chốt ca',
+                note: 'Ghi chú',
+                rejectReason: 'Lý do từ chối',
+                openingCash: 'Tiền đầu ca',
+                expectedCash: 'Tiền kỳ vọng',
+                closingCash: 'Tiền đếm được',
+                cashDifference: 'Lệch quỹ',
+            },
+            toast: {
+                requested: 'Đã gửi yêu cầu mở ca — chờ quản lý duyệt',
+                approved: 'Đã duyệt ca',
+                rejected: 'Đã từ chối ca',
+                closed: 'Đã chốt ca',
+            },
+        },
+
         toast: {
             created: 'Đã tạo đơn hàng',
             confirmed: 'Đã xác nhận đơn',

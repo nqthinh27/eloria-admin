@@ -47,7 +47,15 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**, **2026-08-29**, **2026-09-07**
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**, **2026-08-29**, **2026-09-07**, **2026-09-09**
+
+> **Khảo sát lại 2026-09-09 (lần 2):** backend lên **109 path** (+9 trong ngày). Domain mới:
+> **Ca làm việc & Bán quầy** (`/work-shift/**` 8 + `POST /pos/order`) — thứ **Phase 15** đang chờ,
+> nay có **cả quy trình duyệt ca**. Entity mới: `WorkShift`. Nguồn: `docs/api/ca-lam-viec-p10.md`.
+> Đã kiểm thử thật **23/23 PASS**, xem mục "Domain Ca làm việc & Bán quầy" ở cuối phần này.
+> ⇒ **BE19 · BE24 · BE25 đều đóng; Phase 15 đã code xong.**
+>
+> ⚠️ **Vẫn KHÔNG có** API đổi/trả (`refund|return|exchange`: **0 path**) ⇒ **Phase 13 vẫn bị chặn**.
 
 > **Khảo sát lại 2026-09-07:** backend lên **100 path** (+12). Hai domain mới:
 > **Khuyến mại** (`/promotion/**` 5 + `/coupon/**` 2) và **Quản lý giá** (`/price/**` 3 +
@@ -55,8 +63,8 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
 > Nguồn: `docs/api/khuyen-mai-p9.md` · `docs/api/quan-ly-gia-p8.md`. Xem mục
 > "Domain Khuyến mại & Coupon" ở cuối phần này.
 >
-> ⚠️ **Vẫn KHÔNG có** API đổi/trả (`refund|return|exchange`: 0 path) và ca làm việc
-> (`shift`: 0 path) ⇒ **Phase 13 và 15 vẫn bị chặn**.
+> ⚠️ *(Ghi chép 2026-09-07, **phần ca làm việc đã lỗi thời** — xem hộp 2026-09-09 phía trên.)*
+> Vẫn KHÔNG có API đổi/trả (`refund|return|exchange`: 0 path) ⇒ **Phase 13 vẫn bị chặn**.
 
 > **Khảo sát lại 2026-08-29 (lần 2 — backend đã làm xong Phase 7):** backend lên **88 path**
 > (+5). ⚠️ **Ghi chép buổi sáng cùng ngày ("vẫn 83 path, Phase 12 bị chặn") KHÔNG CÒN ĐÚNG** —
@@ -628,7 +636,9 @@ domain **tài khoản ngân hàng / VietQR** cho luồng thu tiền chuyển kho
 - `OrderSearchReqDTO` = `{keyword, status, orderStatus, paymentStatus, channel, branchId, fromDate, toDate}`
   — lưu ý **`orderStatus`** (vòng đời, chuỗi) tách khỏi **`status`** (0/1 bản ghi), đúng pattern
   `ledgerStatus` của phiếu kho.
-- `OrderResDTO.shiftId` đã có sẵn field nhưng **chưa có API ca làm việc** ⇒ Phase 15 vẫn chờ.
+- `OrderResDTO.shiftId` — ⚠️ **đã có API ca làm việc từ 2026-09-09** (ghi chép cũ "chưa có" **không
+  còn đúng**). **`POST /order` nay TỰ GẮN `shiftId`** cho đơn `POS` của STAFF (bản lần 2) —
+  ghi chép "luôn `null`" cũng **không còn đúng**. Xem mục "Domain Ca làm việc & Bán quầy".
 
 #### Cập nhật 2026-08-14 (backend rà soát & fix Phase 6) — đã kiểm thử lại toàn bộ
 
@@ -898,7 +908,8 @@ hoàn toàn với kết quả đo thật của FE**.
   trước khi dùng; không tự ý nối realtime.
 
 **Vẫn chưa có** API: đổi/trả (`type: REFUND` mới chỉ là enum trên `OrderResDTO`, không có endpoint
-riêng), khuyến mại, ca làm việc (shift), giá theo kênh ⇒ Phase 13/14/15 vẫn chờ backend.
+riêng) ⇒ **Phase 13** vẫn chờ backend. *(Khuyến mại đã có 2026-09-07 ⇒ Phase 14 xong; ca làm việc
+đã có 2026-09-09 ⇒ Phase 15 xong — ghi chép cũ liệt kê 2 mục này **không còn đúng**.)*
 
 Ngoài bậc role, backend còn **tự giới hạn phạm vi dữ liệu** (ghi trong `description` từng endpoint):
 ADMIN chỉ thấy/tạo nhân viên chi nhánh mình và chỉ gán được role STAFF; điều chuyển chi nhánh chỉ SUPER_ADMIN.
@@ -1001,6 +1012,124 @@ invalidStatus, branchForbidden}`.
   bị chồng lịch thì **bỏ qua im lặng**, không tính vào count.
 - Đo thật RBAC: ADMIN `POST /price` ⇒ **403** (đúng, cần SUPER_ADMIN); STAFF `price/search` ⇒ **200**.
 - subKey lỗi: `error.price.{notExisted, invalidRange, overlap, targetRequired, noBase}`.
+
+### Domain Ca làm việc & Bán quầy — **MỚI 2026-09-09**, cập nhật **2026-09-09 (lần 2: DUYỆT CA)**
+
+> Nguồn: `35.1.eloria-backend/docs/api/ca-lam-viec-p10.md`. FE đã **đo thật 23/23 case PASS**
+> (vòng đời duyệt ca · kiểm quỹ · RBAC 4 tài khoản · data-scope · mọi đường lỗi), dữ liệu test
+> **đã dọn sạch**. ⇒ **BE19, BE24, BE25 đều đã đóng; Phase 15 code xong.**
+
+> ### ⚠️ **Cập nhật 2026-09-09 (lần 2) — backend thêm QUY TRÌNH DUYỆT CA + 5 endpoint**
+>
+> api-docs lên **109 path** (+5). Backend làm **cả 3 phần** FE xin ở
+> `docs/backend-request-shift-history.md` (A: tra cứu · B: `shiftId` filter · C: gắn ca cho
+> `POST /order`) **và thêm quy trình duyệt ca** mà FE không xin. Ba thay đổi phá vỡ so với bản đầu:
+>
+> 1. **`EShiftStatus` từ 3 → 5 giá trị**: thêm **`WAITING_APPROVAL`** và **`REJECTED`**.
+>    Mở ca **không còn ra `OPEN` ngay** mà ra `WAITING_APPROVAL` ⇒ nhân viên **chưa bán được**
+>    cho tới khi ADMIN duyệt. Ghi chép cũ "`open` ⇒ `OPEN`, bán được luôn" **không còn đúng**.
+> 2. **`POST /order` nay TỰ GẮN `shiftId`** cho đơn `channel=POS` của **STAFF**, và **bắt buộc**
+>    STAFF phải có ca `OPEN` (chưa mở ⇒ `error.workShift.notOpen`). Ghi chép cũ
+>    "`POST /order` không gắn ca, không cần ca" **không còn đúng** ⇒ **BE25 đã hết**.
+> 3. **Đã có API tra cứu lịch sử ca** (`search` + `{id}`) và **`OrderSearchReqDTO.shiftId`**
+>    ⇒ **BE24 đã hết**, màn "Lịch sử ca" dựng được.
+
+| Nhóm | Role tối thiểu | Endpoint |
+|---|---|---|
+| Ca đang hoạt động của tôi | `STAFF` | `GET /work-shift/current` |
+| **Yêu cầu** mở ca | `STAFF` | `POST /work-shift/open` |
+| Tự chốt ca của mình | `STAFF` | `POST /work-shift/close` |
+| Tra cứu lịch sử ca | `STAFF` | `POST /work-shift/search` · `GET /work-shift/{id}` |
+| **Duyệt / từ chối ca** | **`ADMIN`** | `POST /work-shift/{id}/approve` · `/reject` |
+| **Chốt ca hộ nhân viên** | **`ADMIN`** | `POST /work-shift/{id}/close` |
+| Bán quầy gộp | `STAFF` | `POST /pos/order` |
+
+⚠️ **Đường dẫn là `/work-shift/*`, KHÔNG phải `/shift/*`** — lớp mock đoán ở Phase 6 bịa sai
+đường dẫn lẫn tên field (`note` → thật là `description`, `cashVariance` → `cashDifference`,
+thiếu hẳn `expectedCash`). Mock đó **đã xoá**, đừng lấy lại làm tham chiếu.
+
+**Vòng đời ca (có duyệt):**
+
+```
+(STAFF) open → WAITING_APPROVAL ─(ADMIN+ approve)→ OPEN ─(close | {id}/close)→ CLOSED
+                      └──────────(ADMIN+ reject)─→ REJECTED
+```
+
+- Mỗi nhân viên **tối đa 1 ca đang hoạt động** (`WAITING_APPROVAL` *hoặc* `OPEN`).
+- Ca là **bản ghi lịch sử — không sửa, không xoá**. Ca `REJECTED` là **ngõ cụt**: duyệt lại ⇒
+  `error.workShift.invalidStatus`, nhân viên phải **mở ca mới** (đo thật).
+- **`INCOMING` (ca đặt trước) chưa dùng ở MVP** — không endpoint nào tạo ra ⇒ **đừng bày trong
+  bộ lọc**, lọc theo nó luôn ra rỗng.
+- ⚠️ **`openedAt` được ĐẶT LẠI lúc DUYỆT**, không phải lúc gửi yêu cầu (đo thật: yêu cầu
+  `15:41:55` → duyệt `15:42:12` ⇒ `openedAt = 15:42:12`) ⇒ đây là **giờ bắt đầu ca thật**.
+- `GET /work-shift/current` trả về ca ở **cả `WAITING_APPROVAL` lẫn `OPEN`** ⇒ **phải đọc
+  `status`** mới biết bán được chưa. Trả **`data: null`** khi không có ca nào đang hoạt động —
+  **trạng thái bình thường, không phải lỗi/404** (kể cả ngay sau khi ca bị từ chối).
+- ⚠️ **`closingCash`/`expectedCash`/`cashDifference` đều `null`** khi ca chưa chốt — mọi chỗ
+  hiển thị phải phòng `null`, đừng `.toLocaleString()` thẳng.
+- **Mã ca `CA-{branchCode}-{yyyyMMdd}-{seq}`** (Redis INCR), vd `CA-CG-20260909-001`. Chi nhánh
+  **không có `code`** ⇒ fallback **viết tắt tên** (`Chi nhánh Trung tâm` → `CA-CNTT-…`) — đo thật
+  cả 2 case, giống hệt quy tắc prefix mã đơn.
+- `reject` nhận `{reason}` và backend **ghi lý do vào chính `description`** của ca ⇒ màn chi tiết
+  phải đổi nhãn field theo `status` (ca `REJECTED` ⇒ hiện "Lý do từ chối").
+
+**Kiểm quỹ (backend tính, FE KHÔNG tự tính lại):**
+
+```
+expectedCash   = openingCash + Σ tiền mặt net (PAID − REFUNDED) của đơn GẮN CA này
+                 ↑ CHỈ hình thức CASH — QR/CARD/COD không vào
+cashDifference = closingCash − expectedCash      ← ÂM = THIẾU QUỸ
+```
+
+Đo thật (bản đầu): mở ca 500.000 + bán CASH 1.000.000 + CASH 450.000 + **QR 450.000** ⇒
+`expectedCash = 1.950.000` (QR **không** được cộng), đếm 1.900.000 ⇒ `cashDifference = −50.000`. ✓
+
+**Gắn ca cho đơn — quy tắc MỚI (lần 2), quan trọng nhất với FE:**
+
+Mọi đơn `channel = POS` do **STAFF** tạo — qua `POST /order` **hoặc** `POST /pos/order` — đều
+**bắt buộc có ca `OPEN`** và được backend **tự gắn `shiftId`**. ⇒ **Luồng thu tiền 2 bước**
+(`POST /order` → `POST /order/{id}/payment`) mà màn POS đang dùng **đã vào đúng `expectedCash`**.
+Đo thật đủ 2 đường: đầu ca 500k + `/pos/order` CASH 500k + đơn 2 bước CASH 500k ⇒
+`expectedCash = 1.500.000`, lệch quỹ **0**. ✓ *(Kiểm chứng lại qua UI thật: đầu ca 1.000.000 +
+bán 1 áo 450.000 ⇒ kỳ vọng 1.450.000, lệch 0.)*
+
+⚠️ **ADMIN/SUPER_ADMIN KHÔNG cần ca** để bán POS (họ là người duyệt) — đo thật: ADMIN gọi
+`/pos/order` và `POST /order` khi không có ca đều `200`, **`shiftId: null`** ⇒ **tiền của ADMIN
+bán không vào ca nào**. Đây là thiết kế của backend, không phải bug.
+
+⚠️ **`POST /pos/order` KHÁC `POST /order`** — endpoint **gộp**: ép `channel = POS`, gắn ca, trừ
+tồn, **thu tiền ngay 1 lần** (mặc định `CASH`) ⇒ đơn **tự `COMPLETED`**. Body dùng lại nguyên
+`CreateOrderReqDTO` của P6 (giảm giá 2 tầng + `couponCode` đều chạy — đo thật `subtotal 1.000.000`,
+`discount 120.000`, `total 880.000`). FE **không** gọi `confirm/pack/ship/complete` sau đó.
+**Màn POS hiện KHÔNG dùng endpoint này** (user chốt giữ luồng 2 bước để còn bước xác nhận đã thu,
+nhất là với QR — backend chưa có webhook banking).
+
+⚠️ **`branchId` trong body `/pos/order` BỊ BỎ QUA HOÀN TOÀN** — chi nhánh **luôn lấy từ ca đang
+mở**, kể cả với SUPER_ADMIN (đo thật: SA mở ca ở Trung tâm rồi gửi `branchId` Hoàn Kiếm, đơn vẫn
+vào Trung tâm).
+
+**RBAC & data-scope (đo thật 4 tài khoản):** đọc + mở + tự chốt là **`[STAFF]`**;
+**duyệt/từ chối/chốt hộ là `[ADMIN]`** (STAFF tự duyệt ⇒ **403**).
+`branchId` khi mở ca **chỉ SUPER_ADMIN dùng được và là BẮT BUỘC** (thiếu ⇒ `error.branch.required`,
+`code: 14`); **STAFF/ADMIN gửi lên bị bỏ qua trong im lặng** ⇒ **chỉ bày bộ chọn/lọc chi nhánh cho
+SUPER_ADMIN**.
+Phạm vi dữ liệu của `search`/`{id}`: **STAFF chỉ thấy ca của CHÍNH MÌNH** (xem ca người khác ⇒
+`error.workShift.branchForbidden` 403) · **ADMIN chỉ chi nhánh mình** (đo thật: `hkadmin` duyệt ca
+chi nhánh khác ⇒ 403; search trả **0** dòng vì chưa có ca ở chi nhánh đó) · **SUPER_ADMIN toàn chuỗi**.
+
+⚠️ **Sort của `/work-shift/search`: `staffName`/`branchName` gây HTTP 500** (field DTO-only ⇒
+`PropertyReferenceException`; đo thật `sort=staffName,ASC` ⇒ **500**) ⇒ hai cột này **bắt buộc
+`enableSorting: false`**. Sort được: `code` · `status` · `openingCash` · `closingCash` ·
+`expectedCash` · `cashDifference` · `openedAt` · `closedAt` · `createdDate` (đo thật
+`cashDifference` ⇒ 200).
+
+**Lọc đơn theo ca:** `POST /order/search` body `{ shiftId }` (field **mới**). ⚠️ Kết quả vẫn trả
+**`paidAmount: null`** như mọi API danh sách (cố ý tránh N+1) ⇒ **không cộng tiền từ danh sách
+này**; số tiền chuẩn của ca là `expectedCash` do backend tính.
+
+subKey lỗi: `error.workShift.{alreadyOpen, notOpen, notFound, invalidStatus, branchForbidden}` ·
+`error.branch.required` (SA chưa chọn chi nhánh) · `error.stock.insufficient` (hết hàng khi bán
+quầy — rollback sạch cả đơn, đo thật tồn không đổi khi 1 trong 2 dòng thiếu hàng).
 
 ### Tài khoản test (môi trường dev local)
 

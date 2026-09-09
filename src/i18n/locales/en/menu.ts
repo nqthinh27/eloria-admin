@@ -8,6 +8,7 @@ export default {
         },
         dashboard: 'Dashboard & Reports',
         pos: 'Point of Sale',
+        shifts: 'Work shifts',
         orders: 'Orders',
         returns: 'Returns / Exchanges',
         staff: 'Staff',

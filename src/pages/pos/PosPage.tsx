@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { Building2, Store } from 'lucide-react'
 
 import { orderApi } from '@/api/order'
+import { shiftApi } from '@/api/shift'
 import { hasRole } from '@/config/roles'
 import { toastError, toastSuccess } from '@/lib/toast'
 import { useAuth } from '@/hooks/use-auth'
@@ -12,9 +13,11 @@ import { useCart } from '@/hooks/use-cart'
 import { ERole } from '@/types/common'
 import type { Invoice, Order } from '@/types/order'
 import { EPaymentMethod, EPaymentStatus } from '@/types/order'
+import { EShiftStatus, type WorkShift } from '@/types/shift'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PageHeader } from '@/components/page-header'
 import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
     Select,
     SelectContent,
@@ -27,18 +30,44 @@ import { printInvoice } from '@/pages/orders/components/print-invoice'
 import { QrPaymentDialog } from '@/pages/orders/components/qr-payment-dialog'
 import { CartPanel } from './components/cart-panel'
 import { CheckoutDialog } from './components/checkout-dialog'
+import { CloseShiftDialog } from './components/close-shift-dialog'
 import { useFlyToCart } from './components/fly-to-cart'
+import { OpenShiftCard } from './components/open-shift-card'
 import { OrderReceiptDialog } from './components/order-receipt-dialog'
 import { ProductPicker } from './components/product-picker'
+import { ShiftPendingCard } from './components/shift-pending-card'
+import { ShiftStatusBar } from './components/shift-status-bar'
 
 /**
- * Màn "Bán hàng (POS)" theo `03-pos-ban-hang.png` — PLAN Phase 11.
- *
- * **Bỏ hoàn toàn gate mở ca**: vào thẳng màn bán, không chặn "chưa mở ca"
- * (`02-pos-mo-ca.png` đã chuyển sang Phase 15 — giai đoạn bán online tại nhà chưa cần ca).
+ * Màn "Bán hàng (POS)" theo `03-pos-ban-hang.png` — PLAN Phase 11, **bổ sung ca làm việc ở
+ * Phase 15** (`02-pos-mo-ca.png`).
  *
  * Bố cục 2 cột như mockup: trái là bộ chọn hàng, phải là giỏ hàng.
  * Giỏ hàng nằm trong `CartProvider` riêng để sống sót qua các dialog lồng nhau.
+ *
+ * ---
+ *
+ * ### Gate ca làm việc — **chỉ áp cho STAFF** (user chốt 2026-09-09)
+ *
+ * `STAFF` phải có ca **đã được duyệt** mới bán được. Ba trạng thái cửa vào:
+ *
+ * | Ca hiện tại | Màn hiển thị |
+ * |---|---|
+ * | không có | `OpenShiftCard` — gửi yêu cầu mở ca |
+ * | `WAITING_APPROVAL` | `ShiftPendingCard` — chờ quản lý duyệt, **chưa bán được** |
+ * | `OPEN` | khu bán hàng + `ShiftStatusBar` |
+ *
+ * `ADMIN`/`SUPER_ADMIN` **vào thẳng** — hai role này là người duyệt ca, và backend cũng không
+ * bắt họ có ca (đo thật: ADMIN bán POS không ca vẫn `200`).
+ *
+ * ⚠️ **Gate `WAITING_APPROVAL` là bắt buộc, không phải phòng xa**: backend chặn bán khi ca chưa
+ * duyệt (`error.workShift.notOpen`) ⇒ không chặn ở FE thì nhân viên chọn xong cả giỏ mới biết.
+ *
+ * ✅ **`POST /order` nay TỰ GẮN `shiftId`** cho đơn `POS` của STAFF (backend sửa 2026-09-09 lần 2
+ * theo yêu cầu ở `docs/backend-request-shift-history.md` phần C) ⇒ luồng thu tiền **2 bước** mà
+ * user đã chốt giữ nguyên **vẫn vào đúng `expectedCash`** khi chốt ca. Đo thật: đầu ca 500k +
+ * bán `/pos/order` 500k + bán 2 bước 500k ⇒ `expectedCash = 1.500.000`, lệch quỹ `0`.
+ * *(Ghi chép cũ "đơn qua màn này có `shiftId = null` nên báo thiếu quỹ" — **BE25, đã hết**.)*
  */
 function PosScreen() {
     const { t } = useTranslation(['order', 'common'])
@@ -58,6 +87,29 @@ function PosScreen() {
      * Xem `docs/api/order-branch-scope-audit.md` phía backend.
      */
     const canPickBranch = hasRole(user?.role, ERole.SUPER_ADMIN)
+
+    /*
+     * **Gate mở ca chỉ áp cho STAFF** — xem ghi chú đầu component.
+     *
+     * So sánh **bằng đúng** `STAFF` chứ không dùng `hasRole()`: `hasRole` là thang bậc kế thừa
+     * nên `hasRole(ADMIN, STAFF)` cũng `true`, dùng nhầm sẽ chặn luôn ADMIN/SUPER_ADMIN.
+     */
+    const shiftRequired = user?.role === ERole.STAFF
+    /**
+     * Ca **đang hoạt động** của chính người dùng — có thể ở `WAITING_APPROVAL` **hoặc** `OPEN`.
+     * `null` = không có ca nào (hoặc chưa nạp xong).
+     */
+    const [shift, setShift] = useState<WorkShift | null>(null)
+    /** Đang gọi `GET /work-shift/current` **lần đầu** — chưa biết có ca hay không ⇒ hiện skeleton. */
+    const [loadingShift, setLoadingShift] = useState(shiftRequired)
+    /**
+     * Đang **kiểm tra lại** ca theo yêu cầu người dùng (nút ở màn chờ duyệt) — tách khỏi
+     * `loadingShift` để card chờ duyệt **đứng yên và quay spinner trên nút**, thay vì bị thay cả
+     * card bằng skeleton (nháy màn mỗi lần bấm, và spinner không bao giờ kịp hiện).
+     */
+    const [refreshingShift, setRefreshingShift] = useState(false)
+    const [closeShiftOpen, setCloseShiftOpen] = useState(false)
+
     const [branchId, setBranchId] = useState<string | null>(user?.branchId ?? null)
     const [pendingBranchId, setPendingBranchId] = useState<string | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -90,8 +142,64 @@ function PosScreen() {
         return () => controller.abort()
     }, [canPickBranch, refreshBranches])
 
+    /*
+     * Nạp ca **đang hoạt động** khi vào màn — **chỉ với role bị gate**, để không bắn request thừa
+     * cho ADMIN/SUPER_ADMIN (hai role này vào thẳng, không cần ca).
+     *
+     * ⚠️ `GET /work-shift/current` trả về ca ở **cả `WAITING_APPROVAL` lẫn `OPEN`** ⇒ phải đọc
+     * `status` mới biết bán được chưa (xem `shiftOpen`/`shiftPending` bên dưới).
+     *
+     * ⚠️ Trả **`data: null`** khi không có ca nào đang hoạt động — trạng thái bình thường,
+     * **không phải lỗi**. Chỉ lỗi mạng/5xx mới rơi vào `catch`; lúc đó vẫn để `shift` `null` ⇒
+     * hiện màn mở ca, và người dùng bấm "Mở ca" sẽ nhận `error.workShift.alreadyOpen` nếu thật ra
+     * đang có ca — an toàn hơn là cho vào bán với ca không xác định.
+     *
+     * Tách ra `useCallback` để **nút "Kiểm tra lại"** ở màn chờ duyệt dùng lại đúng logic này.
+     */
+    const reloadShift = useCallback(
+        async (signal?: AbortSignal, quiet = false) => {
+            if (!shiftRequired) return
+            if (quiet) setRefreshingShift(true)
+            else setLoadingShift(true)
+            try {
+                const current = await shiftApi.getCurrent(signal)
+                if (!signal?.aborted) setShift(current)
+            } catch {
+                if (!signal?.aborted) setShift(null)
+            } finally {
+                if (!signal?.aborted) {
+                    setLoadingShift(false)
+                    setRefreshingShift(false)
+                }
+            }
+        },
+        [shiftRequired],
+    )
+
+    useEffect(() => {
+        const controller = new AbortController()
+        void reloadShift(controller.signal)
+        return () => controller.abort()
+    }, [reloadShift])
+
+    /*
+     * **Chỉ ca đã DUYỆT (`OPEN`) mới bán được.** Ca `WAITING_APPROVAL` là đã gửi yêu cầu nhưng
+     * quản lý chưa duyệt — backend chặn bán (`error.workShift.notOpen`), nên FE phải chặn trước
+     * và nói rõ đang chờ duyệt, đừng để nhân viên chọn hàng xong mới báo lỗi.
+     */
+    const shiftOpen = shift?.status === EShiftStatus.OPEN
+    const shiftPending = shift?.status === EShiftStatus.WAITING_APPROVAL
+
+    /*
+     * Tên chi nhánh để hiển thị. Ưu tiên **tên lấy từ ca đang mở** (`WorkShiftResDTO.branchName`)
+     * vì STAFF không nạp được danh sách chi nhánh (không có quyền), nên `branches.find` luôn trượt.
+     *
+     * 🐛 **Sửa lỗi sẵn có**: fallback cũ là `user.branchId` ⇒ khi không tra được tên, thanh tiêu đề
+     * **in thẳng UUID** ra cho người dùng đọc (`Bán tại 00000000-…-0000000b0001` — đã chụp lại
+     * được ở màn POS của STAFF). Không có tên thì **ẩn hẳn nhãn** còn hơn hiện mã máy.
+     */
     const branchName =
-        branches.find((branch) => branch.id === branchId)?.name ?? user?.branchId ?? ''
+        shift?.branchName ?? branches.find((branch) => branch.id === branchId)?.name ?? ''
 
     /**
      * Đổi chi nhánh **phải xoá giỏ**: tồn kho và dòng hàng đang có được chọn theo tồn của chi
@@ -256,6 +364,43 @@ function PosScreen() {
             />
 
             {/*
+              Thanh trạng thái + lối chốt ca — **chỉ khi ca đã duyệt**. Ca đang chờ duyệt thì
+              chưa có gì để chốt, và `ShiftPendingCard` đã hiển thị đủ thông tin ca.
+            */}
+            {shiftRequired && shiftOpen && shift && (
+                <ShiftStatusBar shift={shift} onClose={() => setCloseShiftOpen(true)} />
+            )}
+
+            {/*
+              * **Gate ca làm việc (chỉ STAFF)** — đặt TRƯỚC gate chi nhánh vì mở ca là bước đầu
+              * tiên của ca bán hàng, và bản thân việc mở ca đã chốt luôn chi nhánh.
+              *
+              * Đang nạp thì hiện khung xám thay vì màn mở ca: nhấp nháy "chưa mở ca" rồi mới
+              * hiện màn bán là tín hiệu sai, dễ khiến nhân viên bấm mở ca lần hai.
+              */}
+            {shiftRequired && loadingShift ? (
+                <div className="flex flex-1 items-center justify-center py-6">
+                    <Skeleton className="h-96 w-full max-w-md rounded-xl" />
+                </div>
+            ) : shiftRequired && shiftPending && shift ? (
+                /* Đã gửi yêu cầu, chờ ADMIN duyệt — backend chặn bán nên FE chặn trước. */
+                <ShiftPendingCard
+                    shift={shift}
+                    onRefresh={() => void reloadShift(undefined, true)}
+                    refreshing={refreshingShift}
+                />
+            ) : shiftRequired && !shiftOpen ? (
+                <OpenShiftCard
+                    onOpened={(opened) => {
+                        setShift(opened)
+                        /*
+                         * Ca quyết định chi nhánh bán ⇒ đồng bộ luôn `branchId` để `ProductPicker`
+                         * nạp đúng tồn của kho sẽ bị trừ.
+                         */
+                        setBranchId(opened.branchId)
+                    }}
+                />
+            ) : /*
               * **Chặn chọn hàng khi chưa biết chi nhánh** (chỉ xảy ra với SUPER_ADMIN, vì tài
               * khoản này không thuộc chi nhánh nào).
               *
@@ -263,8 +408,8 @@ function PosScreen() {
               * người dùng thêm hàng rồi tới bước thanh toán mới chọn chi nhánh và lúc đó mới biết
               * chi nhánh đó **hết hàng**. Chốt chi nhánh ngay từ đầu thì tồn hiển thị luôn là tồn
               * thật của đúng kho sẽ bị trừ.
-              */}
-            {canPickBranch && !branchId ? (
+              */
+            canPickBranch && !branchId ? (
                 <Card className="flex flex-1 flex-col items-center justify-center gap-3 p-10 text-center">
                     <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
                         <Store className="size-7" />
@@ -362,6 +507,20 @@ function PosScreen() {
                 amount={created?.totalAmount ?? 0}
                 confirming={confirming}
                 onConfirm={() => void payCreatedOrder()}
+            />
+
+            {/*
+              Chốt ca (kiểm quỹ). Chốt xong ⇒ `shift` về `null` ⇒ màn quay lại thẻ "Mở ca",
+              và **xoá giỏ**: giỏ đang dở thuộc về ca vừa đóng, bán tiếp phải mở ca mới.
+            */}
+            <CloseShiftDialog
+                open={closeShiftOpen}
+                onOpenChange={setCloseShiftOpen}
+                shift={shift}
+                onClosed={() => {
+                    setShift(null)
+                    clear()
+                }}
             />
         </div>
     )

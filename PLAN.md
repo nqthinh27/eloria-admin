@@ -174,7 +174,9 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | **BE10** | **`costPrice` trả về cho cả STAFF** — backend không lọc field theo role, STAFF `GET /product/{id}` vẫn đọc được giá vốn (đo thật 2026-08-29). FE đang giấu bằng gate `canWrite` ở UI ⇒ **che giao diện, không phải bảo mật**. | ⏳ Cần hỏi user: nếu giá vốn là số liệu nhạy cảm thật thì xin backend lọc field theo role. Không chặn việc gì. |
 | **BE17** | **API đổi/trả cho Phase 13** — chưa có gì: 0 endpoint, 0 entity, 0 DTO (rà soát lại **2026-09-07**: backend lên **100 path** nhưng **không có gì** cho đổi/trả — grep `refund|return|exchange` trên path: **0**; `domain/` không có entity nào). `EOrderType.REFUND` là enum chết (`OrderServiceImpl:259` set cứng `PURCHASE`); `STORE_CREDIT` không có ví/sổ số dư. **Kèm lỗ hổng nghiệp vụ**: đơn POS đã thu tiền là `COMPLETED` ⇒ `/cancel` trả `error.order.alreadyClosed` ⇒ **hiện không có cách nào trả hàng/hoàn tiền tại quầy**. | ⛔ **CHẶN CỨNG Phase 13.** Cần soạn yêu cầu API gửi backend (theo mẫu `phase-12-report-api-request.md` đã hiệu quả) + chốt phạm vi với user trước. |
 | **BE18** | **`POST /promotion/{id}/update-status` trả `data: null`** — api-docs khai trả `PromotionResDTO` nhưng JSON thật là `{"code":1,"message":"Thành công","data":null}` (đo thật 2026-09-07). Trạng thái **có lưu đúng** (`GET` lại thấy `RUNNING`). | ⏳ Nên xin backend trả đúng DTO cho khớp api-docs. **Không chặn** — FE **phải refetch** sau khi đổi trạng thái, không được tin response. |
-| **BE19** | **API ca làm việc cho Phase 15** — không có entity `WorkShift`, 0 endpoint khớp `shift`; `EShiftStatus` chỉ là file enum lẻ (3 giá trị `INCOMING·OPEN·CLOSED`). Backend xếp ở **P10, ưu tiên #11 — "sau khi có mặt bằng cửa hàng"**. | ⛔ **CHẶN CỨNG Phase 15.** Đúng bối cảnh (bán online tại nhà chưa cần ca) ⇒ không cần giục backend. |
+| **BE19** | **API ca làm việc cho Phase 15** — trước đây không có entity `WorkShift`, 0 endpoint khớp `shift`. | ✅ **ĐÃ XONG (2026-09-09)** — backend làm **9 endpoint** (`/work-shift/**` 8 + `POST /pos/order`), api-docs lên **109 path**, kèm **quy trình duyệt ca** (`WAITING_APPROVAL → OPEN`). FE kiểm thử thật **23/23 PASS**. **Phase 15 đã code xong.** |
+| **BE24** | **Không có API tra cứu lịch sử ca** — chỉ có 3 endpoint `open`/`close`/`current`; `search`/`{id}` đều 404 và `OrderSearchReqDTO` không có `shiftId` ⇒ ca đã chốt không xem lại được. | ✅ **ĐÃ XONG (2026-09-09 lần 2)** — backend thêm `POST /work-shift/search` + `GET /work-shift/{id}` + **`OrderSearchReqDTO.shiftId`**, đúng cả 3 phần FE xin ở `docs/backend-request-shift-history.md`. FE đã dựng **màn Ca làm việc** (duyệt ca + lịch sử + chi tiết kèm đơn trong ca). ⚠️ Sort `staffName`/`branchName` vẫn **500** (field DTO-only) ⇒ 2 cột đó khai `enableSorting: false`. |
+| **BE25** | **Đơn bán qua `POST /order` không vào `expectedCash`** — endpoint này không gắn `shiftId` (luôn `null`) nên chốt ca báo thiếu quỹ đúng bằng toàn bộ tiền đã bán. | ✅ **ĐÃ XONG (2026-09-09 lần 2)** — backend chọn đúng **Cách A** FE đề xuất: `POST /order` **tự gắn ca đang mở** cho đơn `channel=POS` của STAFF (và bắt buộc STAFF phải có ca `OPEN`). ⇒ **luồng thu tiền 2 bước giữ nguyên** mà số kiểm quỹ vẫn đúng. Đo thật API: đầu ca 500k + `/pos/order` 500k + đơn 2 bước 500k ⇒ `expectedCash = 1.500.000`, lệch **0**; kiểm chứng lại qua UI: đầu ca 1.000.000 + bán 450.000 ⇒ kỳ vọng 1.450.000, lệch **0**. ⚠️ ADMIN/SUPER_ADMIN bán POS **không cần ca** ⇒ tiền của họ `shiftId: null`, không vào ca nào (thiết kế backend). |
 | **BE20** | **Quản lý giá (backend P8) đã xong nhưng FE không có màn** — 5 endpoint `/price/**` + `/price-change-log/search`. | ❌ **ĐÓNG (user chốt 2026-09-08): KHÔNG LÀM màn Quản lý giá.** Nhóm API này **cố ý bỏ trống**. Giá bán tiếp tục dùng `product.price`, backend tự fallback khi `sku_price` rỗng ⇒ không phải đổi gì ở FE. Xem hộp cuối Phase 17. |
 | **BE21** | **Promotion không có số đếm theo trạng thái** — `BaseListResponse<PromotionResDTO>` chỉ có `{total, data}`, **không** có `activeTotal`/`inactiveTotal` như staff/branch, và không có endpoint thống kê. ⇒ 3 thẻ "Đang chạy / Sắp chạy / Đã kết thúc" của mockup `16` **chỉ đếm được trên trang hiện tại**. | ⏳ Nên xin backend trả số đếm theo `EPromotionStatus` (hoặc thêm `BaseListResStatus`). **Không chặn** — 3 thẻ đã được gỡ bỏ (user chốt 2026-09-07). Có số đúng thì bàn lại ở **Phase 17 mục 17.2**. |
 | **BE22** | **Coupon sai không báo lỗi** — `couponCode` không tồn tại trả `200` với `{applied:false}`, y hệt ca không nhập mã. | ✅ **ĐÃ XONG (2026-09-08)** — backend chọn **Cách A**: trả **`400 error.promotion.codeInvalid`** khi có gửi mã mà mã không dùng được (đo thật ở `cart/preview`). FE đã nối ô nhập mã ở POS + bắt riêng mã lỗi này. |
@@ -222,7 +224,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **12** | ✅ **Dashboard & Báo cáo doanh thu** (**API thật**) | 5, 11 | `01` |
 | **13** | ⛔ Đổi / Trả — *chờ backend* (BE17) | 5, 6, 11 | `06` |
 | **14** | ✅ **Khuyến mại** (**API thật**) | 5, 6, 9, 11 | `16` |
-| **15** | ⛔ **Ca làm việc (mở ca / chốt ca)** — tách khỏi phase 11, *chờ backend* | 11 | `02` |
+| **15** | ✅ **Ca làm việc (mở ca / duyệt ca / chốt ca)** (**API thật**) | 11 | `02` |
 | **16** | ✅ Hoàn thiện: audit i18n · a11y · responsive · tài liệu | tất cả | — |
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 
@@ -2186,7 +2188,7 @@ mockup**, không rút gọn.
 | **12** Dashboard | ✅ **ĐÃ CÓ** *(cập nhật chiều 2026-08-29)* | Backend làm xong Phase 7 trong ngày: `ReportResource` + `DashboardResource`, 5 endpoint, api-docs **88 path**. Dòng "❌ chưa có" của buổi sáng đã sai |
 | **13** Đổi/Trả | ❌ **Chưa có** | `EOrderType.REFUND` là **enum chết** — nơi ghi `type` duy nhất là `OrderServiceImpl:201` set cứng `PURCHASE`. `/cancel` chỉ đảo `paymentStatus`, **không phải** luồng trả hàng |
 | **14** Khuyến mại | ❌ **Chưa có** | 3 enum mồ côi + `OrderDetail.promotionId` luôn `null`; không bảng, không API |
-| **15** Ca làm việc | ❌ **Chưa có** | `EShiftStatus` không nơi nào dùng; `OrderSale.shiftId` luôn `null`; **không có bảng `work_shift`** (Liquibase chỉ tạo 18 bảng) |
+| **15** Ca làm việc | ~~❌ Chưa có~~ → ✅ **ĐÃ CÓ (2026-09-09)** | *(Dòng cũ là ảnh chụp lúc khảo sát, **không còn đúng**.)* Backend làm xong cả module: bảng `work_shift`, 9 endpoint, quy trình duyệt ca. Xem **BE19/BE24/BE25** |
 | **16** Hoàn thiện | ✅ **ĐÃ XONG (2026-09-08)** — trừ mục **②** (duyệt chiết khấu) user hoãn để trao đổi riêng |
 
 ⚠️ ~~**Kết luận: Phase 12–15 đều chờ backend.**~~ → **Cập nhật 2026-09-03:** Phase 12 **đã xong**.
@@ -2634,29 +2636,100 @@ Responsive 1024px & 390px **tràn ngang 0px**; 0 lỗi console; lint 0 lỗi; bu
 
 ---
 
-## Phase 15 — Ca làm việc (mở ca / chốt ca) ⛔ **BỊ CHẶN — backend chưa có API** *(rà soát 2026-09-07)*
+## Phase 15 — Ca làm việc (mở ca / duyệt ca / chốt ca) ✅ **ĐÃ XONG (2026-09-09)**
 
-> ⛔ **Điều kiện khởi động — chưa đủ (2026-09-07).** Không có entity `WorkShift` trong `domain/`,
-> **0 endpoint** khớp `shift` trên 100 path. `EShiftStatus` chỉ là **file enum lẻ** chưa ai dùng.
-> `OrderResDTO.shiftId` có sẵn field nhưng luôn `null`. Xem **BE19**.
->
-> ℹ️ **Không cần giục backend** — họ xếp việc này ở **P10, ưu tiên #11, "sau khi có mặt bằng
-> cửa hàng"**, đúng với bối cảnh bán online tại nhà hiện tại (chưa có quầy thì chưa cần ca).
+> ✅ **Điều kiện khởi động — đã đủ.** Backend làm xong trong ngày (`docs/api/ca-lam-viec-p10.md`),
+> api-docs lên **109 path** với **9 endpoint**. FE đã **fetch lại api-docs + kiểm thử thật
+> 23/23 PASS** trước khi code. Xem **BE19/BE24/BE25** và mục "Domain Ca làm việc & Bán quầy" ở CLAUDE.md.
 
+**Thiết kế:** `02-pos-mo-ca.png` *(màn chờ duyệt · chốt ca · danh sách ca **không có mockup** —
+FE thiết kế theo cùng ngôn ngữ giao diện và pattern bảng dùng chung của Phase 5)*.
 
-**Thiết kế:** `02-pos-mo-ca.png` *(màn chốt ca chưa có mockup)*.
+### ⚠️ Backend đổi giữa chừng — bản lần 2 thêm **quy trình duyệt ca**
 
-> **Tách ra khỏi Phase 11 theo replan 2026-08-10.** Giai đoạn đầu bán online tại nhà **không có ca
-> quầy** ⇒ chỉ làm khi mở cửa hàng vật lý thật. Backend đã khai sẵn `EShiftStatus` = `INCOMING ·
-> `OPEN` · `CLOSED` (lưu ý: **3 giá trị**, trong khi [src/types/shift.ts](src/types/shift.ts) dựng ở
-> Phase 6 chỉ có 2 — phải sửa lại khi làm).
+FE code xong bản đầu (3 endpoint) thì backend giao bản lần 2, **phá vỡ 3 điểm**:
+`EShiftStatus` 3 → **5 giá trị** (thêm `WAITING_APPROVAL`, `REJECTED`) · mở ca **không còn ra
+`OPEN` ngay** · `POST /order` **nay tự gắn ca**. FE đã đồng bộ lại toàn bộ type/service/UI.
 
-- Mở ca: nhập **tiền mặt đầu ca** + ghi chú.
-- Chốt ca: kiểm quỹ, chênh lệch tiền mặt, bàn giao.
-- **Gate màn bán hàng**: khi bật tính năng ca, `/pos` yêu cầu có ca đang mở mới bán được —
-  đây là thay đổi **ngược lại** quyết định ở Phase 11, cần làm có cờ bật/tắt để không phá luồng
-  bán online đang chạy.
-- Lịch sử ca: tra theo nhân viên/ngày, in báo cáo ca; danh sách đơn lọc theo ca.
+### Quyết định phạm vi (user chốt 2026-09-09)
+
+| Câu hỏi | Chốt |
+|---|---|
+| Nối `POST /pos/order` (thu tiền ngay lúc tạo đơn)? | **Không.** Giữ luồng thanh toán 2 bước của Phase 11 (tạo đơn → xem phiếu → "Xác nhận đã thanh toán"), chỉ bổ sung gate ca. ✅ Nhờ BE25 được vá, lựa chọn này **không còn phải đánh đổi** số kiểm quỹ |
+| Gate ca áp cho ai? | **Chỉ `STAFF`.** ADMIN/SUPER_ADMIN vào thẳng — họ là người duyệt, và backend cũng không bắt họ có ca |
+| Màn "Lịch sử ca"? | **Có** — user chọn; backend đã mở API nên làm được đầy đủ |
+
+### Đã làm
+
+- **`src/types/shift.ts` + `src/api/shift.ts` viết lại hoàn toàn** theo API thật (9 endpoint) —
+  bản đoán Phase 6 sai đường dẫn (`/shift/*` → `/work-shift/*`), sai tên field, thiếu
+  `expectedCash`. `src/mocks/shift.ts` **đã xoá**.
+- **Gate 3 trạng thái ở màn POS**: chưa có ca ⇒ `OpenShiftCard` (`02-pos-mo-ca.png`) ·
+  `WAITING_APPROVAL` ⇒ **`ShiftPendingCard`** (chờ duyệt, có nút "Kiểm tra lại" — **không polling
+  ngầm** vì backend chưa có realtime) · `OPEN` ⇒ khu bán hàng + `ShiftStatusBar`.
+- **`CloseShiftDialog`** 2 bước: nhập tiền đếm được → hiện đối soát (kỳ vọng · đã đếm · lệch quỹ;
+  âm = đỏ, dương = vàng, 0 = xanh).
+- **Màn "Ca làm việc" mới** (`/shifts`, menu + route `[STAFF]`): bảng lịch sử ca + lọc trạng thái/
+  chi nhánh + **duyệt / từ chối / chốt ca hộ** (gate `[ADMIN]`), modal chi tiết kèm **danh sách
+  đơn trong ca** (`POST /order/search` với `shiftId`).
+- **`CashCountResult`** tách dùng chung cho 2 chỗ chốt ca (nhân viên tự chốt / quản lý chốt hộ)
+  để hai nơi không bao giờ hiển thị lệch nhau.
+- i18n `vi`/`en` đầy đủ + 5 subKey `error.workShift.*`; `OrderSearchReq` thêm `shiftId`.
+- 🐛 **Sửa lỗi sẵn có**: thanh tiêu đề POS **in thẳng UUID chi nhánh** cho STAFF
+  (`Bán tại 00000000-…-0000000b0001`) vì fallback rơi về `user.branchId`. Nay ưu tiên
+  `shift.branchName`, không tra được tên thì **ẩn nhãn** thay vì hiện mã máy.
+- 🐛 **Sửa lỗi tự gây trong lúc code**: các key `common.*` viết thiếu tiền tố namespace
+  (`t('common.action.detail')`) ⇒ menu hành động **hiện thẳng khoá i18n** ra màn hình.
+  Quy ước repo là `t('common:action.detail')`. Bắt được nhờ bước quét khoá i18n rò rỉ trong test UI.
+
+### Chưa làm (có lý do)
+
+- **Không nối `POST /pos/order`** — user chốt giữ luồng 2 bước (cần bước xác nhận đã nhận tiền,
+  nhất là với QR: backend chưa có webhook banking). Endpoint vẫn được kiểm thử đầy đủ và ghi
+  tài liệu để dùng sau nếu đổi ý.
+- **Không polling ngầm màn chờ duyệt** — backend chưa có realtime cho ca (`POST /websocket` vẫn
+  chưa rõ mục đích, **BE4**); polling suốt thời gian chờ là đốt request. Dùng nút bấm chủ động.
+
+### Kiểm chứng
+
+- **API thật 23/23 PASS**: `open` ⇒ `WAITING_APPROVAL` · STAFF bán khi chưa duyệt ⇒ chặn ·
+  STAFF tự duyệt ⇒ **403** · ADMIN khác chi nhánh duyệt ⇒ **403 branchForbidden** · duyệt ⇒ `OPEN`
+  + `openedAt` đặt lại · từ chối ⇒ `REJECTED` + lưu lý do, duyệt lại ⇒ `invalidStatus` ·
+  ADMIN chốt hộ · **`POST /order` gắn `shiftId`** · `order/search?shiftId` · search lọc/phân trang ·
+  **sort `staffName` ⇒ 500** (xác nhận phải khoá) · sort `cashDifference` ⇒ 200 · data-scope 3 role ·
+  `expectedCash` loại đúng đơn QR · SA thiếu `branchId` ⇒ `error.branch.required`.
+- **UI Chrome headless, dữ liệu thật — 30/30 PASS**: gate 3 trạng thái · chỉ STAFF bị gate ·
+  nút Mở ca disabled khi trống nhưng **enabled với `0`** · ô tiền format `500.000` ·
+  luồng chéo 2 role (STAFF gửi → ADMIN duyệt → STAFF "Kiểm tra lại" → bán được) ·
+  duyệt/từ chối/chốt hộ trên bảng · chi tiết hiện **đơn trong ca** · STAFF chỉ thấy "Chi tiết"
+  (không có duyệt/từ chối) và **không có bộ lọc chi nhánh** · **kiểm quỹ khớp `0đ`** sau khi bán
+  qua luồng 2 bước · **không rò rỉ khoá i18n** · **0 lỗi console, 0 pageerror**.
+- Lint **0 lỗi** (5 warning `react-refresh` sẵn có của shadcn/ui), build sạch.
+- Dữ liệu test **đã dọn**: mọi ca test đã chốt.
+
+### Review đóng task (2026-09-09, agent review theo CONVENTIONS mục 10)
+
+Kiểm thử lại độc lập: **API thật 21/21 PASS** (vòng đời duyệt ca · RBAC 4 tài khoản · data-scope ·
+sort `staffName` ⇒ 500 · `expectedCash`/`cashDifference`) và **UI Chrome headless 17/18 PASS**
+(1 fail là console 401 lúc boot trang login — sẵn có, không thuộc phase). Checklist mục 10 đạt
+toàn bộ. **3 phát hiện nhẹ, đã sửa ngay trong đợt review:**
+
+1. **`ShiftListPage` — stale closure quanh nút "Duyệt ca"**: `columns` memo bỏ `handleApprove`
+   khỏi deps ⇒ lần duyệt đầu sau khi đổi filter/trang reload bảng bằng closure cũ; trạng thái cuối
+   tự hồi phục nhờ chuỗi `approvingId → columns → load → effect` nhưng mỗi lần duyệt bắn **3**
+   request + nháy skeleton. Sửa: `handleApprove` thành `useCallback([])` ổn định (nằm được trong
+   deps của `columns`), gọi `reload` mới nhất qua **`reloadRef`** để không tạo vòng
+   `load → columns → handleApprove → reload → load`; chống bấm kép bằng `approvingRef`.
+   Đo lại qua UI: **đúng 1 request** `/work-shift/search` sau khi duyệt, body giữ đúng filter.
+2. **`PosPage` — nút "Kiểm tra lại" không bao giờ hiện spinner**: bấm nút đặt `loadingShift` ⇒
+   cả card chờ duyệt bị thay bằng skeleton (nháy màn, prop `refreshing` chết). Sửa: thêm cờ
+   `refreshingShift` riêng, nút refresh gọi `reloadShift(undefined, true)` — card đứng yên,
+   spinner quay trên nút.
+3. Xoá key i18n mồ côi `order.shift.toast.opened` (vi + en) — sót từ bản đầu trước khi backend
+   thêm quy trình duyệt ca (nay dùng `requested`).
+
+Sau sửa: lint 0 lỗi, build sạch, kiểm chứng UI luồng duyệt **8/8 PASS**; ca test của đợt review
+(`-014`, `-016`, `-017`) đều đã chốt sạch, không tạo đơn, không đụng tồn kho.
 
 ---
 
