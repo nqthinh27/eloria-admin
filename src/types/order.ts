@@ -118,6 +118,17 @@ export type OrderLine = {
     discountAmount: number | null
     lineTotal: number
     isGift: boolean
+    /**
+     * Số lượng **đã trả** của dòng này ⇒ còn trả được = `quantity - returnedQuantity`.
+     *
+     * Backend bổ sung 2026-09-13 (**BE26**) — trước đó FE phải `search({orderId})` rồi `GET` từng
+     * phiếu để tự cộng (**N+1 request**). Chỉ được populate ở **`GET /order/{id}`**;
+     * `POST /order/search` trả `lines: null` nên không có.
+     *
+     * Đếm **khớp cách backend chặn `error.return.quantityExceeded`**: phiếu `PENDING_APPROVAL` đã
+     * tính vào, phiếu **`REJECTED` thì không** (đo thật 2026-09-13: tạo phiếu ⇒ `1`, từ chối ⇒ về `0`).
+     */
+    returnedQuantity?: number
 }
 
 /**

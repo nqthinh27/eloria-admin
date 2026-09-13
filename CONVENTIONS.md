@@ -457,6 +457,67 @@ Hiện trạng đang áp dụng (2026-09-12):
 | Ca làm việc | `openingCash` | người quản lý soi TIỀN KỲ VỌNG + LỆCH QUỸ |
 | Phiếu kho · Nhật ký hệ thống | *(không ẩn cột nào)* | mọi cột đều là căn cứ duyệt / truy vết |
 
+
+### 5.7 Dropdown / combobox có tìm kiếm — **panel NỔI · giới hạn chiều cao · 10 mục mỗi lượt** (chốt với user 2026-09-13)
+
+Áp cho **mọi ô chọn có tìm kiếm**, dù nằm trong trang, trong modal hay trong một dropdown khác.
+Ba luật này do hạ tầng **ép cứng**, màn hình không đặt khác được:
+
+#### ① Kết quả LUÔN **nổi lên trên** nội dung, không chiếm chiều dài trang
+
+Panel kết quả phải là lớp nổi (`Popover`, hoặc `absolute` + `z-50` neo theo ô nhập). **Cấm** render
+danh sách kết quả thẳng vào luồng trang: mỗi lần tìm là trang/dialog dài thêm một đoạn, nút bấm bên
+dưới bị đẩy đi, người dùng mất chỗ đang nhìn.
+
+#### ② LUÔN giới hạn chiều cao panel và cho **cuộn bên trong**
+
+`max-h-64` + `overflow-y-auto` trên danh sách. Không có trần này thì 200 kết quả kéo dài panel ra
+khỏi màn hình, và người dùng phải cuộn cả trang để xem hết một dropdown.
+
+#### ③ Nạp hết được ⇒ **lọc phía FE**; không nạp hết được ⇒ **tra phía server, 10 mục mỗi lượt + infinite scroll**
+
+Ranh giới là **so `data.length` với `total`** của backend, không phải cảm tính:
+
+| Tình huống | Cách làm |
+|---|---|
+| `total <= size` đã xin (nạp hết được) | Giữ nguyên danh sách ở client, **`SearchSelect` lọc phía FE** — tìm khớp cả nhãn lẫn `hint`, không tốn request nào |
+| `total > size` (không nạp hết được) | **Tra phía server**: mỗi lượt **10 phần tử**, cuộn tới đáy mới nạp tiếp |
+| **Danh mục SKU** | **LUÔN tra phía server**, không xét `total` — xem ngoại lệ ngay dưới |
+
+⚠️ **Ngoại lệ bắt buộc: ô chọn SKU LUÔN tra phía server** (user chốt 2026-09-13), dù hôm nay catalog
+còn nhỏ. Lý do: SKU là danh mục **lớn nhất và tăng nhanh nhất** (mỗi sản phẩm sinh ra hàng chục biến
+thể màu × size) nên chắc chắn sẽ vượt trần — để nó tự đổi chế độ vào một ngày nào đó nghĩa là hành vi
+ô chọn **đột ngột khác đi** ngay giữa lúc đang dùng. Dùng [`useSkuOptions`](src/hooks/use-sku-options.ts),
+đừng tự gọi `skuApi.search` để dựng options.
+
+⚠️ **Tuyệt đối không "xin một trang thật to rồi lọc phía FE"** — backend **cap cứng `size` ở 200 và
+IM LẶNG** (xem CLAUDE.md): xin 1000 vẫn trả đúng 200, không lỗi, không cảnh báo. Danh mục vượt 200
+sẽ **thiếu hàng mà gõ tìm cũng không ra**, người dùng tưởng bản ghi đó không tồn tại.
+
+#### Hạ tầng dùng chung — dùng lại, đừng dựng tay
+
+| Thành phần | Dùng khi |
+|---|---|
+| [`usePagedSearch`](src/hooks/use-paged-search.ts) | Engine: debounce · abort · phân trang cộng dồn · `hasMore`. Mọi thứ bên dưới đều chạy trên nó |
+| [`SearchSelect`](src/components/search-select.tsx) | **Combobox** có trạng thái "đang chọn" hiện trên nút. Truyền `loadPage` ⇒ tự chuyển sang chế độ server |
+| [`AsyncSuggest`](src/components/async-suggest.tsx) | **Ô tra cứu gõ tự do** rồi chọn một bản ghi (tra khách ở POS, tra đơn gốc khi lập phiếu đổi/trả) |
+| [`useSkuOptions`](src/hooks/use-sku-options.ts) | Nguồn SKU dùng chung: **luôn** tra server + infinite scroll, ép nhãn `mã — tên` + `hint` màu · size, lọc sẵn `ACTIVE` |
+
+⚠️ `AsyncSuggest` **cố ý không dùng `Popover`**: Radix kéo focus sang panel, người đang gõ dở bị cướp
+con trỏ mỗi lần kết quả về. Bù lại phải tự chặn `mousedown` trên từng mục để `blur` không đóng panel
+trước `click`.
+
+⚠️ Ô chọn SKU **bắt buộc hiện mã SKU trong nhãn**, không chỉ tên sản phẩm: một sản phẩm sinh ra hàng
+chục SKU **trùng hệt tên** (đo thật 2026-09-13: 67 SKU chỉ có **7** tên khác nhau, riêng *"Áo sơ mi
+linen"* có **12** SKU). Chỉ hiện tên là người dùng không thể biết mình chọn màu/size nào.
+
+⚠️ Mọi ô chọn hàng hoá phải lọc **`status: ACTIVE`**. SKU đã ngừng kinh doanh mà vẫn chọn được thì
+lỗi chỉ nổ ở bước sau (duyệt phiếu mới trừ tồn) — **người tạo phiếu không phải người lãnh lỗi**.
+
+✅ **Tìm SKU khớp cả mã lẫn tên sản phẩm** — `keyword` của `POST /sku/search` soi `sku.id` · `ean` ·
+`product.name` · `product.code` (**BE29**, backend mở rộng 2026-09-13). Nhờ vậy tra phía server
+**không còn kém** lọc phía FE, và đó chính là điều kiện để ô chọn SKU luôn chạy server mode.
+
 ---
 
 ## 6. Thiết kế nguồn — folder `design/`

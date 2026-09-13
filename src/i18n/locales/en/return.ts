@@ -102,6 +102,7 @@ export default {
             noOrderFound: 'No matching order',
             returnLines: 'Items returned by the customer',
             deliverLines: 'Items delivered to the customer',
+            addReturnLine: 'Add a returned item',
             addDeliverLine: 'Add an item',
             pickSku: 'Pick a SKU',
             quantity: 'Qty',

@@ -64,6 +64,9 @@ export default {
         /* ---------------- Dashboard ---------------- */
         dashboard: {
             revenue: 'Revenue',
+            afterReturns: 'After returns',
+            refundTotal: 'Refunded',
+            grossProfitBeforeReturns: 'Before returns',
             revenueHint: 'Shipping fees included',
             completedOrders: 'Completed orders',
             completedOrdersHint: 'Only orders in Completed status',

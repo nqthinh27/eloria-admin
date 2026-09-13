@@ -103,6 +103,7 @@ export default {
             noOrderFound: 'Không tìm thấy đơn hàng phù hợp',
             returnLines: 'Hàng khách trả về',
             deliverLines: 'Hàng giao mới cho khách',
+            addReturnLine: 'Thêm dòng hàng trả',
             addDeliverLine: 'Thêm hàng giao mới',
             pickSku: 'Chọn SKU',
             quantity: 'SL',

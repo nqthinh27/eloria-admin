@@ -63,7 +63,7 @@ export default function AuditLogPage() {
                  * Sắp theo thời gian là sort mặc định của màn, cho cùng thứ tự.
                  */
                 enableSorting: false,
-                meta: { columnLabel: t('staff.auditLog.column.id'), align: 'right' },
+                meta: { columnLabel: t('staff.auditLog.column.id'), align: 'center' },
                 cell: ({ row }) => (
                     <span className="text-muted-foreground font-mono text-xs tabular-nums">
                         #{row.original.id}

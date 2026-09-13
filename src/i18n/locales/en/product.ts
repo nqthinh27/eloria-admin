@@ -4,6 +4,8 @@ export default {
         pageDescription: 'Manage products, SKUs and channel pricing',
 
         list: {
+            refsTruncated:
+                'Reference lists (categories / brands / colors / sizes) exceed one page, so filters and forms are missing some options. Narrow your search or contact an administrator.',
             searchPlaceholder: 'Search product code, name…',
             allStatuses: 'All statuses',
             allCategories: 'All categories',

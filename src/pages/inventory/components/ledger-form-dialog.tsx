@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { warehouseLedgerApi } from '@/api/inventory'
-import { skuApi } from '@/api/product'
 import { toastSuccess } from '@/lib/toast'
+import { useSkuOptions } from '@/hooks/use-sku-options'
 import type { Branch } from '@/types/branch'
-import type { Sku } from '@/types/product'
 import {
     EWarehouseLedgerType,
     type CreateWarehouseLedgerReq,
@@ -26,20 +25,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchSelect } from '@/components/search-select'
-
-/**
- * Trần số SKU nạp cho dropdown chọn hàng.
- *
- * ⚠️ **Backend cap `size` cứng ở 200 và IM LẶNG** — gửi `size=1000` vẫn chỉ trả 200 dòng, không
- * lỗi, không dấu hiệu gì (đo thật 2026-08-11: 201/300/500/1000 đều trả đúng 200). Nâng hằng số này
- * lên cao hơn 200 là **vô nghĩa**, chỉ tạo ảo giác đã nạp đủ.
- *
- * `SearchSelect` lại lọc **phía client**, nên SKU ngoài 200 dòng đầu **gõ tìm kiếm cũng không ra**.
- * Backend đã có 264 SKU (> 200) ⇒ tình huống này **đang xảy ra thật ngay lúc này**, vì vậy phải
- * hiện cảnh báo (xem `skuTruncated`). Cách sửa triệt để là **tìm kiếm phía server** —
- * `SkuSearchReqDTO` đã có sẵn `keyword`; cần `SearchSelect` hỗ trợ async search, ngoài phạm vi bản vá này.
- */
-const MAX_SKUS = 200
 
 type LineDraft = {
     /** Khoá React ổn định — SKU có thể chưa chọn nên không dùng `skuId` làm key. */
@@ -89,9 +74,12 @@ export function LedgerFormDialog({
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [submitting, setSubmitting] = useState(false)
 
-    const [skus, setSkus] = useState<Sku[]>([])
-    /** Tổng SKU phía backend — lớn hơn số đã nạp ⇒ dropdown thiếu hàng, phải cảnh báo. */
-    const [skuTotal, setSkuTotal] = useState(0)
+    /*
+     * Nguồn SKU dùng chung với màn Đổi/Trả: **tra phía server, 10 SKU mỗi lượt + infinite scroll**
+     * (CONVENTIONS mục 5.7) ⇒ **không còn cảnh dropdown bị cắt ở 200 dòng** như bản trước, và cũng
+     * không cần câu cảnh báo `skuTruncated`. Mỗi ô chỉ gọi API khi được mở ra.
+     */
+    const { selectProps: skuSelectProps } = useSkuOptions()
 
     const reset = useCallback(() => {
         setType(EWarehouseLedgerType.IN)
@@ -106,25 +94,7 @@ export function LedgerFormDialog({
     }, [])
 
     useEffect(() => {
-        if (!open) return
-        reset()
-        const controller = new AbortController()
-        skuApi
-            /*
-             * ⚠️ Sort theo **`id`**, KHÔNG phải `skuCode`: từ 2026-08-11 `sku.id` chính là mã SKU
-             * và `skuCode` trở thành field dẫn xuất **không sort được** — gửi `sort=skuCode,ASC`
-             * bị backend trả `code:6 error.other` (đã đo thật). Kết quả sắp xếp tương đương vì
-             * `id === skuCode`.
-             */
-            .search({}, { page: 1, size: MAX_SKUS, sort: ['id,ASC'] }, controller.signal)
-            .then((res) => {
-                setSkus(res.data)
-                setSkuTotal(res.total)
-            })
-            .catch(() => {
-                // api-client đã toast lỗi; dropdown để rỗng chứ không làm vỡ dialog.
-            })
-        return () => controller.abort()
+        if (open) reset()
     }, [open, reset])
 
     const isTransfer = type === EWarehouseLedgerType.TRANSFER
@@ -196,13 +166,6 @@ export function LedgerFormDialog({
             setSubmitting(false)
         }
     }
-
-    /** Nhãn gồm mã SKU + tên sản phẩm; màu/size đẩy sang `hint` để tìm kiếm vẫn khớp cả hai. */
-    const skuOptions = skus.map((sku) => ({
-        value: sku.id,
-        label: `${sku.skuCode} — ${sku.productName ?? ''}`.trim(),
-        hint: [sku.colorName, sku.sizeLabel].filter(Boolean).join(' · '),
-    }))
 
     return (
         <Dialog open={open} onOpenChange={(next) => !submitting && onOpenChange(next)}>
@@ -361,20 +324,6 @@ export function LedgerFormDialog({
 
                         {errors.lines && <p className="text-destructive text-xs">{errors.lines}</p>}
 
-                        {/*
-                         * Dropdown chỉ chứa `MAX_SKUS` SKU đầu và `SearchSelect` lọc phía client ⇒
-                         * SKU ngoài trần **gõ tìm cũng không ra**. Nói rõ thay vì để người dùng
-                         * tưởng SKU đó không tồn tại.
-                         */}
-                        {skuTotal > skus.length && (
-                            <p className="text-warning text-xs">
-                                {t('inventory.form.skuTruncated', {
-                                    loaded: skus.length,
-                                    total: skuTotal,
-                                })}
-                            </p>
-                        )}
-
                         <div className="space-y-2">
                             {lines.map((line) => (
                                 <div key={line.key} className="space-y-1">
@@ -391,7 +340,7 @@ export function LedgerFormDialog({
                                                     ),
                                                 )
                                             }
-                                            options={skuOptions}
+                                            {...skuSelectProps}
                                             placeholder={t('inventory.form.skuPlaceholder')}
                                         />
                                         <Input

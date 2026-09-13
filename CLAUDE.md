@@ -419,6 +419,15 @@ backend + gọi API thật:**
   khảo sát 2026-08-09 chưa có. Hiện **luôn `null`** trên dữ liệu thật: không API nào đặt được giá
   theo SKU (`CreateProductReqDTO` và `GenerateSkuReqDTO` đều không nhận field này) ⇒ chỗ nào cần
   giá bán phải **fallback về `Product.price`**, đừng hiển thị thẳng `unitPrice`.
+- ⚠️ **`keyword` của `POST /sku/search` CHỈ khớp mã SKU + EAN, KHÔNG khớp `productName`**
+  *(đo thật 2026-09-13)*: `keyword: "linen"` trả **0** dù có 12 SKU thuộc *"Áo sơ mi linen trắng
+  basic"*, trong khi `keyword: "SP001"` trả đúng 12. Các endpoint khác đều đã khớp tên
+  (`product/search` khớp tên SP · `order/search` khớp mã đơn + tên/SĐT khách · `customer/search`
+  khớp tên + SĐT) ⇒ **đừng suy diễn `keyword` ở đâu cũng như nhau**. Hệ quả: ô chọn SKU chỉ tra
+  phía server được theo **mã**. ✅ **Backend đã mở rộng 2026-09-13 (BE29)**: `keyword` nay soi
+  `sku.id` · `ean` · **`product.name`** · **`product.code`**. Đo thật sau khi sửa: `"linen"` ⇒ 12 ·
+  `"Áo sơ mi"` (có dấu) ⇒ 12. ⇒ Ô chọn SKU **luôn** tra phía server (CONVENTIONS mục 5.7) mà vẫn
+  gõ tên tìm được.
 - `color/search` và `size/search` trả `BaseListRes` (không `activeTotal`); `product`/`category`/
   `brand`/`sku` trả `BaseListResStatus`.
 - **`GET /sku/{id}/barcode`** (`[STAFF]`) — trả **ảnh PNG EAN-13** (không bọc `BaseResponse`) để
@@ -457,8 +466,14 @@ backend + gọi API thật:**
 `totalMarginPercent: null`). Mọi chỗ hiển thị phải render `—`, đừng `.toFixed()` thẳng.
 
 ⚠️ **`missingCostQty > 0` ⇒ COGS thiếu ⇒ lãi gộp bị THỔI PHỒNG.** Backend yêu cầu FE cảnh báo;
-đã dựng ở cả Dashboard lẫn tab Lãi gộp. Dữ liệu thật hiện `missingCostQty: 140/143` (hầu hết SKU
-chưa có giá vốn) nên cảnh báo này **luôn hiện** cho tới khi nhập giá vốn — đúng, không phải bug.
+đã dựng ở **Dashboard**. Dữ liệu thật hiện `missingCostQty: 140/143` (hầu hết SKU chưa có giá vốn)
+nên cảnh báo này **luôn hiện** cho tới khi nhập giá vốn — đúng, không phải bug.
+
+⚠️ **FE CHƯA có màn Báo cáo** *(câu "đã dựng ở cả tab Lãi gộp" ghi trước đây **không đúng**)*.
+Màn duy nhất tiêu thụ nhóm API này là **Dashboard**, và nó chỉ gọi `dashboard/summary` +
+`report/sales` (cho biểu đồ doanh thu). `report/profit` · `report/inventory` ·
+`report/branch-comparison` **đã có hàm trong `api/report.ts` nhưng không màn nào gọi** — types đầy
+đủ, dựng màn là dùng được ngay.
 
 ⚠️ **`fromDate`/`toDate` BẮT BUỘC ở cả 5 endpoint.** Thiếu ⇒ `400 error.input.invalid` (`code:7`);
 `fromDate > toDate` ⇒ `400` **`code:14`** (`Thiếu dữ liệu truyền vào` — thông báo không khớp lỗi
@@ -1127,11 +1142,21 @@ Phạm vi dữ liệu của `search`/`{id}`: **STAFF chỉ thấy ca của CHÍN
 `error.workShift.branchForbidden` 403) · **ADMIN chỉ chi nhánh mình** (đo thật: `hkadmin` duyệt ca
 chi nhánh khác ⇒ 403; search trả **0** dòng vì chưa có ca ở chi nhánh đó) · **SUPER_ADMIN toàn chuỗi**.
 
-⚠️ **Sort của `/work-shift/search`: `staffName`/`branchName` gây HTTP 500** (field DTO-only ⇒
-`PropertyReferenceException`; đo thật `sort=staffName,ASC` ⇒ **500**) ⇒ hai cột này **bắt buộc
+⚠️ **Sort của `/work-shift/search`: `staffName` gây HTTP 500** (field DTO-only ⇒
+`PropertyReferenceException`; đo thật `sort=staffName,ASC` ⇒ **500**) ⇒ cột NHÂN VIÊN **bắt buộc
 `enableSorting: false`**. Sort được: `code` · `status` · `openingCash` · `closingCash` ·
 `expectedCash` · `cashDifference` · `openedAt` · `closedAt` · `createdDate` (đo thật
 `cashDifference` ⇒ 200).
+
+⚠️ *(Câu "`branchName` cũng gây 500" ghi trước đây **KHÔNG ĐÚNG** — đo lại 2026-09-13:
+`sort=branchName,ASC/DESC` trả **200 và sắp đúng**, ASC/DESC đảo ngược nhau. Hibernate tự join sang
+`branch`, giống 4 module đã kiểm ở Phase 16. FE vẫn khoá cột này ⇒ an toàn, chỉ là **bảo thủ hơn mức
+cần**; mở được khi muốn.)*
+
+⚠️ **Backend báo đã sửa `staffName` (`staffName → staff.fullName`) ngày 2026-09-13 nhưng bản đó
+CHƯA lên server đang chạy** — đo thật vẫn **500**. Xem mục BE30 ở PLAN: cùng đợt build đó còn có
+bản vá `report/sales groupBy=DAY`, cũng chưa có trên server. ⇒ **Backend cần build/chạy lại** thì FE
+mới mở sort được. Đây là tình huống đã gặp trước đây với `DELETE /sku/{id}`.
 
 **Lọc đơn theo ca:** `POST /order/search` body `{ shiftId }` (field **mới**). ⚠️ Kết quả vẫn trả
 **`paidAmount: null`** như mọi API danh sách (cố ý tránh N+1) ⇒ **không cộng tiền từ danh sách
@@ -1241,10 +1266,12 @@ N+1 — giống `lines` của phiếu kho, `categories` của sản phẩm). ⇒
 bảng danh sách** như mockup `06-doi-tra.png` vẽ, và mọi dialog cần `lines` (nhận hàng vào kho) phải
 `getById` trước khi mở.
 
-⚠️ **Không có cách biết "dòng đơn còn trả được mấy cái"** — `OrderDetailResDTO` **không có**
-`returnedQuantity`, mà `/return/search` lại trả `lines: null` ⇒ FE phải `search(orderId)` rồi
-`GET /return/{id}` **từng phiếu** để cộng (**N+1**, xem `ReturnCreateDialog#loadReturnable`). Phiếu
-`REJECTED` không tính. Đây là **BE26** — xem PLAN mục B.
+✅ **`OrderDetailResDTO` có `returnedQuantity`** *(backend bổ sung 2026-09-13 — **BE26 đã đóng**;
+ghi chép cũ "không có cách biết dòng đơn còn trả được mấy cái, FE phải N+1" **không còn đúng**)*.
+Còn trả được = `quantity - returnedQuantity`. Chỉ populate ở **`GET /order/{id}`** —
+`POST /order/search` vẫn trả `lines: null`. Đếm **khớp cách backend chặn
+`error.return.quantityExceeded`**: phiếu `PENDING_APPROVAL` tính vào, phiếu **`REJECTED` không tính**
+(đo thật: tạo phiếu ⇒ `1`, từ chối ⇒ về `0`).
 
 ⚠️ **FE LUÔN dùng `/return/exchange-diff`, không bao giờ dùng `/return/exchange`.** Giá quyết toán
 do backend phân bổ nên FE **không đoán được** ngang giá hay lệch giá; đoán sai thì `/exchange` trả
@@ -1259,11 +1286,46 @@ methodNotSupported, stockAlreadyReceived, conditionRequired}` · `error.stock.in
 `error.return.invalidStatus` chứ **không** phải `stockAlreadyReceived` (mã đó chỉ nổ khi phiếu còn
 `APPROVED`) ⇒ FE xử lý cả hai mã như nhau.
 
-**Cố ý ngoài phạm vi (backend ghi rõ):** store credit · **báo cáo doanh thu P7 CHƯA trừ hàng trả**
-(`report/sales` · `report/profit` · `dashboard/summary` vẫn tính trên `order_sale` COMPLETED — báo
-cáo xuất-nhập-tồn thì **đã đúng**) · khuyến mại không được gỡ khi trả hàng (`usage_count` và
-`membershipPoint` giữ nguyên) · không có thời hạn đổi/trả · **đổi hàng không sinh đơn bán mới** nên
-SKU giao mới không vào doanh thu.
+**Cố ý ngoài phạm vi (backend ghi rõ):** store credit · khuyến mại không được gỡ khi trả hàng
+(`usage_count` và `membershipPoint` giữ nguyên) · không có thời hạn đổi/trả · **đổi hàng không sinh
+đơn bán mới** nên SKU giao mới không vào doanh thu.
+
+⚠️ *(Câu "báo cáo doanh thu P7 CHƯA trừ hàng trả" ghi ở đây **đã lỗi thời** — backend bổ sung
+2026-09-13, xem mục "Doanh thu sau hoàn" ngay dưới.)*
+
+### Doanh thu sau hoàn — **MỚI 2026-09-13** (BE28), đã kiểm thử API thật
+
+Backend **giữ nguyên nghĩa GỘP** của `revenue` / `totalRevenue` (không phá màn cũ) và **thêm field
+mới** cho doanh thu thuần sau hoàn:
+
+| Endpoint | Field mới |
+|---|---|
+| `GET /dashboard/summary` | `returnRefundTotal` · `revenueAfterReturns` |
+| `POST /report/sales` | row: `returnRefund` · `revenueAfterReturns`; tổng: `totalReturnRefund` · `totalRevenueAfterReturns` |
+| `GET /report/branch-comparison` | row: `returnRefund` · `revenueAfterReturns` |
+
+- **Net hoàn** = `Σ(refundAmount − collectAmount)` của phiếu đổi/trả **đã quyết toán**
+  (`refundedAt != null`; phiếu `REJECTED` không tính), **quy về kỳ theo `refundedAt`**.
+- `revenueAfterReturns = revenue − returnRefund`.
+- Đo thật: hoàn 500.000 ⇒ `revenue` giữ **6.900.000**, `revenueAfterReturns` = **6.400.000**.
+
+⚠️ **`null` ở nhóm `CHANNEL` / `STAFF`** (và khi request lọc `channel`/`staffId`) — không quy chiếu
+được tiền hoàn theo kênh/nhân viên. Đo thật: 2 nhóm này trả `null` cả row lẫn total. Gặp `null` ⇒
+hiển thị doanh thu gộp như cũ và **không** gắn nhãn "sau hoàn".
+
+⚠️ **Scope `STAFF_SELF` luôn trả `returnRefundTotal = 0`** (đo thật với `staffone`) — hoàn chưa quy
+được về nhân viên bán. Chỉ ADMIN/SUPER_ADMIN mới có số hoàn thật.
+
+⚠️ **LÃI GỘP VẪN CHƯA TRỪ HOÀN** — `grossProfit` và toàn bộ `/report/profit` tính trên doanh thu
+**gộp** (giá vốn hàng trả chưa được snapshot). ⇒ **Tuyệt đối không** lấy `revenueAfterReturns − cogs`
+để suy ra lãi; chỗ nào hiện lãi gộp phải ghi rõ là **"trước hoàn"**.
+
+⚠️ 🐞 **`groupBy = DAY` LÀM MẤT tiền hoàn khi ngày đó không có đơn** (**BE30**, FE phát hiện
+2026-09-13): dòng DAY chỉ sinh cho ngày **có đơn**, nên phiếu hoàn rơi vào ngày không bán được gì
+thì biến mất khỏi **cả `rows` lẫn `totalReturnRefund`**. Đo thật: hoàn 500.000 ngày 13 (không có
+đơn) ⇒ `DAY` báo `0`, trong khi `MONTH`/`BRANCH`/`PRODUCT`/`YEAR` và `dashboard/summary` đều báo
+**500.000**. ⇒ Dựng màn Báo cáo bán hàng thì phải xin backend sửa trước, nếu không hai màn cùng một
+kỳ sẽ nói hai con số khác nhau.
 
 ### Tài khoản test (môi trường dev local)
 

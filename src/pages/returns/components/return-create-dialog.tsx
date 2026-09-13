@@ -1,24 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Trash2 } from 'lucide-react'
+import { Plus, Receipt, Trash2 } from 'lucide-react'
 
 import { orderApi } from '@/api/order'
 import { returnApi } from '@/api/return'
-import { skuApi } from '@/api/product'
 import { formatDateTime, formatVnd } from '@/lib/format'
 import { parseMoneyInput } from '@/lib/money-input-format'
 import { toastError, toastSuccess } from '@/lib/toast'
 import { cn } from '@/lib/utils'
+import { useSkuOptions } from '@/hooks/use-sku-options'
+import type { PagedSearchLoader } from '@/hooks/use-paged-search'
 import { EOrderStatus, type Order, type OrderLine } from '@/types/order'
 import {
-    EReturnLineType,
     type CreateExchangeReq,
     type CreateReturnReq,
     type ReturnDeliverLineReq,
     type ReturnLineReq,
 } from '@/types/return'
+import { AsyncSuggest } from '@/components/async-suggest'
 import { MoneyInput } from '@/components/money-input'
-import { SearchSelect, type SearchSelectOption } from '@/components/search-select'
+import { SearchSelect } from '@/components/search-select'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -31,10 +32,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-
-/** Cap cứng 200 của backend — xin hơn là vô nghĩa (CLAUDE.md mục `size` bị cap im lặng). */
-const MAX_PAGE = 200
-const ORDER_RESULT_SIZE = 10
 
 type Mode = 'RETURN' | 'EXCHANGE'
 type Source = 'ORDER' | 'MANUAL'
@@ -67,7 +64,9 @@ type DraftDeliverLine = { key: string; skuId: string; quantity: number }
  * `/exchange` trả `error.return.exchangePriceDiff` và người dùng lãnh một lỗi vô nghĩa. Đã đo thật
  * 2026-09-12: `/exchange-diff` xử lý **cả hai** trường hợp, ngang giá thì trả `refund = collect = 0`.
  *
- * ⚠️ **Số "còn trả được" phải tự tính bằng N+1 request** — xem `loadReturnable()`.
+ * Số **"còn trả được"** lấy thẳng từ `lines[].returnedQuantity` của `GET /order/{id}` (backend bổ
+ * sung 2026-09-13 — **BE26**). Bản trước phải quét toàn bộ phiếu của đơn bằng **N+1 request**; nay
+ * chọn đơn chỉ tốn **đúng 1 request**.
  */
 export function ReturnCreateDialog({
     open,
@@ -86,10 +85,7 @@ export function ReturnCreateDialog({
 
     // --- nguồn "theo hoá đơn"
     const [orderKeyword, setOrderKeyword] = useState('')
-    const [orderResults, setOrderResults] = useState<Order[]>([])
-    const [searchingOrder, setSearchingOrder] = useState(false)
     const [order, setOrder] = useState<Order | null>(null)
-    const [returnedBefore, setReturnedBefore] = useState<Record<string, number>>({})
 
     // --- dòng hàng
     const [returnLines, setReturnLines] = useState<DraftReturnLine[]>([])
@@ -101,16 +97,18 @@ export function ReturnCreateDialog({
     const [customerName, setCustomerName] = useState('')
     const [customerPhone, setCustomerPhone] = useState('')
 
-    // --- danh mục SKU cho ô chọn hàng
-    const [skuOptions, setSkuOptions] = useState<SearchSelectOption[]>([])
+    /*
+     * Danh mục SKU cho ô chọn hàng — nguồn dùng chung với màn Phiếu kho: **tra phía server, 10 SKU
+     * mỗi lượt + infinite scroll** (CONVENTIONS mục 5.7), nên ở đây **không còn trần 200 im lặng**
+     * như bản đầu. Mỗi ô chỉ gọi API khi được mở ra, 10 dòng hàng đóng lại không tốn request nào.
+     */
+    const { selectProps: skuSelectProps } = useSkuOptions()
 
     const resetAll = useCallback(() => {
         setMode('RETURN')
         setSource('ORDER')
         setOrderKeyword('')
-        setOrderResults([])
         setOrder(null)
-        setReturnedBefore({})
         setReturnLines([])
         setDeliverLines([])
         setReason('')
@@ -123,84 +121,32 @@ export function ReturnCreateDialog({
         if (open) resetAll()
     }, [open, resetAll])
 
-    /*
-     * Nạp danh mục SKU cho ô chọn hàng (hàng giao mới, và hàng trả khi không có hoá đơn).
-     *
-     * ⚠️ `size` bị backend cap cứng ở 200 **trong im lặng** ⇒ danh sách SKU nhiều hơn thế sẽ thiếu
-     * mà không có dấu hiệu gì. Chấp nhận như các màn khác trong repo (POS, phiếu kho) — muốn đúng
-     * tuyệt đối thì phải xin backend cho search SKU phía server ở ô này.
-     */
-    useEffect(() => {
-        if (!open) return
-        const controller = new AbortController()
-        void (async () => {
-            try {
-                const result = await skuApi.search({}, { page: 1, size: MAX_PAGE }, controller.signal)
-                setSkuOptions(
-                    result.data.map((sku) => ({
-                        value: sku.id,
-                        label: sku.productName ?? sku.id,
-                        hint: sku.id,
-                    })),
-                )
-            } catch {
-                /* Lỗi đã được api-client toast; ô chọn rỗng là đủ tín hiệu. */
-            }
-        })()
-        return () => controller.abort()
-    }, [open])
-
     /**
-     * Tính **số còn trả được** của từng dòng đơn.
+     * Nguồn gợi ý cho ô tra đơn gốc — **tra phía server, 10 đơn mỗi lượt + infinite scroll**
+     * (CONVENTIONS mục 5.7).
      *
-     * ⚠️ Backend **không trả sẵn con số này**: `OrderDetailResDTO` không có `returnedQuantity`, và
-     * `POST /return/search` trả `lines: null` ⇒ phải lấy danh sách phiếu của đơn rồi `GET` từng
-     * phiếu để cộng lại (**N+1 request**). Một đơn thường chỉ có 0–2 phiếu nên chi phí chấp nhận
-     * được, nhưng đây là chỗ **cần backend bổ sung** — xem PLAN mục BE26.
-     *
-     * Phiếu `REJECTED` **không tính** (hàng chưa từng rời khỏi đơn), khớp cách backend đếm khi
-     * chặn `error.return.quantityExceeded`.
+     * Chỉ đơn `COMPLETED` mới trả được (`error.return.orderNotReturnable`) nên lọc sẵn, đỡ để người
+     * dùng chọn phải đơn rồi mới ăn lỗi. `keyword` của backend khớp **mã đơn lẫn tên/SĐT khách**
+     * (đo thật 2026-09-13) ⇒ một ô nhập là đủ.
      */
-    const loadReturnable = useCallback(async (orderId: string, signal?: AbortSignal) => {
-        const list = await returnApi.search({ orderId }, { page: 1, size: MAX_PAGE }, signal)
-        const open = list.data.filter((r) => r.status !== 'REJECTED')
-        const details = await Promise.all(open.map((r) => returnApi.getById(r.id, signal)))
-        const used: Record<string, number> = {}
-        for (const detail of details) {
-            for (const line of detail.lines ?? []) {
-                if (line.lineType !== EReturnLineType.RETURNED || !line.orderDetailId) continue
-                used[line.orderDetailId] = (used[line.orderDetailId] ?? 0) + line.quantity
-            }
-        }
-        return used
-    }, [])
-
-    const handleSearchOrder = async () => {
-        const keyword = orderKeyword.trim()
-        if (!keyword || searchingOrder) return
-        setSearchingOrder(true)
-        try {
-            /* Chỉ đơn COMPLETED mới trả được (`error.return.orderNotReturnable`) ⇒ lọc sẵn. */
+    const loadOrderPage = useCallback<PagedSearchLoader<Order>>(
+        async ({ keyword, page, size, signal }) => {
             const result = await orderApi.search(
                 { keyword, orderStatus: EOrderStatus.COMPLETED },
-                { page: 1, size: ORDER_RESULT_SIZE, sort: ['createdDate,DESC'] },
+                { page, size, sort: ['createdDate,DESC'] },
+                signal,
             )
-            setOrderResults(result.data)
-        } catch (error) {
-            toastError(error)
-        } finally {
-            setSearchingOrder(false)
-        }
-    }
+            return { items: result.data, total: result.total }
+        },
+        [],
+    )
 
     const pickOrder = async (picked: Order) => {
         try {
             /* Danh sách đơn trả `lines: null` ⇒ bắt buộc `GET /order/{id}` mới có dòng hàng. */
             const full = await orderApi.getById(picked.id)
-            const used = await loadReturnable(picked.id)
             setOrder(full)
-            setReturnedBefore(used)
-            setOrderResults([])
+            setOrderKeyword('')
             setCustomerName(full.customerName ?? '')
             setCustomerPhone(full.customerPhone ?? '')
             setReturnLines([])
@@ -209,9 +155,16 @@ export function ReturnCreateDialog({
         }
     }
 
+    /**
+     * Số **còn trả được** của một dòng đơn.
+     *
+     * `returnedQuantity` do backend trả sẵn trong `GET /order/{id}` (**BE26**, 2026-09-13) và đã
+     * loại phiếu `REJECTED` đúng như cách nó chặn `error.return.quantityExceeded` — FE **không tự
+     * cộng lại**. Trước đó chỗ này phải quét toàn bộ phiếu của đơn bằng N+1 request.
+     */
     const remainingOf = useCallback(
-        (line: OrderLine) => line.quantity - (returnedBefore[line.id] ?? 0),
-        [returnedBefore],
+        (line: OrderLine) => line.quantity - (line.returnedQuantity ?? 0),
+        [],
     )
 
     const toggleOrderLine = (line: OrderLine) => {
@@ -336,7 +289,7 @@ export function ReturnCreateDialog({
                                 setSource(v as Source)
                                 setReturnLines([])
                                 setOrder(null)
-                                setOrderResults([])
+                                setOrderKeyword('')
                             }}
                         />
                     </div>
@@ -368,56 +321,45 @@ export function ReturnCreateDialog({
                                 </div>
                             ) : (
                                 <>
-                                    <div className="flex gap-2">
-                                        <Input
-                                            id="return-order-keyword"
-                                            value={orderKeyword}
-                                            onChange={(e) => setOrderKeyword(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') void handleSearchOrder()
-                                            }}
-                                            placeholder={t('return.form.findOrderPlaceholder')}
-                                            disabled={submitting}
-                                        />
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            aria-label={t('return.form.findOrder')}
-                                            disabled={submitting || searchingOrder}
-                                            onClick={() => void handleSearchOrder()}
-                                        >
-                                            <Search className="size-4" />
-                                        </Button>
-                                    </div>
+                                    {/*
+                                      Gợi ý NỔI trên nội dung, cuộn trong panel, nạp thêm khi chạm
+                                      đáy (CONVENTIONS mục 5.7). Bản đầu render thẳng danh sách vào
+                                      luồng trang nên mỗi lần tìm là dialog dài thêm một đoạn.
+                                    */}
+                                    <AsyncSuggest
+                                        id="return-order-keyword"
+                                        value={orderKeyword}
+                                        onValueChange={setOrderKeyword}
+                                        loadPage={loadOrderPage}
+                                        minChars={0}
+                                        disabled={submitting}
+                                        icon={<Receipt className="size-4" />}
+                                        placeholder={t('return.form.findOrderPlaceholder')}
+                                        ariaLabel={t('return.form.findOrder')}
+                                        emptyLabel={t('return.form.noOrderFound')}
+                                        getKey={(o) => o.id}
+                                        onPick={(o) => void pickOrder(o)}
+                                        renderItem={(o) => (
+                                            <span className="flex items-center justify-between gap-3">
+                                                <span className="min-w-0">
+                                                    <span className="block font-mono text-sm">
+                                                        {o.orderCode}
+                                                    </span>
+                                                    <span className="text-muted-foreground block text-xs">
+                                                        {o.customerName ||
+                                                            t('return.list.noCustomer')}{' '}
+                                                        · {formatDateTime(o.createdDate)}
+                                                    </span>
+                                                </span>
+                                                <span className="shrink-0 text-sm tabular-nums">
+                                                    {formatVnd(o.totalAmount)}
+                                                </span>
+                                            </span>
+                                        )}
+                                    />
                                     <p className="text-muted-foreground text-xs">
                                         {t('return.form.onlyCompleted')}
                                     </p>
-                                    {orderResults.length > 0 && (
-                                        <div className="divide-y rounded-lg border">
-                                            {orderResults.map((o) => (
-                                                <button
-                                                    key={o.id}
-                                                    type="button"
-                                                    className="hover:bg-muted/50 flex w-full items-center justify-between gap-3 p-3 text-left"
-                                                    onClick={() => void pickOrder(o)}
-                                                >
-                                                    <span className="min-w-0">
-                                                        <span className="block font-mono text-sm">
-                                                            {o.orderCode}
-                                                        </span>
-                                                        <span className="text-muted-foreground block text-xs">
-                                                            {o.customerName ||
-                                                                t('return.list.noCustomer')}{' '}
-                                                            · {formatDateTime(o.createdDate)}
-                                                        </span>
-                                                    </span>
-                                                    <span className="shrink-0 text-sm tabular-nums">
-                                                        {formatVnd(o.totalAmount)}
-                                                    </span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
                                 </>
                             )}
                         </section>
@@ -443,7 +385,7 @@ export function ReturnCreateDialog({
                                     const picked = returnLines.find(
                                         (l) => l.orderDetailId === line.id,
                                     )
-                                    const before = returnedBefore[line.id] ?? 0
+                                    const before = line.returnedQuantity ?? 0
                                     return (
                                         <div key={line.id} className="space-y-2 p-3">
                                             <button
@@ -542,7 +484,7 @@ export function ReturnCreateDialog({
                         {source === 'MANUAL' && (
                             <ManualLines
                                 lines={returnLines}
-                                skuOptions={skuOptions}
+                                skuSelectProps={skuSelectProps}
                                 disabled={submitting}
                                 onPatch={patchReturnLine}
                                 onRemove={(key) =>
@@ -574,7 +516,7 @@ export function ReturnCreateDialog({
                                     <div key={line.key} className="flex items-end gap-2">
                                         <div className="min-w-0 flex-1">
                                             <SearchSelect
-                                                options={skuOptions}
+                                                {...skuSelectProps}
                                                 value={line.skuId}
                                                 disabled={submitting}
                                                 placeholder={t('return.form.pickSku')}
@@ -762,14 +704,15 @@ function ChoiceRow({
  */
 function ManualLines({
     lines,
-    skuOptions,
+    skuSelectProps,
     disabled,
     onPatch,
     onRemove,
     onAdd,
 }: {
     lines: DraftReturnLine[]
-    skuOptions: SearchSelectOption[]
+    /** Bộ props của `useSkuOptions()` — tra phía server + infinite scroll. */
+    skuSelectProps: ReturnType<typeof useSkuOptions>['selectProps']
     disabled: boolean
     onPatch: (key: string, patch: Partial<DraftReturnLine>) => void
     onRemove: (key: string) => void
@@ -783,7 +726,7 @@ function ManualLines({
                     <div className="flex items-center gap-2">
                         <div className="min-w-0 flex-1">
                             <SearchSelect
-                                options={skuOptions}
+                                {...skuSelectProps}
                                 value={line.skuId}
                                 disabled={disabled}
                                 placeholder={t('return.form.pickSku')}
@@ -830,7 +773,7 @@ function ManualLines({
             ))}
             <Button variant="outline" size="sm" disabled={disabled} onClick={onAdd}>
                 <Plus className="size-4" />
-                {t('return.form.addDeliverLine')}
+                {t('return.form.addReturnLine')}
             </Button>
         </div>
     )

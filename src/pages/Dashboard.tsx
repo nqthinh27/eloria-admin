@@ -277,12 +277,35 @@ export default function Dashboard() {
 
                     {/* Hàng KPI — 4 thẻ như mockup, lấy đúng số backend có. */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        {/*
+                          `revenue` là doanh thu **GỘP**, cố ý giữ làm số chính để khớp với màn Báo
+                          cáo và với các kỳ đã xem trước đây. Tiền hoàn (BE28) hiện ở dòng mô tả và
+                          **chỉ khi thực sự có hoàn** — kỳ không phát sinh trả hàng thì thêm một
+                          dòng "sau hoàn" bằng đúng doanh thu chỉ làm rối.
+                          ⚠️ Scope `STAFF_SELF` backend **luôn trả 0** (chưa quy được hoàn về NV bán)
+                          nên điều kiện này cũng tự ẩn khối đó với nhân viên.
+                        */}
                         <KpiCard
                             label={t('report.dashboard.revenue')}
                             value={formatVnd(data.revenue)}
                             icon={DollarSign}
                             iconClassName="bg-primary/10 text-primary"
-                            description={t('report.dashboard.revenueHint')}
+                            description={
+                                data.returnRefundTotal > 0 ? (
+                                    <>
+                                        {t('report.dashboard.afterReturns')}:{' '}
+                                        <span className="text-foreground font-medium">
+                                            {formatVnd(data.revenueAfterReturns)}
+                                        </span>{' '}
+                                        <span className="text-muted-foreground">
+                                            ({t('report.dashboard.refundTotal')}:{' '}
+                                            {formatVnd(data.returnRefundTotal)})
+                                        </span>
+                                    </>
+                                ) : (
+                                    t('report.dashboard.revenueHint')
+                                )
+                            }
                         />
                         <KpiCard
                             label={t('report.dashboard.completedOrders')}
@@ -305,11 +328,24 @@ export default function Dashboard() {
                             value={formatVnd(data.grossProfit)}
                             icon={TrendingUp}
                             iconClassName="bg-warning-muted text-warning"
-                            description={`${t('report.dashboard.marginPercent')}: ${
-                                data.marginPercent != null
-                                    ? `${data.marginPercent}%`
-                                    : t('report.common.notAvailable')
-                            }`}
+                            description={
+                                <>
+                                    {t('report.dashboard.marginPercent')}:{' '}
+                                    {data.marginPercent != null
+                                        ? `${data.marginPercent}%`
+                                        : t('report.common.notAvailable')}
+                                    {/*
+                                      ⚠️ Lãi gộp **chưa trừ hàng trả** — backend ghi rõ giá vốn hàng
+                                      trả chưa được snapshot (BE28). Nói thẳng khi kỳ có phát sinh
+                                      hoàn, để không ai lấy `revenueAfterReturns − cogs` suy ra lãi.
+                                    */}
+                                    {data.returnRefundTotal > 0 && (
+                                        <span className="text-warning block">
+                                            {t('report.dashboard.grossProfitBeforeReturns')}
+                                        </span>
+                                    )}
+                                </>
+                            }
                         />
                     </div>
 

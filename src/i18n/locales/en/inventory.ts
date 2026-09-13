@@ -129,8 +129,6 @@ export default {
             addLine: 'Add line',
             removeLine: 'Remove line',
             skuPlaceholder: 'Select SKU',
-            skuTruncated:
-                'Only {{loaded}}/{{total}} SKUs are listed — SKUs beyond this list cannot be found via search. Tell an admin if the SKU you need is missing.',
             quantity: 'Quantity',
             noLines: 'No lines yet',
             submit: 'Create slip',

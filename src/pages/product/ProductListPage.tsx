@@ -133,6 +133,15 @@ export default function ProductListPage() {
      * Yêu cầu là **không gọi trùng trong CÙNG một màn**: 4 request này khác endpoint nhau, chạy
      * song song trong đúng một effect, mỗi endpoint đúng 1 lần.
      */
+    /**
+     * Danh mục nền bị **cắt bớt** vì vượt trần một lượt nạp.
+     *
+     * ⚠️ Backend cap `size` cứng ở 200 và **im lặng** ⇒ nếu không so `data.length` với `total` thì
+     * dropdown thiếu mục mà **gõ tìm cũng không ra**, người dùng tưởng bản ghi không tồn tại
+     * (CLAUDE.md mục cap `size` · CONVENTIONS mục 5.7 luật ③).
+     */
+    const [refsTruncated, setRefsTruncated] = useState(false)
+
     const loadRefs = useCallback(async (signal?: AbortSignal) => {
         const [cats, brs, cls, szs] = await Promise.all([
             categoryApi.search({}, { page: 1, size: MAX_REFS, sort: ['code,ASC'] }, signal).catch(() => null),
@@ -145,6 +154,9 @@ export default function ProductListPage() {
         if (brs) setBrands(brs.data)
         if (cls) setColors(cls.data)
         if (szs) setSizes(szs.data)
+        setRefsTruncated(
+            [cats, brs, cls, szs].some((res) => res !== null && res.total > res.data.length),
+        )
     }, [])
 
     useEffect(() => {
@@ -220,6 +232,9 @@ export default function ProductListPage() {
             />
 
             <div className="space-y-4">
+                {refsTruncated && (
+                    <p className="text-warning text-xs">{t('product.list.refsTruncated')}</p>
+                )}
                 <DataTableToolbar
                     searchValue={keyword}
                     onSearchChange={handleSearchChange}

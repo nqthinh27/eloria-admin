@@ -4,6 +4,8 @@ export default {
         pageDescription: 'Quản lý sản phẩm, SKU và giá bán theo kênh',
 
         list: {
+            refsTruncated:
+                'Danh mục nền (danh mục / thương hiệu / màu / size) vượt quá một lượt nạp nên bộ lọc và form đang thiếu lựa chọn. Hãy thu hẹp bằng ô tìm kiếm hoặc báo quản trị viên.',
             searchPlaceholder: 'Tìm mã SP, tên sản phẩm…',
             allStatuses: 'Tất cả trạng thái',
             allCategories: 'Tất cả danh mục',

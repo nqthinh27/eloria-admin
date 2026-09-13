@@ -57,6 +57,10 @@ export default {
         clearSearch: 'Clear search',
         selectedCount: '{{count}} selected',
         removeItem: 'Remove {{name}}',
+        skuSearchPlaceholder: 'Search by SKU code or product name…',
+        skuEmpty: 'No matching SKU found',
+        loadingMore: 'Loading…',
+        scrollForMore: 'Scroll for more',
     },
     /** Trang 404 — route không khớp. */
     notFound: {

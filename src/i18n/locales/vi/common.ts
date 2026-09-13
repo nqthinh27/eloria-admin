@@ -58,6 +58,10 @@ export default {
         clearSearch: 'Xoá từ khoá',
         selectedCount: 'Đã chọn {{count}}',
         removeItem: 'Bỏ chọn {{name}}',
+        skuSearchPlaceholder: 'Tìm theo mã SKU hoặc tên sản phẩm…',
+        skuEmpty: 'Không tìm thấy SKU phù hợp',
+        loadingMore: 'Đang tải…',
+        scrollForMore: 'Cuộn xuống để xem thêm',
     },
     /** Trang 404 — route không khớp. */
     notFound: {

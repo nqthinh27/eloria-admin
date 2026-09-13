@@ -64,6 +64,9 @@ export default {
         /* ---------------- Dashboard ---------------- */
         dashboard: {
             revenue: 'Doanh thu',
+            afterReturns: 'Sau hoàn',
+            refundTotal: 'Tiền hoàn',
+            grossProfitBeforeReturns: 'Chưa trừ hàng trả',
             revenueHint: 'Đã gồm phí giao hàng',
             completedOrders: 'Đơn hoàn thành',
             completedOrdersHint: 'Chỉ đơn ở trạng thái Hoàn thành',

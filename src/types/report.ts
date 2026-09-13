@@ -97,8 +97,18 @@ export type DashboardSummary = ReportDateRange & {
     /** `null` khi xem toàn chuỗi (SUPER_ADMIN không lọc chi nhánh). */
     branchId: string | null
     completedOrderCount: number
-    /** `= totalAmount`, **đã gồm phí ship**. */
+    /** `= totalAmount`, **đã gồm phí ship**. ⚠️ Là doanh thu **GỘP — chưa trừ tiền hoàn**. */
     revenue: number
+    /**
+     * Net tiền hoàn của kỳ = `Σ(refundAmount − collectAmount)` các phiếu đổi/trả **đã quyết toán**
+     * (`refundedAt != null`; phiếu `REJECTED` không tính), quy về kỳ theo **`refundedAt`**.
+     *
+     * Backend bổ sung 2026-09-13 (**BE28**). ⚠️ Scope **`STAFF_SELF` luôn trả `0`** — tiền hoàn
+     * chưa quy được về nhân viên bán; chỉ ADMIN/SUPER_ADMIN mới có số thật.
+     */
+    returnRefundTotal: number
+    /** `= revenue − returnRefundTotal` (**BE28**). Đây mới là doanh thu **thuần sau hoàn**. */
+    revenueAfterReturns: number
     /** `= grossSubtotal − discountTotal`, **chưa gồm** phí ship. */
     netRevenue: number
     discountTotal: number
@@ -156,7 +166,18 @@ export type SalesReportRow = {
     discountTotal: number
     netRevenue: number
     shippingTotal: number | null
+    /** ⚠️ Doanh thu **GỘP — chưa trừ tiền hoàn**. */
     revenue: number
+    /**
+     * Net tiền hoàn quy về dòng này (**BE28**, 2026-09-13).
+     *
+     * ⚠️ **`null` khi `groupBy` là `CHANNEL`/`STAFF`**, hoặc khi request có lọc `channel`/`staffId`
+     * — không quy chiếu được tiền hoàn theo kênh/nhân viên. Gặp `null` ⇒ hiển thị doanh thu gộp
+     * như cũ và **không** gắn nhãn "sau hoàn".
+     */
+    returnRefund: number | null
+    /** `= revenue − returnRefund` (**BE28**); `null` ở cùng các trường hợp với `returnRefund`. */
+    revenueAfterReturns: number | null
 }
 
 /** `SalesReportResDTO`. */
@@ -170,7 +191,12 @@ export type SalesReport = ReportDateRange & {
     totalDiscount: number
     totalNetRevenue: number
     totalShipping: number
+    /** ⚠️ **GỘP — chưa trừ tiền hoàn**. */
     totalRevenue: number
+    /** **BE28**; `null` ở `CHANNEL`/`STAFF` hoặc khi lọc `channel`/`staffId`. */
+    totalReturnRefund: number | null
+    /** `= totalRevenue − totalReturnRefund` (**BE28**); `null` ở cùng các trường hợp. */
+    totalRevenueAfterReturns: number | null
     rows: SalesReportRow[]
 }
 
@@ -277,9 +303,15 @@ export type BranchComparisonRow = {
     branchName: string | null
     orderCount: number
     itemsSold: number
+    /** ⚠️ Doanh thu **GỘP — chưa trừ tiền hoàn**. */
     revenue: number
+    /** Net tiền hoàn của chi nhánh (**BE28**). Nhóm theo chi nhánh nên **luôn có số**, không `null`. */
+    returnRefund: number
+    /** `= revenue − returnRefund` (**BE28**). */
+    revenueAfterReturns: number
     netRevenue: number
     cogs: number
+    /** ⚠️ **CHƯA trừ tiền hoàn** — giá vốn hàng trả chưa được snapshot (BE28 ghi rõ). */
     grossProfit: number
     /** ⚠️ `null` khi `netRevenue <= 0` ⇒ hiển thị `—`. */
     marginPercent: number | null

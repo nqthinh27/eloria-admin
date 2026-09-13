@@ -450,20 +450,29 @@ export default function ReturnListPage() {
      *
      * Gọi riêng một request `size: 1` thay vì đếm trong `data`: bảng đang lọc/phân trang nên số
      * trên màn không phải tổng thật, mà cái người quản lý cần biết là **toàn bộ** việc còn tồn.
+     *
+     * ⚠️ **Chỉ chạy với người duyệt được.** Băng này là lời kêu gọi hành động ("cần ADMIN phê
+     * duyệt") mà STAFF không làm được gì — mọi nút duyệt/từ chối đều `[ADMIN]`. Bày cho STAFF là
+     * giao việc cho người không có quyền, cùng lý do màn này đã giấu bộ lọc chi nhánh khỏi role
+     * thấp hơn SUPER_ADMIN.
      */
-    const loadPending = useCallback(async (signal?: AbortSignal) => {
-        try {
-            const result = await returnApi.search(
-                { returnStatus: EReturnStatus.PENDING_APPROVAL },
-                { page: 1, size: 1 },
-                signal,
-            )
-            setPendingTotal(result.total)
-        } catch {
-            /* Băng cảnh báo là phụ trợ — lỗi thì ẩn đi, không chặn cả màn. */
-            setPendingTotal(0)
-        }
-    }, [])
+    const loadPending = useCallback(
+        async (signal?: AbortSignal) => {
+            if (!canApprove) return
+            try {
+                const result = await returnApi.search(
+                    { returnStatus: EReturnStatus.PENDING_APPROVAL },
+                    { page: 1, size: 1 },
+                    signal,
+                )
+                setPendingTotal(result.total)
+            } catch {
+                /* Băng cảnh báo là phụ trợ — lỗi thì ẩn đi, không chặn cả màn. */
+                setPendingTotal(0)
+            }
+        },
+        [canApprove],
+    )
 
     useEffect(() => {
         const controller = new AbortController()

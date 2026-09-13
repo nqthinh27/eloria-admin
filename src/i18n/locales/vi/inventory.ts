@@ -131,8 +131,6 @@ export default {
             addLine: 'Thêm dòng',
             removeLine: 'Xoá dòng',
             skuPlaceholder: 'Chọn SKU',
-            skuTruncated:
-                'Danh sách chỉ hiển thị {{loaded}}/{{total}} SKU — SKU ngoài danh sách này không tìm được bằng ô tìm kiếm. Hãy báo quản trị nếu thiếu SKU cần dùng.',
             quantity: 'Số lượng',
             noLines: 'Chưa có dòng hàng nào',
             submit: 'Tạo phiếu',

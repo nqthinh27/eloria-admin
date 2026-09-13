@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Loader2, Minus, Plus, ShoppingCart, Trash2, User, X } from 'lucide-react'
+import { Minus, Plus, ShoppingCart, Trash2, User, X } from 'lucide-react'
 
 import { customerApi } from '@/api/customer'
+import { AsyncSuggest } from '@/components/async-suggest'
+import type { PagedSearchLoader } from '@/hooks/use-paged-search'
 import { orderApi } from '@/api/order'
 import { ApiError } from '@/lib/api-error'
 import { formatVnd } from '@/lib/format'
@@ -20,13 +22,6 @@ import { MoneyInput } from '@/components/money-input'
 
 /** Chờ gõ xong mới gọi `cart/preview`. */
 const DEBOUNCE_MS = 400
-
-/**
- * Tra khách hàng: **chờ ngừng gõ 1s mới gọi API** (user chốt 2026-08-19).
- * Dài hơn debounce của preview vì mỗi lần gõ ở đây là một truy vấn tìm kiếm thật sự,
- * còn preview chỉ tính tiền trên giỏ đã có.
- */
-const CUSTOMER_DEBOUNCE_MS = 1000
 
 /** Ngắn hơn thế thì kết quả tìm kiếm quá rộng, không đáng gọi API. */
 const CUSTOMER_MIN_CHARS = 2
@@ -143,8 +138,6 @@ export function CartPanel({
     /** Ô mã đang gõ; chỉ đẩy vào giỏ khi bấm "Áp dụng" để không gọi preview mỗi lần gõ 1 ký tự. */
     const [couponDraft, setCouponDraft] = useState(couponCode)
     const [customerQuery, setCustomerQuery] = useState('')
-    const [lookingUp, setLookingUp] = useState(false)
-    const [candidates, setCandidates] = useState<Customer[] | null>(null)
     const [clearOpen, setClearOpen] = useState(false)
     /** Dòng vừa gõ số lượng vượt tồn — chỉ để bật animation rung, tự tắt sau khi chạy xong. */
     const [shakeSkuId, setShakeSkuId] = useState<string | null>(null)
@@ -240,46 +233,28 @@ export function CartPanel({
     }, [orderLines, orderDiscountAmount, shippingFee, branchId, couponCode])
 
     /* ---------------- Tra khách theo SĐT hoặc tên ---------------- */
-    useEffect(() => {
-        const value = customerQuery.trim()
-        if (value.length < CUSTOMER_MIN_CHARS || customer) {
-            setCandidates(null)
-            setLookingUp(false)
-            return
-        }
-
-        const controller = new AbortController()
-        /*
-         * Chỉ gọi API sau khi người dùng NGỪNG GÕ 1s: mỗi lần gõ đều clear timer của lần trước
-         * và abort request đang bay, nên gõ liên tục không sinh request nào.
-         */
-        const timer = setTimeout(() => {
-            setLookingUp(true)
-            /*
-             * Dùng `customer/search` chứ KHÔNG dùng `customer/duplicates`: endpoint tra trùng là
-             * `[ADMIN]` (STAFF gọi bị 403), mà màn POS phải chạy được với STAFF.
-             * `keyword` của backend khớp **cả SĐT lẫn họ tên** ⇒ một ô nhập là đủ.
-             * `status: 1` để không gán được khách đã bị khoá.
-             */
-            customerApi
-                .search({ keyword: value, status: 1 }, { page: 1, size: 8 }, controller.signal)
-                .then((result) => {
-                    if (!controller.signal.aborted) setCandidates(result.data)
-                })
-                .catch(() => {
-                    // api-client đã toast; coi như không có kết quả để UI không kẹt ở "đang tìm".
-                    if (!controller.signal.aborted) setCandidates([])
-                })
-                .finally(() => {
-                    if (!controller.signal.aborted) setLookingUp(false)
-                })
-        }, CUSTOMER_DEBOUNCE_MS)
-
-        return () => {
-            clearTimeout(timer)
-            controller.abort()
-        }
-    }, [customerQuery, customer])
+    /**
+     * Nguồn gợi ý khách — **tra phía server, 10 khách mỗi lượt + infinite scroll**
+     * (CONVENTIONS mục 5.7). Debounce/abort/phân trang do `AsyncSuggest` lo.
+     *
+     * Dùng `customer/search` chứ KHÔNG dùng `customer/duplicates`: endpoint tra trùng là `[ADMIN]`
+     * (STAFF gọi bị 403), mà màn POS phải chạy được với STAFF. `keyword` của backend khớp **cả SĐT
+     * lẫn họ tên** ⇒ một ô nhập là đủ. `status: 1` để không gán được khách đã bị khoá.
+     *
+     * ⚠️ Bản trước xin đúng `size: 8` **một lần duy nhất**: khách thứ 9 trở đi không có cách nào
+     * chạm tới, mà giao diện cũng không nói gì — đúng kiểu cắt kết quả trong im lặng mà mục 5.7 cấm.
+     */
+    const loadCustomerPage = useCallback<PagedSearchLoader<Customer>>(
+        async ({ keyword, page, size, signal }) => {
+            const result = await customerApi.search(
+                { keyword, status: 1 },
+                { page, size },
+                signal,
+            )
+            return { items: result.data, total: result.total }
+        },
+        [],
+    )
 
     const handlePickCustomer = useCallback(
         (picked: Customer) => {
@@ -289,7 +264,6 @@ export function CartPanel({
                 phoneNumber: picked.phoneNumber,
             })
             setCustomerQuery('')
-            setCandidates(null)
         },
         [setCustomer],
     )
@@ -297,7 +271,6 @@ export function CartPanel({
     const handleClearCustomer = useCallback(() => {
         setCustomer(null)
         setCustomerQuery('')
-        setCandidates(null)
     }, [setCustomer])
 
     /**
@@ -332,7 +305,6 @@ export function CartPanel({
     const handleClearCart = useCallback(() => {
         clear()
         setCustomerQuery('')
-        setCandidates(null)
         setPreview(null)
         setClearOpen(false)
     }, [clear])
@@ -374,65 +346,37 @@ export function CartPanel({
                         </Button>
                     </div>
                 ) : (
-                    // `relative` để danh sách gợi ý neo theo ô nhập; danh sách dùng `absolute` nên
-                    // NỔI lên trên, không đẩy dòng hàng bên dưới xuống (user chốt 2026-08-28).
-                    <div className="relative">
-                        <div className="relative">
-                            <User className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-                            <Input
-                                value={customerQuery}
-                                onChange={(event) => setCustomerQuery(event.target.value)}
-                                placeholder={t('order.pos.cart.customerPlaceholder')}
-                                aria-label={t('order.pos.cart.customerPlaceholder')}
-                                className="pl-9"
-                            />
-                            {lookingUp && (
-                                <Loader2 className="text-muted-foreground absolute top-1/2 right-3 size-4 -translate-y-1/2 animate-spin" />
-                            )}
-                        </div>
-
-                        {/*
-                          Danh sách gợi ý NỔI ngay dưới ô nhập (không dùng Popover) để không cướp
-                          focus khỏi ô nhập — nhân viên vẫn gõ tiếp được khi kết quả về.
-                          `min-w-72` để hàng tên + SĐT không bị bó theo bề rộng cột giỏ hàng khi màn
-                          hẹp. Dùng `bg-popover`, KHÔNG dùng `bg-background` (CONVENTIONS mục 5).
-                        */}
-                        {candidates !== null && !lookingUp && (
-                            <div className="bg-popover absolute top-full right-0 left-0 z-50 mt-2 min-w-72 rounded-md border shadow-lg">
-                                {candidates.length === 0 ? (
-                                    <p className="text-muted-foreground px-3 py-2 text-xs">
-                                        {t('order.pos.cart.customerNotFound')}
-                                    </p>
-                                ) : (
-                                    <ul className="max-h-64 divide-y overflow-auto">
-                                        {candidates.map((row) => (
-                                            <li key={row.id}>
-                                                <button
-                                                    type="button"
-                                                    className="hover:bg-accent focus-visible:bg-accent w-full px-3 py-2 text-left outline-none"
-                                                    onClick={() => handlePickCustomer(row)}>
-                                                    <p className="truncate text-sm font-medium">
-                                                        {row.fullName}
-                                                    </p>
-                                                    {/*
-                                                      Từ Phase 3b (2026-08-28) kết quả tra khách là
-                                                      TOÀN CHUỖI, không còn giới hạn chi nhánh ⇒ hiện
-                                                      thêm chi nhánh đăng ký để phân biệt hai khách
-                                                      trùng tên ở hai chi nhánh khác nhau.
-                                                    */}
-                                                    <p className="text-muted-foreground truncate text-xs">
-                                                        {row.branchName
-                                                            ? `${row.phoneNumber} · ${row.branchName}`
-                                                            : row.phoneNumber}
-                                                    </p>
-                                                </button>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
+                    /*
+                     * Gợi ý NỔI ngay dưới ô nhập và cuộn trong panel (CONVENTIONS mục 5.7) —
+                     * `AsyncSuggest` cố ý không dùng `Popover` để không cướp focus khỏi ô nhập,
+                     * nhân viên vẫn gõ tiếp được khi kết quả về.
+                     */
+                    <AsyncSuggest
+                        value={customerQuery}
+                        onValueChange={setCustomerQuery}
+                        loadPage={loadCustomerPage}
+                        minChars={CUSTOMER_MIN_CHARS}
+                        icon={<User className="size-4" />}
+                        placeholder={t('order.pos.cart.customerPlaceholder')}
+                        emptyLabel={t('order.pos.cart.customerNotFound')}
+                        getKey={(row) => row.id}
+                        onPick={handlePickCustomer}
+                        renderItem={(row) => (
+                            <>
+                                <p className="truncate text-sm font-medium">{row.fullName}</p>
+                                {/*
+                                  Từ Phase 3b (2026-08-28) kết quả tra khách là TOÀN CHUỖI, không
+                                  còn giới hạn chi nhánh ⇒ hiện thêm chi nhánh đăng ký để phân biệt
+                                  hai khách trùng tên ở hai chi nhánh khác nhau.
+                                */}
+                                <p className="text-muted-foreground truncate text-xs">
+                                    {row.branchName
+                                        ? `${row.phoneNumber} · ${row.branchName}`
+                                        : row.phoneNumber}
+                                </p>
+                            </>
                         )}
-                    </div>
+                    />
                 )}
             </div>
 
