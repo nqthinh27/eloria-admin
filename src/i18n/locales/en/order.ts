@@ -406,6 +406,7 @@ export default {
                     openingCash: 'OPENING CASH',
                     expectedCash: 'EXPECTED CASH',
                     cashDifference: 'DIFFERENCE',
+                    actions: 'ACTIONS',
                 },
             },
             status: {

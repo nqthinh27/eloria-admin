@@ -57,7 +57,12 @@ export default function StaffListPage() {
     const [branchFilter, setBranchFilter] = useState<string>(ALL_BRANCHES)
 
     /* page · sort · cột ẩn/hiện · nonce tải lại — xem `use-table-state`. */
-    const table = useTableState()
+    /*
+     * Cột ẩn sẵn (CONVENTIONS mục 5.6): NGÀY VÀO là thông tin hồ sơ, không phải thứ tra hằng ngày
+     * — đã có trong modal chi tiết. Các cột còn lại (chi nhánh · vai trò · trạng thái) đều là căn
+     * cứ phân quyền nên vẫn hiện sẵn.
+     */
+    const table = useTableState([], { joinedDate: false })
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     const [formStaff, setFormStaff] = useState<Staff | null | 'new'>(null)

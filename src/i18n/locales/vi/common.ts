@@ -45,6 +45,8 @@ export default {
         refreshing: 'Đang tải lại…',
         /** Toast báo tải lại xong — người dùng cần biết bảng đã là dữ liệu mới. */
         refreshed: 'Tải lại dữ liệu thành công',
+        /** Cột số thứ tự do `DataTable` tự chèn — đánh theo trang hiện tại (CONVENTIONS mục 5.6). */
+        index: 'STT',
         columns: 'Hiển thị cột',
     },
     searchSelect: {

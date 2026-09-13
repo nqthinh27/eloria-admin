@@ -10,6 +10,7 @@ export default {
             resultLabel: 'khách hàng',
             addButton: 'Thêm khách hàng',
             column: {
+                phone: 'SỐ ĐIỆN THOẠI',
                 customer: 'KHÁCH HÀNG',
                 contact: 'LIÊN HỆ',
                 branch: 'CHI NHÁNH',

@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
 import { toSearchSort, useTableState } from '@/hooks/use-table-state'
 import { hasRole } from '@/config/roles'
+import { cn } from '@/lib/utils'
 import { formatNumber } from '@/lib/format'
 import { ERole } from '@/types/common'
 import type { StockItem } from '@/types/inventory'
@@ -62,7 +63,12 @@ export function StockTab() {
     const [lowStockOnly, setLowStockOnly] = useState(false)
 
     /* page · sort · cột ẩn/hiện · nonce tải lại — xem `use-table-state`. */
-    const table = useTableState()
+    /*
+     * Cột ẩn sẵn (CONVENTIONS mục 5.6): TỔNG trùng khít KHẢ DỤNG từ khi backend bỏ cơ chế giữ chỗ
+     * (`available === total`, 2026-08-14) nên hiện cả hai là thừa; TỒN TỐI THIỂU chưa có API đặt
+     * ngưỡng nên mọi dòng đều "Chưa đặt". Bật lại được khi backend bổ sung.
+     */
+    const table = useTableState([], { total: false, minStock: false })
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     useEffect(() => {
@@ -106,6 +112,8 @@ export function StockTab() {
             {
                 accessorKey: 'skuCode',
                 header: t('inventory.stock.column.sku'),
+                // Cột ghim ⇒ bắt buộc khai `size` để dải ghim không lệch khi cuộn (mục 5.6).
+                size: 190,
                 // Cột định danh — không cho ẩn, người dùng sẽ không biết đang xem dòng tồn của SKU nào.
                 enableHiding: false,
                 /*
@@ -125,17 +133,23 @@ export function StockTab() {
             {
                 accessorKey: 'productName',
                 header: t('inventory.stock.column.product'),
+                // Cột tên, nằm trong dải ghim ⇒ bắt buộc khai `size`; không cho ẩn (mục 5.6).
+                size: 240,
+                enableHiding: false,
                 // ⚠️ `productName` là field DTO ghép từ `Product`, không phải cột của `StockItem` ⇒ sort 500.
                 enableSorting: false,
                 meta: { columnLabel: t('inventory.stock.column.product') },
-                cell: ({ row }) => <span className="font-medium">{row.original.productName}</span>,
+                cell: ({ row }) => (
+                    <span className="block truncate font-medium">{row.original.productName}</span>
+                ),
             },
             {
                 accessorKey: 'sizeLabel',
                 header: t('inventory.stock.column.size'),
                 // ⚠️ `sizeLabel` là field DTO lấy từ `SizeOption`, không phải cột của `StockItem` ⇒ sort 500.
                 enableSorting: false,
-                meta: { columnLabel: t('inventory.stock.column.size') },
+                // Badge tròn ⇒ căn giữa (CONVENTIONS mục 5.6).
+                meta: { columnLabel: t('inventory.stock.column.size'), align: 'center' },
                 cell: ({ row }) => (
                     <span className="bg-muted inline-flex size-7 items-center justify-center rounded-full text-xs">
                         {row.original.sizeLabel}
@@ -153,9 +167,14 @@ export function StockTab() {
                 accessorKey: 'total',
                 header: t('inventory.stock.column.total'),
                 // `total` là cột thật của `StockItem` ⇒ backend sort được.
-                meta: { sortField: 'total', columnLabel: t('inventory.stock.column.total') },
+                // Số lượng ⇒ căn phải cho thẳng cột chữ số (CONVENTIONS mục 5.6).
+                meta: {
+                    sortField: 'total',
+                    columnLabel: t('inventory.stock.column.total'),
+                    align: 'right',
+                },
                 cell: ({ row }) => (
-                    <span className="font-semibold">{formatNumber(row.original.total)}</span>
+                    <span className="font-semibold tabular-nums">{formatNumber(row.original.total)}</span>
                 ),
             },
             /*
@@ -176,18 +195,23 @@ export function StockTab() {
                  * Sort thẳng `available` sẽ 500, nên map `sortField` về `total` — cùng một con số
                  * nên thứ tự người dùng thấy vẫn đúng tuyệt đối.
                  */
-                meta: { sortField: 'total', columnLabel: t('inventory.stock.column.available') },
+                meta: {
+                    sortField: 'total',
+                    columnLabel: t('inventory.stock.column.available'),
+                    align: 'right',
+                },
                 cell: ({ row }) => {
                     const tone = stockTone(row.original)
                     return (
                         <span
-                            className={
+                            className={cn(
+                                'font-semibold tabular-nums',
                                 tone === 'outOfStock'
-                                    ? 'text-destructive font-semibold'
+                                    ? 'text-destructive'
                                     : tone === 'low'
-                                      ? 'text-warning font-semibold'
-                                      : 'text-success font-semibold'
-                            }>
+                                      ? 'text-warning'
+                                      : 'text-success',
+                            )}>
                             {formatNumber(row.original.available)}
                         </span>
                     )
@@ -197,7 +221,11 @@ export function StockTab() {
                 accessorKey: 'minStock',
                 header: t('inventory.stock.column.minStock'),
                 // `minStock` là cột thật của `StockItem` ⇒ backend sort được.
-                meta: { sortField: 'minStock', columnLabel: t('inventory.stock.column.minStock') },
+                meta: {
+                    sortField: 'minStock',
+                    columnLabel: t('inventory.stock.column.minStock'),
+                    align: 'right',
+                },
                 cell: ({ row }) =>
                     /*
                      * `minStock` luôn có số từ 2026-08-11 (mặc định 0). Vẫn chưa có API đặt ngưỡng
@@ -209,7 +237,7 @@ export function StockTab() {
                             {t('inventory.stock.minStockUnset')}
                         </span>
                     ) : (
-                        <span className="text-muted-foreground">
+                        <span className="text-muted-foreground tabular-nums">
                             {formatNumber(row.original.minStock)}
                         </span>
                     ),
@@ -236,7 +264,7 @@ export function StockTab() {
                  * ứng — không phải cột entity, cũng không phải field DTO ⇒ không thể sort phía server.
                  */
                 enableSorting: false,
-                meta: { columnLabel: t('inventory.stock.column.status') },
+                meta: { columnLabel: t('inventory.stock.column.status'), align: 'center' },
                 cell: ({ row }) => {
                     const tone = stockTone(row.original)
                     if (tone === 'outOfStock') {

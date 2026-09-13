@@ -112,7 +112,12 @@ export default function OrderListPage() {
     )
 
     /* page · sort · cột ẩn/hiện · nonce tải lại — xem `use-table-state`. */
-    const table = useTableState()
+    /*
+     * Cột ẩn sẵn (CONVENTIONS mục 5.6): KÊNH đã là **tab lọc** ngay phía trên bảng nên lặp lại
+     * thành cột là thừa. Các cột còn lại (tiền · thanh toán · trạng thái · ngày tạo) đều là thứ
+     * nhân viên đọc ở mọi lượt tra đơn.
+     */
+    const table = useTableState([], { channel: false })
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     const handlePrint = useCallback(async (order: Order) => {
@@ -136,6 +141,8 @@ export default function OrderListPage() {
             {
                 accessorKey: 'orderCode',
                 header: t('order.list.column.code'),
+                // Cột ghim ⇒ bắt buộc khai `size` để dải ghim không lệch khi cuộn (mục 5.6).
+                size: 210,
                 // Cột định danh — ẩn đi thì không biết đang xem đơn nào.
                 enableHiding: false,
                 meta: {
@@ -151,6 +158,9 @@ export default function OrderListPage() {
             {
                 accessorKey: 'customerName',
                 header: t('order.list.column.customer'),
+                // Cột tên, nằm trong dải ghim ⇒ bắt buộc khai `size`; không cho ẩn (mục 5.6).
+                size: 220,
+                enableHiding: false,
                 /*
                  * Ô ghép tên + SĐT; sort theo field chính là `customerName` (cả hai đều là cột
                  * thật của `OrderSale` — đơn khách vãng lai lưu tên/SĐT ngay trên đơn).
@@ -175,7 +185,12 @@ export default function OrderListPage() {
             {
                 accessorKey: 'channel',
                 header: t('order.list.column.channel'),
-                meta: { sortField: 'channel', columnLabel: t('order.list.column.channel') },
+                // Badge ⇒ căn giữa (CONVENTIONS mục 5.6).
+                meta: {
+                    sortField: 'channel',
+                    columnLabel: t('order.list.column.channel'),
+                    align: 'center',
+                },
                 cell: ({ row }) => (
                     <StatusBadge tone={row.original.channel === EOrderChannel.ONLINE ? 'info' : 'muted'}>
                         {t(`order.channel.${row.original.channel}`)}
@@ -192,12 +207,20 @@ export default function OrderListPage() {
             },
             {
                 accessorKey: 'totalAmount',
-                header: () => <div className="text-right">{t('order.list.column.total')}</div>,
-                meta: { sortField: 'totalAmount', columnLabel: t('order.list.column.total') },
+                header: t('order.list.column.total'),
+                /*
+                 * Cột tiền ⇒ **nội dung căn phải** (CONVENTIONS mục 5.6). Tiêu đề vẫn căn giữa —
+                 * `DataTable` ép cứng, nên ở đây không bọc `<div className="text-right">` nữa.
+                 */
+                meta: {
+                    sortField: 'totalAmount',
+                    columnLabel: t('order.list.column.total'),
+                    align: 'right',
+                },
                 cell: ({ row }) => (
-                    <div className="text-right font-medium tabular-nums">
+                    <span className="font-medium tabular-nums">
                         {formatVnd(row.original.totalAmount)}
-                    </div>
+                    </span>
                 ),
             },
             {
@@ -206,6 +229,7 @@ export default function OrderListPage() {
                 meta: {
                     sortField: 'paymentStatus',
                     columnLabel: t('order.list.column.payment'),
+                    align: 'center',
                 },
                 cell: ({ row }) => (
                     <StatusBadge tone={PAYMENT_TONE[row.original.paymentStatus]}>
@@ -216,7 +240,11 @@ export default function OrderListPage() {
             {
                 accessorKey: 'status',
                 header: t('order.list.column.status'),
-                meta: { sortField: 'status', columnLabel: t('order.list.column.status') },
+                meta: {
+                    sortField: 'status',
+                    columnLabel: t('order.list.column.status'),
+                    align: 'center',
+                },
                 cell: ({ row }) => (
                     <StatusBadge tone={STATUS_TONE[row.original.status]}>
                         {t(`order.status.${row.original.status}`)}
@@ -259,17 +287,18 @@ export default function OrderListPage() {
             },
             {
                 id: 'actions',
-                header: () => <div className="text-right">{t('order.list.column.actions')}</div>,
+                header: t('order.list.column.actions'),
+                size: 88,
                 // Đường vào xem chi tiết / in hoá đơn — không cho ẩn, và không có gì để sort.
                 enableHiding: false,
                 enableSorting: false,
-                meta: { columnLabel: t('order.list.column.actions') },
+                meta: { columnLabel: t('order.list.column.actions'), align: 'center' },
                 cell: ({ row }) => {
                     const order = row.original
                     /* Hoa don chi in duoc khi da thu tien (user chot 2026-08-21) — chan o ca 2 noi. */
                     const canPrint = order.paymentStatus === EPaymentStatus.PAID
                     return (
-                        <div className="flex justify-end gap-1">
+                        <div className="flex items-center justify-center gap-1">
                             {/* Nut Chi tiet LUON hien (CONVENTIONS muc 5.3). */}
                             <Button
                                 variant="ghost"

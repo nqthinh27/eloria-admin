@@ -52,10 +52,29 @@ export default function AuditLogPage() {
     const columns: ColumnDef<AuditLog, unknown>[] = useMemo(
         () => [
             {
+                id: 'id',
+                header: t('staff.auditLog.column.id'),
+                // Cột định danh, nằm trong dải ghim ⇒ không cho ẩn (CONVENTIONS mục 5.6).
+                size: 90,
+                enableHiding: false,
+                /*
+                 * ⚠️ `id` KHÔNG nằm trong danh sách field `AuditLog` đã kiểm chứng sort được
+                 * (xem CLAUDE.md mục "Sort phía server") ⇒ khoá sort cho chắc, sai field là **500**.
+                 * Sắp theo thời gian là sort mặc định của màn, cho cùng thứ tự.
+                 */
+                enableSorting: false,
+                meta: { columnLabel: t('staff.auditLog.column.id'), align: 'right' },
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                        #{row.original.id}
+                    </span>
+                ),
+            },
+            {
                 id: 'time',
                 header: t('staff.auditLog.column.time'),
-                size: 150,
-                // Cột định danh của nhật ký: một dòng log được nhận ra bằng mốc thời gian.
+                size: 170,
+                // Nằm trong dải ghim (mục 5.6) — cũng là thứ người dùng nhận ra dòng log.
                 enableHiding: false,
                 meta: { sortField: 'createdDate', columnLabel: t('staff.auditLog.column.time') },
                 cell: ({ row }) => formatDateTime(row.original.createdDate),
@@ -98,12 +117,16 @@ export default function AuditLogPage() {
                 // Đường vào xem chi tiết — không cho ẩn, và không có gì để sort.
                 enableHiding: false,
                 enableSorting: false,
-                meta: { columnLabel: t('staff.auditLog.column.actions') },
+                meta: { columnLabel: t('staff.auditLog.column.actions'), align: 'center' },
+                /*
+                 * Nhật ký chỉ đọc — không có hành động phụ nào ⇒ **không dựng nút `(...)`**
+                 * (CONVENTIONS mục 5.3: `(...)` chỉ xuất hiện khi có ít nhất một hành động).
+                 */
                 cell: ({ row }) => (
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8"
+                        className="mx-auto size-8"
                         title={t('common:action.detail')}
                         aria-label={t('common:action.detail')}
                         onClick={() => setSelected(row.original)}>

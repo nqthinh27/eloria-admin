@@ -85,7 +85,11 @@ export default function PromotionListPage() {
     const [statusFilter, setStatusFilter] = useState<string>(ALL_STATUSES)
     const [channelFilter, setChannelFilter] = useState<string>(ALL_CHANNELS)
 
-    const table = useTableState()
+    /*
+     * Cột ẩn sẵn (CONVENTIONS mục 5.6): LOẠI đã đọc được ngay từ cột GIÁ TRỊ (`10%` ⇒ PERCENT,
+     * `50.000đ` ⇒ FIXED) nên lặp lại là thừa; KÊNH áp dụng hầu hết là "tất cả kênh".
+     */
+    const table = useTableState([], { type: false, channel: false })
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     const [formPromotion, setFormPromotion] = useState<Promotion | null | 'new'>(null)
@@ -103,7 +107,9 @@ export default function PromotionListPage() {
                 id: 'code',
                 accessorKey: 'code',
                 header: t('promotion.list.column.code'),
-                size: 130,
+                // Cột định danh, nằm trong dải ghim ⇒ không cho ẩn (CONVENTIONS mục 5.6).
+                size: 160,
+                enableHiding: false,
                 /* `code` là cột thật của entity ⇒ sort được phía server. */
                 meta: { columnLabel: t('promotion.list.column.code'), sortField: 'code' },
                 cell: ({ row }) =>
@@ -119,7 +125,9 @@ export default function PromotionListPage() {
                 id: 'name',
                 accessorKey: 'name',
                 header: t('promotion.list.column.name'),
-                // Cột định danh — ẩn đi thì không biết đang xem chương trình nào.
+                // Cột ghim ⇒ bắt buộc khai `size` để dải ghim không lệch khi cuộn (mục 5.6).
+                size: 260,
+                // Cột tên — ẩn đi thì không biết đang xem chương trình nào.
                 enableHiding: false,
                 meta: { columnLabel: t('promotion.list.column.name'), sortField: 'name' },
                 cell: ({ row }) => {
@@ -147,7 +155,11 @@ export default function PromotionListPage() {
                 accessorKey: 'type',
                 header: t('promotion.list.column.type'),
                 size: 110,
-                meta: { columnLabel: t('promotion.list.column.type'), sortField: 'type' },
+                meta: {
+                    columnLabel: t('promotion.list.column.type'),
+                    sortField: 'type',
+                    align: 'center',
+                },
                 cell: ({ row }) => t(`promotion.type.${row.original.type}`),
             },
             {
@@ -155,7 +167,12 @@ export default function PromotionListPage() {
                 accessorKey: 'value',
                 header: t('promotion.list.column.value'),
                 size: 120,
-                meta: { columnLabel: t('promotion.list.column.value'), sortField: 'value' },
+                /* Badge gói cả `10%` lẫn `50.000đ` ⇒ căn giữa, không phải cột tiền thuần (mục 5.6). */
+                meta: {
+                    columnLabel: t('promotion.list.column.value'),
+                    sortField: 'value',
+                    align: 'center',
+                },
                 cell: ({ row }) => (
                     <Badge variant="outline">
                         {row.original.type === EPromotionType.PERCENT
@@ -169,7 +186,11 @@ export default function PromotionListPage() {
                 accessorKey: 'channel',
                 header: t('promotion.list.column.channel'),
                 size: 110,
-                meta: { columnLabel: t('promotion.list.column.channel'), sortField: 'channel' },
+                meta: {
+                    columnLabel: t('promotion.list.column.channel'),
+                    sortField: 'channel',
+                    align: 'center',
+                },
                 cell: ({ row }) => t(`promotion.channel.${row.original.channel}`),
             },
             {
@@ -201,7 +222,12 @@ export default function PromotionListPage() {
                 accessorKey: 'usageCount',
                 header: t('promotion.list.column.usage'),
                 size: 100,
-                meta: { columnLabel: t('promotion.list.column.usage'), sortField: 'usageCount' },
+                /* Số lượt dùng ⇒ căn phải cho thẳng cột chữ số (CONVENTIONS mục 5.6). */
+                meta: {
+                    columnLabel: t('promotion.list.column.usage'),
+                    sortField: 'usageCount',
+                    align: 'right',
+                },
                 cell: ({ row }) => {
                     const { usageCount, usageLimit } = row.original
                     return usageLimit == null
@@ -217,7 +243,11 @@ export default function PromotionListPage() {
                 accessorKey: 'status',
                 header: t('promotion.list.column.status'),
                 size: 130,
-                meta: { columnLabel: t('promotion.list.column.status'), sortField: 'status' },
+                meta: {
+                    columnLabel: t('promotion.list.column.status'),
+                    sortField: 'status',
+                    align: 'center',
+                },
                 cell: ({ row }) => (
                     <StatusBadge tone={STATUS_TONE[row.original.status]}>
                         {t(`promotion.status.${row.original.status}`)}
@@ -230,11 +260,11 @@ export default function PromotionListPage() {
                 size: 88,
                 enableHiding: false,
                 enableSorting: false,
-                meta: { columnLabel: t('promotion.list.column.actions') },
+                meta: { columnLabel: t('promotion.list.column.actions'), align: 'center' },
                 cell: ({ row }) => {
                     const promotion = row.original
                     return (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-1">
                             {/* Nút Chi tiết LUÔN hiện, không gate theo quyền (CONVENTIONS mục 5.3). */}
                             <Button
                                 variant="ghost"

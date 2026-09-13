@@ -270,8 +270,10 @@ Tham chiếu: **ProTable của Ant Design**. Mọi bảng danh sách **phải** 
    - ⚠️ Reload **sau mutation** thì **không** toast "đã cập nhật": hành động đó đã có toast riêng
      ("Tạo … thành công"), thêm cái nữa là ồn. Chỉ nút Tải lại mới đi qua `runRefresh`.
 2. **Bật/tắt cột** — dropdown liệt kê các cột ẩn/hiện được, đặt **ngay cạnh nút Tải lại**.
-   Cột **khoá cứng** (`enableHiding: false`) dùng cho cột định danh và cột thao tác — không cho
-   người dùng tự ẩn mất đường thao tác.
+   Cột **khoá cứng** (`enableHiding: false`) dùng cho **cả dải cột ghim** (STT · mã · tên) và cột
+   thao tác — không cho người dùng tự ẩn mất đường thao tác hay thủng dải ghim (mục 5.6).
+   Cột ít dùng thì **ẩn sẵn** qua `useTableState(sorting, { <id>: false })` (mục 5.6 ⑤), chứ không
+   bỏ hẳn khỏi bảng.
 3. **Sort theo cột** — **chỉ mở sort cho cột mà backend thực sự sort được**, và phải là
    **sort phía server** (đẩy vào `SearchPagination.sort` dạng `field,ASC|DESC`).
    - ⚠️ **Cấm để sort mặc định của TanStack chạy tự do**: nó chỉ sắp xếp ≤ `size` dòng của **trang
@@ -283,7 +285,7 @@ Tham chiếu: **ProTable của Ant Design**. Mọi bảng danh sách **phải** 
 - Trạng thái bảng (cột đang ẩn, sort hiện tại) là **state của màn**, không lưu localStorage,
   cho tới khi có yêu cầu riêng.
 
-### 5.3 Cột THAO TÁC — **luôn có nút "Chi tiết", phần còn lại vào `(...)`** (chốt với user 2026-09-07)
+### 5.3 Cột THAO TÁC — **nút "Chi tiết" là mặc định; `(...)` chỉ xuất hiện khi có hành động** (chốt với user 2026-09-07, làm rõ **2026-09-12**)
 
 > Quy tắc này đã được chốt từ 2026-08-08 khi làm màn Nhân viên nhưng **chỉ ghi trong PLAN**, nên các
 > màn làm sau bị trôi mỗi nơi một kiểu. Nay nâng thành **luật chung, bắt buộc cho mọi bảng**.
@@ -292,23 +294,36 @@ Cột THAO TÁC của **mọi** `DataTable` chỉ được có **đúng 2 thành
 
 | Vị trí | Thành phần | Bắt buộc? |
 |---|---|---|
-| 1 | **Nút "Chi tiết"** (icon `Eye`) — mở modal xem bản ghi | ✅ **LUÔN CÓ** |
-| 2 | Menu `(...)` (icon `MoreHorizontal`) gom **toàn bộ** hành động còn lại | Chỉ khi có ≥ 1 hành động |
+| 1 | **Nút "Chi tiết"** (icon `Eye`) — mở modal xem bản ghi | ✅ **MẶC ĐỊNH, LUÔN CÓ** |
+| 2 | Menu `(...)` (icon `MoreHorizontal`) gom **toàn bộ** hành động còn lại | ❌ **Chỉ khi còn ≥ 1 hành động** |
 
+- **"Chi tiết" là nút mặc định của cột**, đứng riêng bên ngoài menu và **không bao giờ bị ẩn theo
+  quyền**. Xem là quyền thấp nhất — người vào được màn thì xem được bản ghi. Tuyệt đối **không** đẩy
+  "Chi tiết" vào trong `(...)` (lỗi màn Ca làm việc mắc trước 2026-09-12: người dùng phải mở menu
+  mới xem được ca, trong khi 8 màn còn lại bấm thẳng một nhát).
+- ⚠️ **Không còn hành động nào thì KHÔNG vẽ nút `(...)`** — không vẽ nút rỗng, không vẽ nút
+  `disabled`. "Còn hành động" tính theo **cả quyền lẫn trạng thái bản ghi**: STAFF ở màn Khách hàng,
+  hay ca đã `CLOSED`/`REJECTED` ở màn Ca làm việc, đều **không có gì để làm** ⇒ dòng đó chỉ còn mỗi
+  nút "Chi tiết". Màn chỉ-đọc hoàn toàn (Nhật ký hệ thống) thì **không bao giờ** có `(...)`.
 - **Cấm** đặt nút hành động thứ ba trực tiếp trên cột (Sửa, Xoá, Bật/tắt, Duyệt…) — kể cả khi chỉ có
   một hành động duy nhất, nó vẫn phải nằm trong `(...)`. Lý do: cột THAO TÁC có **chiều rộng cố
   định**; mỗi màn tự thêm nút thì bảng lệch nhau và cột phình ra, đúng thứ rule `size` cố định muốn
   tránh.
-- **Nút "Chi tiết" không bao giờ bị ẩn theo quyền.** Xem là quyền thấp nhất — người vào được màn thì
-  xem được bản ghi. Chỉ các mục *trong* `(...)` mới gate theo role, và **`(...)` tự ẩn khi rỗng**.
 - Modal chi tiết theo pattern [`DetailModal`](src/components/detail-modal.tsx): chế độ xem chỉ có 2
   nút **"Sửa" + "Đóng"**; bấm "Sửa" chuyển field sang input **ngay tại chỗ** (inline edit, không mở
   dialog thứ hai). Field không sửa được qua API vẫn hiện dạng **khoá (`disabled`)**, không ẩn đi.
 - Bản ghi **không có gì để sửa** (ví dụ Nhật ký hệ thống) thì modal chỉ đọc, không có nút "Sửa".
-- Cột THAO TÁC luôn khai `enableHiding: false` + `enableSorting: false` + `size` cố định.
+- Cột THAO TÁC luôn khai `enableHiding: false` + `enableSorting: false` + `size` cố định +
+  **`meta.align: 'center'`** (mục 5.6), nội dung bọc trong `flex items-center justify-center gap-1`.
+- **Tiêu đề cột vẫn bắt buộc** (`THAO TÁC`) — mục 5.6 cấm cột không nhãn, kể cả cột chỉ chứa icon.
 
-⚠️ **Màn không phải bảng** (card grid như Chi nhánh, danh sách phiếu dạng thẻ) **không áp dụng** rule
-này — nó chỉ dành cho `DataTable`.
+⚠️ **Màn không phải bảng** (card grid như Chi nhánh, Sản phẩm) **không áp dụng** rule này — nó chỉ
+dành cho `DataTable`.
+
+⚠️ **Ngoại lệ: bảng không có bản ghi để mở.** Tab **Tồn kho** (`StockTab`) không có cột THAO TÁC vì
+backend **không có** `GET /stock-item/{id}` — một dòng tồn là số liệu tổng hợp SKU × chi nhánh, không
+phải bản ghi xem được. Bảng như vậy **bỏ hẳn cột THAO TÁC**, không dựng nút "Chi tiết" mở ra màn
+trống. Có API chi tiết rồi thì phải thêm lại cột theo đúng luật trên.
 
 ### 5.4 Định dạng ngày giờ hiển thị — **`dd/MM/yyyy`**, có giờ thì **`HH:mm:ss dd/MM/yyyy`** (chốt với user 2026-09-07)
 
@@ -352,6 +367,96 @@ này — nó chỉ dành cho `DataTable`.
 - **Không tự viết lại logic format** trong component — dùng helper ở
   [`src/lib/money-input-format.ts`](src/lib/money-input-format.ts) và
   [`src/lib/format.ts`](src/lib/format.ts).
+
+### 5.6 Cấu trúc bảng — **STT · tiêu đề · căn lề · thứ tự & ghim cột · cột ẩn sẵn** (chốt với user 2026-09-12)
+
+Năm luật dưới đây áp cho **mọi `DataTable`**. Ba luật đầu do
+[`DataTable`](src/components/data-table/data-table.tsx) **ép cứng** — màn hình không đặt khác được,
+nên không màn nào trôi đi kiểu riêng; hai luật cuối do người khai cột quyết định.
+
+#### ① Cột đầu tiên LUÔN là **STT**, đánh số theo **trang hiện tại**
+
+`DataTable` **tự chèn** cột `__index` ở đầu mọi bảng — **không khai ở màn hình**, không import gì thêm.
+
+```
+STT hiển thị = (pagination.page − 1) × pagination.size + vị trí dòng + 1
+```
+
+- Trang 1 bắt đầu từ **1**; trang 2 (size 10) bắt đầu từ **11**. Đây là **số thứ tự trong toàn bộ kết
+  quả**, không phải trong trang — để người dùng nói chuyện được với nhau ("dòng 37") và khớp với dòng
+  *"Hiển thị 31–40 trong tổng số…"* ngay dưới bảng.
+- ⚠️ STT đếm theo **vị trí hiển thị**, không phải `row.index` của TanStack (`row.index` là vị trí
+  trong mảng **trước khi sort**, bảng sort phía client sẽ ra số nhảy cóc). `DataTable` render thẳng
+  giá trị trong thân bảng, cột `__index` **cố ý không khai `cell`**.
+- STT **không sort được, không ẩn được**, luôn nằm trong dải cột ghim (④).
+
+#### ② Mọi cột **bắt buộc có tiêu đề**, và tiêu đề **luôn căn giữa**
+
+- **Cấm `header: ''`** — cột chỉ chứa icon (THAO TÁC) vẫn phải có nhãn i18n. Cột không nhãn thì
+  dropdown "Hiển thị cột" không gọi tên được, và người dùng không đoán ra cột đó là gì.
+- Tiêu đề **căn giữa theo chiều ngang** ở **mọi** cột — kể cả cột tiền (nội dung căn phải). `DataTable`
+  áp `text-center` cho `TableHead`, cột sort được thì cụm "chữ + mũi tên" cũng `justify-center`.
+  ⇒ **Không bọc `header` trong `<div className="text-right">`** như trước, sẽ bị ép về giữa.
+- ⚠️ Nhãn viết **CHỮ HOA** (`MÃ ĐƠN`, `TỔNG TIỀN`). Chuỗi i18n khai kiểu gì cũng được vì `DataTable`
+  áp `uppercase` — **kể cả cột sort được**: preflight của Tailwind đặt `text-transform: none` cho
+  `button` nên nút sort phải khai lại `uppercase` (đã xử lý trong `DataTable`, đừng gỡ).
+
+#### ③ Căn lề **nội dung ô** — khai qua `meta.align`
+
+| Loại cột | Căn | Ví dụ |
+|---|---|---|
+| **STT · THAO TÁC** | **`center`** | cột `__index`, cột nút Chi tiết |
+| **Text thường** | **`left`** (mặc định, không cần khai) | tên, mã, email, chi nhánh, ngày giờ |
+| **Tiền tệ** | **`right`** | `TỔNG TIỀN`, `TIỀN KỲ VỌNG`, `LỆCH QUỸ` |
+| Số đếm / số lượng | `right` | `ĐIỂM TÍCH LUỸ`, `KHẢ DỤNG`, `ĐÃ DÙNG`, `THỨ TỰ` |
+| Badge trong cột hẹp cố định | `center` | `TRẠNG THÁI`, `VAI TRÒ`, `LOẠI`, `KÊNH` |
+| Còn lại | tự suy luận theo hai luật trên | |
+
+- Khai **một chỗ** bằng `meta: { align: 'right' }`, **không** tự bọc `<div className="text-right">`
+  trong `cell` — bọc tay thì tiêu đề và ô lệch nhau, và cột ẩn/hiện xong lại sai.
+- Cột số/tiền thêm `tabular-nums` để chữ số thẳng hàng giữa các dòng.
+
+#### ④ Thứ tự cột **STT → mã → tên**, và **ghim 3 cột đó** khi cuộn ngang
+
+- Thứ tự khai cột bắt buộc mở đầu bằng: **STT** (tự chèn) → **cột mã** (`code`, hoặc **trường định
+  danh custom duy nhất** nếu DTO không có `code`) → **cột tên**.
+- `DataTable` **ghim trái 3 cột đầu** (`pinnedColumnCount`, mặc định `3`): cuộn ngang thì ba cột này
+  đứng yên, phần còn lại trượt bên dưới. Vạch phân cách **chỉ hiện khi đã cuộn** — bảng vừa khung
+  thì không kẻ gì.
+- ⚠️ **Cột được ghim BẮT BUỘC khai `size`**: vị trí `left` của cột ghim sau tính bằng **tổng `size`**
+  các cột ghim trước nó, không đo DOM. Quên `size` là cả dải ghim lệch chỗ khi cuộn.
+- Cột trong dải ghim luôn `enableHiding: false` — ẩn mất một cột ghim thì dải ghim thủng.
+- DTO **không có `code`** thì chọn trường định danh **có nghĩa với người dùng**, không dùng UUID:
+  Khách hàng ⇒ **SĐT** · Nhân viên ⇒ **`username`** · Nhật ký hệ thống ⇒ **`id`** (đã hiện ở tiêu đề
+  modal chi tiết). Chọn xong phải **ghi lý do** ngay tại khối khai cột.
+
+#### ⑤ **Ẩn sẵn** cột ít dùng, đừng đổ hết ra ngay từ đầu
+
+Bảng mở ra phải đọc được trong một màn hình, không bắt người dùng cuộn ngang ngay lượt đầu.
+
+- Cột nào là "cần thiết" **do người khai cột suy luận theo nghiệp vụ của màn** — không có danh sách
+  cứng. Cột thừa với đa số lượt dùng thì khai ẩn sẵn qua tham số thứ 2 của
+  [`useTableState`](src/hooks/use-table-state.ts): `useTableState([], { createdDate: false })`.
+- Đây chỉ là **mặc định**: người dùng bật lại bất cứ lúc nào ở dropdown **"Hiển thị cột"**, và lựa
+  chọn của họ không bị `initialVisibility` ghi đè về sau.
+- **Bảng mà mọi cột đều quan trọng thì cứ hiện hết** — ẩn bớt cho đẹp trong khi người dùng cần cả là
+  phản tác dụng (ví dụ Phiếu kho: loại · chi nhánh · trạng thái · người tạo đều là căn cứ duyệt phiếu).
+- Mỗi cột ẩn sẵn phải có **một câu ghi lý do** ngay tại chỗ khai — người sau đọc mới biết đó là quyết
+  định, không phải sót.
+
+Hiện trạng đang áp dụng (2026-09-12):
+
+| Màn | Cột ẩn sẵn | Vì sao |
+|---|---|---|
+| Khách hàng | `branch` · `createdDate` | Phase 3b: khách là toàn cục, chi nhánh chỉ là nơi đăng ký |
+| Nhân viên | `joinedDate` | thông tin hồ sơ, đã có trong modal chi tiết |
+| Đơn hàng | `channel` | đã là **tab lọc** ngay trên bảng |
+| Tồn kho | `total` · `minStock` | `total === available` từ 2026-08-14; chưa có API đặt ngưỡng tồn |
+| Danh mục SP | `sortOrder` | chỉ dùng lúc sắp lại menu danh mục |
+| Khuyến mại | `type` · `channel` | `type` đọc được từ cột GIÁ TRỊ (`10%` ⇔ `50.000đ`) |
+| Ca làm việc | `openingCash` | người quản lý soi TIỀN KỲ VỌNG + LỆCH QUỸ |
+| Phiếu kho · Nhật ký hệ thống | *(không ẩn cột nào)* | mọi cột đều là căn cứ duyệt / truy vết |
+
 ---
 
 ## 6. Thiết kế nguồn — folder `design/`

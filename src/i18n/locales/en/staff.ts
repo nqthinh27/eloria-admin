@@ -10,6 +10,7 @@ export default {
             resultLabel: 'staff',
             addButton: 'Add staff',
             column: {
+                username: 'USERNAME',
                 staff: 'STAFF',
                 branch: 'BRANCH',
                 role: 'ROLE',
@@ -175,6 +176,7 @@ export default {
             allActions: 'All actions',
             resultLabel: 'entries',
             column: {
+                id: 'ID',
                 time: 'TIME',
                 user: 'PERFORMED BY',
                 action: 'ACTION',

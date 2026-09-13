@@ -74,10 +74,20 @@ export type TableState = {
     resetTo: (apply: () => void) => void
 }
 
-export function useTableState(initialSorting: SortingState = []): TableState {
+/**
+ * @param initialSorting Sort mặc định của bảng.
+ * @param initialVisibility Cột **ẩn sẵn** lúc mở màn (CONVENTIONS mục 5.6) — khai dạng
+ *   `{ createdDate: false }`. Người dùng vẫn bật lại được ở dropdown "Hiển thị cột"; đây chỉ là
+ *   mặc định để bảng không dài dằng dặc ngay từ đầu. Cột không nhắc tới ⇒ **hiện**.
+ */
+export function useTableState(
+    initialSorting: SortingState = [],
+    initialVisibility: VisibilityState = {},
+): TableState {
     const [page, setPage] = useState(1)
     const [sorting, setSortingState] = useState<SortingState>(initialSorting)
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+    /* Chỉ là **giá trị khởi tạo**: đổi `initialVisibility` sau đó không reset lựa chọn của người dùng. */
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(initialVisibility)
     const [reloadNonce, setReloadNonce] = useState(0)
 
     const setSorting = useCallback((next: SortingState) => {

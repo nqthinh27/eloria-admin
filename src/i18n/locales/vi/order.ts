@@ -410,6 +410,7 @@ export default {
                     openingCash: 'TIỀN ĐẦU CA',
                     expectedCash: 'TIỀN KỲ VỌNG',
                     cashDifference: 'LỆCH QUỸ',
+                    actions: 'THAO TÁC',
                 },
             },
             status: {

@@ -25,7 +25,12 @@ type StaffColumnActions = {
 }
 
 /**
- * Cột bảng Nhân viên theo `07-nhan-vien.png`: NHÂN VIÊN · CHI NHÁNH · VAI TRÒ · TRẠNG THÁI · NGÀY VÀO · THAO TÁC.
+ * Cột bảng Nhân viên theo `07-nhan-vien.png`: STT · TÊN ĐĂNG NHẬP · NHÂN VIÊN · CHI NHÁNH ·
+ * VAI TRÒ · TRẠNG THÁI · NGÀY VÀO · THAO TÁC.
+ *
+ * Thứ tự cột theo CONVENTIONS mục 5.6: **STT → định danh → tên**. `StaffResDTO` không có `code`,
+ * `id` là UUID vô nghĩa với người dùng ⇒ trường định danh custom là **`username`** (khoá đăng nhập,
+ * duy nhất toàn hệ thống). Cột STT do `DataTable` tự chèn, không khai ở đây.
  *
  * THAO TÁC chỉ có 2 nút cố định: "Chi tiết" (mở modal xem/sửa inline — pattern chung toàn hệ thống)
  * và `(...)` chứa các hành động phụ (Sửa đầy đủ, Gán vai trò, Reset mật khẩu, Khoá/Mở, Xoá) — chốt
@@ -42,9 +47,20 @@ export function buildStaffColumns(
 ): ColumnDef<Staff, unknown>[] {
     return [
         {
+            id: 'username',
+            header: t('staff.list.column.username'),
+            size: 150,
+            // Cột định danh — không cho ẩn, và được ghim khi cuộn ngang (CONVENTIONS mục 5.6).
+            enableHiding: false,
+            // `username` là cột thật của `SysUser` ⇒ backend sort được.
+            meta: { sortField: 'username', columnLabel: t('staff.list.column.username') },
+            cell: ({ row }) => <span className="font-mono text-xs">{row.original.username}</span>,
+        },
+        {
             id: 'staff',
             header: t('staff.list.column.staff'),
-            // Cột định danh — không cho ẩn, người dùng sẽ không biết đang xem dòng của ai.
+            size: 240,
+            // Cột tên — không cho ẩn, người dùng sẽ không biết đang xem dòng của ai.
             enableHiding: false,
             meta: { sortField: 'fullName', columnLabel: t('staff.list.column.staff') },
             cell: ({ row }) => {
@@ -56,8 +72,8 @@ export function buildStaffColumns(
                             {initial}
                         </span>
                         <div className="min-w-0">
-                            <p className="font-medium">{staff.fullName}</p>
-                            <p className="text-muted-foreground text-xs">{staff.email}</p>
+                            <p className="truncate font-medium">{staff.fullName}</p>
+                            <p className="text-muted-foreground truncate text-xs">{staff.email}</p>
                         </div>
                     </div>
                 )
@@ -76,14 +92,15 @@ export function buildStaffColumns(
             id: 'role',
             header: t('staff.list.column.role'),
             size: 130,
-            meta: { sortField: 'role', columnLabel: t('staff.list.column.role') },
+            // Badge trong cột hẹp cố định ⇒ căn giữa cho cân (CONVENTIONS mục 5.6).
+            meta: { sortField: 'role', columnLabel: t('staff.list.column.role'), align: 'center' },
             cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge>,
         },
         {
             id: 'status',
             header: t('staff.list.column.status'),
             size: 120,
-            meta: { sortField: 'status', columnLabel: t('staff.list.column.status') },
+            meta: { sortField: 'status', columnLabel: t('staff.list.column.status'), align: 'center' },
             cell: ({ row }) =>
                 row.original.status === EntityStatus.ACTIVE ? (
                     <StatusBadge tone="success">{t('staff.list.statusActive')}</StatusBadge>
@@ -105,11 +122,12 @@ export function buildStaffColumns(
             // Đường vào mọi thao tác — không cho ẩn, và không có gì để sort.
             enableHiding: false,
             enableSorting: false,
+            meta: { columnLabel: t('staff.list.column.actions'), align: 'center' },
             cell: ({ row }) => {
                 const staff = row.original
                 const isLocked = staff.status === EntityStatus.INACTIVE
                 return (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                         <Button
                             variant="ghost"
                             size="icon"

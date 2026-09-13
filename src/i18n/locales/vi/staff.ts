@@ -10,6 +10,7 @@ export default {
             resultLabel: 'nhân viên',
             addButton: 'Thêm nhân viên',
             column: {
+                username: 'TÊN ĐĂNG NHẬP',
                 staff: 'NHÂN VIÊN',
                 branch: 'CHI NHÁNH',
                 role: 'VAI TRÒ',
@@ -175,6 +176,7 @@ export default {
             allActions: 'Tất cả hành động',
             resultLabel: 'nhật ký',
             column: {
+                id: 'MÃ',
                 time: 'THỜI GIAN',
                 user: 'NGƯỜI THỰC HIỆN',
                 action: 'HÀNH ĐỘNG',

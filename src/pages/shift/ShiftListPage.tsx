@@ -89,7 +89,11 @@ export default function ShiftListPage() {
     const [statusFilter, setStatusFilter] = useState<string>(ALL_STATUSES)
     const [branchFilter, setBranchFilter] = useState<string>(ALL_BRANCHES)
 
-    const table = useTableState()
+    /*
+     * Cột ẩn sẵn (CONVENTIONS mục 5.6): TIỀN ĐẦU CA chỉ là số đầu vào của phép kiểm quỹ — thứ
+     * người quản lý thực sự soi là TIỀN KỲ VỌNG và LỆCH QUỸ, hai cột đó vẫn hiện sẵn.
+     */
+    const table = useTableState([], { openingCash: false })
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     const [detailShift, setDetailShift] = useState<WorkShift | null>(null)
@@ -128,7 +132,9 @@ export default function ShiftListPage() {
                 id: 'code',
                 accessorKey: 'code',
                 header: t('order.shift.list.column.code'),
+                // Cột định danh, nằm trong dải ghim ⇒ không cho ẩn (CONVENTIONS mục 5.6).
                 size: 190,
+                enableHiding: false,
                 /* `code` là cột thật của entity ⇒ sort được phía server. */
                 meta: { columnLabel: t('order.shift.list.column.code'), sortField: 'code' },
                 cell: ({ row }) => (
@@ -139,6 +145,9 @@ export default function ShiftListPage() {
                 id: 'staffName',
                 accessorKey: 'staffName',
                 header: t('order.shift.list.column.staff'),
+                // Cột "tên" của ca, nằm trong dải ghim ⇒ bắt buộc `size`, không cho ẩn (mục 5.6).
+                size: 200,
+                enableHiding: false,
                 /*
                  * ⚠️ **KHÔNG mở sort**: `staffName` chỉ có ở DTO, backend giải sort theo field
                  * entity ⇒ `PropertyReferenceException` ⇒ **HTTP 500** (đã đo thật
@@ -162,7 +171,12 @@ export default function ShiftListPage() {
                 accessorKey: 'status',
                 header: t('order.shift.list.column.status'),
                 size: 130,
-                meta: { columnLabel: t('order.shift.list.column.status'), sortField: 'status' },
+                // Badge ⇒ căn giữa (CONVENTIONS mục 5.6).
+                meta: {
+                    columnLabel: t('order.shift.list.column.status'),
+                    sortField: 'status',
+                    align: 'center',
+                },
                 cell: ({ row }) => (
                     <StatusBadge tone={STATUS_TONE[row.original.status]}>
                         {t(`order.shift.status.${row.original.status}`)}
@@ -185,6 +199,8 @@ export default function ShiftListPage() {
                 meta: {
                     columnLabel: t('order.shift.list.column.openingCash'),
                     sortField: 'openingCash',
+                    // Cột tiền ⇒ nội dung căn phải (CONVENTIONS mục 5.6).
+                    align: 'right',
                 },
                 cell: ({ row }) => (
                     <span className="tabular-nums">{formatVnd(row.original.openingCash)}</span>
@@ -198,6 +214,8 @@ export default function ShiftListPage() {
                 meta: {
                     columnLabel: t('order.shift.list.column.expectedCash'),
                     sortField: 'expectedCash',
+                    // Cột tiền ⇒ nội dung căn phải (CONVENTIONS mục 5.6).
+                    align: 'right',
                 },
                 /* `null` khi ca chưa chốt — hiện `—`, đừng format số `null`. */
                 cell: ({ row }) =>
@@ -215,6 +233,8 @@ export default function ShiftListPage() {
                 meta: {
                     columnLabel: t('order.shift.list.column.cashDifference'),
                     sortField: 'cashDifference',
+                    // Cột tiền ⇒ nội dung căn phải (CONVENTIONS mục 5.6).
+                    align: 'right',
                 },
                 /*
                  * Lệch quỹ là con số quan trọng nhất của màn này: **âm = thiếu tiền** (đỏ),
@@ -238,57 +258,78 @@ export default function ShiftListPage() {
             },
             {
                 id: 'actions',
-                header: '',
-                size: 60,
+                header: t('order.shift.list.column.actions'),
+                size: 88,
                 enableSorting: false,
                 enableHiding: false,
-                meta: { columnLabel: t('common:action.detail') },
+                meta: { columnLabel: t('order.shift.list.column.actions'), align: 'center' },
                 cell: ({ row }) => {
                     const shift = row.original
                     const pending = shift.status === EShiftStatus.WAITING_APPROVAL
                     const open = shift.status === EShiftStatus.OPEN
+                    /*
+                     * `(...)` chỉ có nghĩa khi thật sự còn hành động: người xem không có quyền
+                     * duyệt, hoặc ca đã CLOSED/REJECTED, thì menu rỗng ⇒ **ẩn hẳn nút**
+                     * (CONVENTIONS mục 5.3).
+                     */
+                    const hasMenu = canApprove && (pending || open)
                     return (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label={t('common:action.detail')}
-                                >
-                                    <MoreHorizontal className="size-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setDetailShift(shift)}>
-                                    <Eye className="size-4" />
-                                    {t('common:action.detail')}
-                                </DropdownMenuItem>
+                        <div className="flex items-center justify-center gap-1">
+                            {/* Nút Chi tiết LUÔN hiện, không gate theo quyền (CONVENTIONS mục 5.3). */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 shrink-0"
+                                title={t('common:action.detail')}
+                                aria-label={t('common:action.detail')}
+                                onClick={() => setDetailShift(shift)}>
+                                <Eye className="size-4" />
+                            </Button>
 
-                                {/* Duyệt/từ chối chỉ có nghĩa với ca đang chờ duyệt. */}
-                                {canApprove && pending && (
-                                    <>
-                                        <DropdownMenuItem
-                                            onClick={() => void handleApprove(shift)}
+                            {hasMenu && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="size-8 shrink-0"
+                                            aria-label={t('order.shift.list.column.actions')}
                                         >
-                                            <Check className="size-4" />
-                                            {t('order.shift.list.approve')}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setRejectShift(shift)}>
-                                            <X className="size-4" />
-                                            {t('order.shift.list.reject')}
-                                        </DropdownMenuItem>
-                                    </>
-                                )}
+                                            <MoreHorizontal className="size-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {/* Duyệt/từ chối chỉ có nghĩa với ca đang chờ duyệt. */}
+                                        {pending && (
+                                            <>
+                                                <DropdownMenuItem
+                                                    onClick={() => void handleApprove(shift)}
+                                                >
+                                                    <Check className="size-4" />
+                                                    {t('order.shift.list.approve')}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => setRejectShift(shift)}
+                                                >
+                                                    <X className="size-4" />
+                                                    {t('order.shift.list.reject')}
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
 
-                                {/* Chốt hộ chỉ với ca đã duyệt và còn mở. */}
-                                {canApprove && open && (
-                                    <DropdownMenuItem onClick={() => setCloseShift(shift)}>
-                                        <Wallet className="size-4" />
-                                        {t('order.shift.list.closeForStaff')}
-                                    </DropdownMenuItem>
-                                )}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                        {/* Chốt hộ chỉ với ca đã duyệt và còn mở. */}
+                                        {open && (
+                                            <DropdownMenuItem
+                                                onClick={() => setCloseShift(shift)}
+                                            >
+                                                <Wallet className="size-4" />
+                                                {t('order.shift.list.closeForStaff')}
+                                            </DropdownMenuItem>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </div>
                     )
                 },
             },

@@ -1,10 +1,11 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
     flexRender,
     getCoreRowModel,
     getSortedRowModel,
     useReactTable,
+    type Column,
     type ColumnDef,
     type SortingState,
     type VisibilityState,
@@ -23,7 +24,7 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RefreshingOverlay } from './data-table-view-options'
-// Kích hoạt `declare module` mở rộng `ColumnMeta` (sortField / columnLabel).
+// Kích hoạt `declare module` mở rộng `ColumnMeta` (sortField / columnLabel / align).
 import './types'
 
 export type DataTablePagination = {
@@ -33,6 +34,53 @@ export type DataTablePagination = {
     total: number
     onPageChange: (page: number) => void
 }
+
+/**
+ * Id cột **STT** do `DataTable` tự chèn (CONVENTIONS mục 5.6). Đặt tiền tố `__` để không bao giờ
+ * đụng tên field của backend.
+ */
+export const INDEX_COLUMN_ID = '__index'
+
+/** Bề ngang cột STT — đủ cho 4 chữ số (`size` 200 × trang 50 vẫn chỉ tới 4 số). */
+const INDEX_COLUMN_SIZE = 56
+
+/** Số cột ghim mặc định: **STT + cột mã + cột tên** (CONVENTIONS mục 5.6). */
+const DEFAULT_PINNED_COLUMN_COUNT = 3
+
+/**
+ * Bảng **đã bị cuộn ngang hay chưa** — dùng để chỉ kẻ vạch phân cách dải cột ghim **khi cần**.
+ * Bảng vừa khung mà vẫn kẻ vạch thì người dùng thấy một đường dọc lạc lõng giữa bảng.
+ *
+ * ⚠️ Khung cuộn thật là `<div data-slot="table-container">` **bên trong** `Table` của shadcn, không
+ * phải div bọc ngoài của `DataTable` ⇒ phải tìm xuống qua `querySelector`. `ResizeObserver` để
+ * bật/tắt lại khi người dùng ẩn/hiện cột hoặc đổi kích thước cửa sổ làm bảng hết (hoặc bắt đầu) tràn.
+ */
+function useScrolledX(wrapperRef: React.RefObject<HTMLDivElement | null>): boolean {
+    const [scrolled, setScrolled] = useState(false)
+
+    useEffect(() => {
+        const scroller = wrapperRef.current?.querySelector<HTMLElement>('[data-slot="table-container"]')
+        if (!scroller) return
+
+        const update = () => setScrolled(scroller.scrollLeft > 0)
+        update()
+        scroller.addEventListener('scroll', update, { passive: true })
+        const observer = new ResizeObserver(update)
+        observer.observe(scroller)
+        return () => {
+            scroller.removeEventListener('scroll', update)
+            observer.disconnect()
+        }
+    }, [wrapperRef])
+
+    return scrolled
+}
+
+const ALIGN_CLASS = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right',
+} as const
 
 type DataTableProps<TData> = {
     columns: ColumnDef<TData, unknown>[]
@@ -69,17 +117,32 @@ type DataTableProps<TData> = {
      */
     refreshing?: boolean
     emptyState?: ReactNode
+    /**
+     * Số cột **ghim trái** khi cuộn ngang, tính cả cột STT tự chèn. Mặc định **3**
+     * (STT + mã + tên — CONVENTIONS mục 5.6).
+     *
+     * ⚠️ Cột được ghim **bắt buộc khai `size`**: vị trí `left` của cột sau tính bằng tổng `size`
+     * các cột ghim trước nó, không đo DOM. Cột ghim mà quên `size` sẽ lệch chỗ khi cuộn.
+     * Truyền `0` cho bảng không muốn ghim (bảng ít cột, chắc chắn không tràn ngang).
+     */
+    pinnedColumnCount?: number
     className?: string
 }
 
 /**
- * Bảng dữ liệu dùng chung (PLAN Phase 5) — sort cột, phân trang, bật/tắt cột, nút tải lại,
- * empty/loading/error state, scroll ngang trong khung ở màn hẹp
- * (CONVENTIONS mục 5 + 5.2).
+ * Bảng dữ liệu dùng chung (PLAN Phase 5) — cột STT, sort cột, phân trang, bật/tắt cột, ghim cột,
+ * nút tải lại, empty/loading/error state, scroll ngang trong khung ở màn hẹp
+ * (CONVENTIONS mục 5 + 5.2 + 5.6).
  *
  * Search/filter là control rời do từng màn tự dựng (`DataTableToolbar`, đặt phía trên bảng) vì cần
  * gọi lại `POST .../search` với tham số riêng; `DataTable` chỉ render kết quả trang hiện tại +
  * các điều khiển của chính bảng.
+ *
+ * Ba thứ `DataTable` **ép cứng** để mọi bảng trong hệ thống giống nhau, màn hình không tự đặt được
+ * (CONVENTIONS mục 5.6):
+ * 1. **Cột STT** tự chèn ở đầu, đánh số theo **trang hiện tại** (`(page-1)*size + i + 1`).
+ * 2. **Tiêu đề cột luôn căn giữa** — kể cả cột tiền tệ (nội dung mới căn phải).
+ * 3. **Ghim `pinnedColumnCount` cột đầu** khi cuộn ngang.
  */
 export function DataTable<TData>({
     columns,
@@ -96,18 +159,58 @@ export function DataTable<TData>({
     onColumnVisibilityChange,
     refreshing = false,
     emptyState,
+    pinnedColumnCount = DEFAULT_PINNED_COLUMN_COUNT,
     className,
 }: DataTableProps<TData>) {
     const { t } = useTranslation('common')
+    const wrapperRef = useRef<HTMLDivElement>(null)
+    const scrolledX = useScrolledX(wrapperRef)
     const [internalSorting, setInternalSorting] = useState<SortingState>([])
     const sorting = controlledSorting ?? internalSorting
     const [internalVisibility, setInternalVisibility] = useState<VisibilityState>({})
     const columnVisibility = controlledVisibility ?? internalVisibility
 
+    /**
+     * Cột **STT** — chèn ở `DataTable` chứ không bắt từng màn tự khai, để 9 bảng không trôi mỗi nơi
+     * một kiểu và không màn nào quên (CONVENTIONS mục 5.6).
+     *
+     * ⚠️ Không khai `cell` ở đây: số thứ tự phải đếm theo **vị trí hiển thị** của dòng, mà
+     * `row.index` của TanStack là vị trí trong mảng dữ liệu **trước khi sort** — bảng sort phía
+     * client (Danh mục) sẽ ra số nhảy cóc. Giá trị được render thẳng trong thân bảng bên dưới.
+     */
+    const allColumns = useMemo<ColumnDef<TData, unknown>[]>(
+        () => [
+            {
+                id: INDEX_COLUMN_ID,
+                header: t('dataTable.index'),
+                size: INDEX_COLUMN_SIZE,
+                // Cột khung của bảng — không cho ẩn, và không có gì để sort (STT không phải dữ liệu).
+                enableHiding: false,
+                enableSorting: false,
+                meta: { columnLabel: t('dataTable.index'), align: 'center' },
+            },
+            ...columns,
+        ],
+        [columns, t],
+    )
+
+    /**
+     * Ghim `pinnedColumnCount` cột đầu (STT + mã + tên). Ghim theo **thứ tự khai cột**, không theo
+     * cột đang hiện: cột ghim đều là cột `enableHiding: false` nên không thể bị ẩn mất.
+     */
+    const pinnedColumnIds = useMemo(
+        () =>
+            allColumns
+                .slice(0, Math.max(0, pinnedColumnCount))
+                .map((column) => column.id ?? String((column as { accessorKey?: unknown }).accessorKey ?? ''))
+                .filter(Boolean),
+        [allColumns, pinnedColumnCount],
+    )
+
     const table = useReactTable({
         data,
-        columns,
-        state: { sorting, columnVisibility },
+        columns: allColumns,
+        state: { sorting, columnVisibility, columnPinning: { left: pinnedColumnIds, right: [] } },
         onSortingChange: (updater) => {
             const next = typeof updater === 'function' ? updater(sorting) : updater
             if (onSortingChange) {
@@ -133,11 +236,13 @@ export function DataTable<TData>({
     const rows = table.getRowModel().rows
     /** Số cột đang hiện — dùng cho `colSpan` của các dòng trạng thái. */
     const visibleColumnCount = table.getVisibleLeafColumns().length
+    /** STT đánh theo **trang hiện tại**: dòng đầu trang 2 (size 20) là 21, không phải 1. */
+    const indexOffset = pagination ? (pagination.page - 1) * pagination.size : 0
 
     return (
         <div className={cn('space-y-4', className)}>
             {/* `relative` để lớp phủ "đang tải lại" bám đúng khung bảng. */}
-            <div className="bg-card relative overflow-x-auto rounded-lg border">
+            <div ref={wrapperRef} className="bg-card relative overflow-x-auto rounded-lg border">
                 {/*
                  * Lớp phủ khi **tải lại**: làm mờ + khoá tương tác + hiện spinner, nhưng dữ liệu cũ
                  * vẫn nằm nguyên bên dưới nên người dùng không mất chỗ đang đọc
@@ -154,22 +259,31 @@ export function DataTable<TData>({
                                 {headerGroup.headers.map((header) => {
                                     const canSort = header.column.getCanSort()
                                     const sortDir = header.column.getIsSorted()
-                                    // `size` khai trong ColumnDef ⇒ cột có chiều rộng cố định (ví dụ
-                                    // cột THAO TÁC chỉ cần đúng bằng bề ngang nút, không nên bị `flex`
-                                    // kéo giãn theo nội dung cột dài nhất trong bảng).
-                                    const hasFixedWidth = header.column.columnDef.size !== undefined
-                                    const widthStyle = hasFixedWidth
-                                        ? { width: header.getSize(), minWidth: header.getSize() }
-                                        : undefined
                                     return (
                                         <TableHead
                                             key={header.id}
-                                            style={widthStyle}
-                                            className="text-muted-foreground py-2.5 text-xs font-semibold tracking-wide uppercase">
+                                            style={cellStyle(header.column)}
+                                            className={cn(
+                                                'text-muted-foreground py-2.5 text-xs font-semibold tracking-wide uppercase',
+                                                // Tiêu đề **luôn căn giữa** (CONVENTIONS mục 5.6),
+                                                // không phụ thuộc `meta.align` của nội dung ô.
+                                                'text-center',
+                                                pinnedClass(header.column, 'header', scrolledX),
+                                            )}>
                                             {header.isPlaceholder ? null : canSort ? (
                                                 <button
                                                     type="button"
-                                                    className="hover:text-foreground flex items-center gap-1"
+                                                    /*
+                                                     * `justify-center` để cụm "chữ + mũi tên sort" vẫn
+                                                     * nằm giữa ô như tiêu đề cột không sort được.
+                                                     *
+                                                     * ⚠️ `uppercase` phải khai **lại** ở đây: preflight
+                                                     * của Tailwind đặt `text-transform: none` cho
+                                                     * `button` nên tiêu đề cột sort được **không** kế
+                                                     * thừa `uppercase` của `<th>` — tiêu đề nào khai
+                                                     * i18n dạng thường sẽ lệch hẳn với các cột khác.
+                                                     */
+                                                    className="hover:text-foreground mx-auto flex items-center justify-center gap-1 uppercase"
                                                     onClick={header.column.getToggleSortingHandler()}>
                                                     {flexRender(
                                                         header.column.columnDef.header,
@@ -229,19 +343,26 @@ export function DataTable<TData>({
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            rows.map((row) => (
-                                <TableRow key={row.id}>
-                                    {row.getVisibleCells().map((cell) => {
-                                        const hasFixedWidth = cell.column.columnDef.size !== undefined
-                                        const widthStyle = hasFixedWidth
-                                            ? { width: cell.column.getSize(), minWidth: cell.column.getSize() }
-                                            : undefined
-                                        return (
-                                            <TableCell key={cell.id} style={widthStyle}>
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        )
-                                    })}
+                            rows.map((row, rowIndex) => (
+                                // `group/row` để ô **ghim** (nền đục, che nội dung cuộn bên dưới)
+                                // vẫn sáng lên cùng cả dòng khi rê chuột.
+                                <TableRow key={row.id} className="group/row">
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell
+                                            key={cell.id}
+                                            style={cellStyle(cell.column)}
+                                            className={cn(
+                                                ALIGN_CLASS[cell.column.columnDef.meta?.align ?? 'left'],
+                                                pinnedClass(cell.column, 'cell', scrolledX),
+                                            )}>
+                                            {cell.column.id === INDEX_COLUMN_ID
+                                                ? indexOffset + rowIndex + 1
+                                                : flexRender(
+                                                      cell.column.columnDef.cell,
+                                                      cell.getContext(),
+                                                  )}
+                                        </TableCell>
+                                    ))}
                                 </TableRow>
                             ))
                         )}
@@ -253,6 +374,45 @@ export function DataTable<TData>({
                 <DataTablePager unitLabel={unitLabel} pagination={pagination} />
             )}
         </div>
+    )
+}
+
+/**
+ * Chiều rộng + vị trí ghim của một ô.
+ *
+ * `size` khai trong `ColumnDef` ⇒ cột có chiều rộng cố định (ví dụ cột THAO TÁC chỉ cần đúng bề
+ * ngang nút, không nên bị kéo giãn theo cột dài nhất bảng). Cột **ghim** thì thêm `maxWidth` để
+ * chiều rộng thật khớp đúng `size` — `left` của cột ghim kế tiếp tính bằng tổng `size` các cột
+ * trước nó, ô nào phình ra vì nội dung dài là lệch cả dải ghim.
+ */
+function cellStyle<TData>(column: Column<TData, unknown>): React.CSSProperties | undefined {
+    const pinned = column.getIsPinned() === 'left'
+    if (column.columnDef.size === undefined) return pinned ? { left: column.getStart('left') } : undefined
+    const width = column.getSize()
+    return pinned
+        ? { width, minWidth: width, maxWidth: width, left: column.getStart('left') }
+        : { width, minWidth: width }
+}
+
+/**
+ * Class của ô **ghim trái** (CONVENTIONS mục 5.6).
+ *
+ * ⚠️ Nền phải **đục**, nếu không nội dung cuộn ngang sẽ chạy xuyên qua ô ghim. Vì vậy màu nền khi
+ * rê chuột không dùng thẳng `bg-muted/50` như dòng thường (trong suốt 50%) mà trộn sẵn bằng
+ * `color-mix` để ra **đúng cùng một màu** với phần dòng không ghim.
+ */
+function pinnedClass<TData>(
+    column: Column<TData, unknown>,
+    kind: 'header' | 'cell',
+    scrolledX: boolean,
+): string | undefined {
+    if (column.getIsPinned() !== 'left') return undefined
+    return cn(
+        'bg-card sticky z-10 overflow-hidden',
+        // Vạch phân cách dải cột đứng yên — **chỉ khi đã cuộn**, bảng vừa khung thì không kẻ gì.
+        scrolledX && column.getIsLastColumn('left') && 'border-r',
+        kind === 'cell' &&
+            'group-hover/row:bg-[color-mix(in_oklab,var(--muted)_50%,var(--card))]',
     )
 }
 

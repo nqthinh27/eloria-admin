@@ -72,7 +72,13 @@ export default function CustomerListPage() {
     const [branchFilter, setBranchFilter] = useState<string>(ALL_BRANCHES)
 
     /* page · sort · cột ẩn/hiện · nonce tải lại — xem `use-table-state`. */
-    const table = useTableState()
+    /*
+     * Cột ẩn sẵn (CONVENTIONS mục 5.6): CHI NHÁNH chỉ là "chi nhánh đăng ký" mang tính tham khảo
+     * từ Phase 3b (khách là toàn cục, không còn giới hạn theo chi nhánh), NGÀY TẠO hiếm khi cần
+     * tới. Bảng mở ra gọn còn SĐT · tên · email · điểm · trạng thái; ai cần thì bật lại ở
+     * dropdown "Hiển thị cột".
+     */
+    const table = useTableState([], { branch: false, createdDate: false })
     /* Không lấy `setPage` ra ngoài: màn này không có xoá nên không cần kẹp trang, đổi trang do
      * `DataTable` gọi thẳng `table.setPage`. */
     const { page, sorting, setSorting, columnVisibility, setColumnVisibility } = table

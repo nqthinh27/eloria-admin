@@ -44,6 +44,8 @@ export default {
         refreshing: 'Refreshing…',
         /** Toast after a refresh completes — the user needs to know the table is now current. */
         refreshed: 'Data refreshed',
+        /** Row-number column auto-injected by `DataTable` — numbered within the current page. */
+        index: 'No.',
         columns: 'Toggle columns',
     },
     searchSelect: {

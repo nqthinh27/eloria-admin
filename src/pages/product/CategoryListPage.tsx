@@ -63,7 +63,11 @@ export default function CategoryListPage() {
      * ⚠️ Màn này **cố ý KHÔNG dùng `sorting` của hook**: bảng chạy sort phía client (xem ghi chú
      * ở `<DataTable>` bên dưới), nên không có gì để đẩy lên `SearchPagination.sort`.
      */
-    const table = useTableState()
+    /*
+     * Cột ẩn sẵn (CONVENTIONS mục 5.6): THỨ TỰ chỉ dùng lúc sắp lại menu danh mục, không phải
+     * thông tin tra cứu thường ngày — bật lại ở dropdown "Hiển thị cột" khi cần.
+     */
+    const table = useTableState([], { sortOrder: false })
     const { page, setPage, columnVisibility, setColumnVisibility } = table
 
     const [formCategory, setFormCategory] = useState<Category | null | 'new'>(null)
@@ -212,7 +216,9 @@ export default function CategoryListPage() {
             {
                 id: 'code',
                 header: t('category.list.column.code'),
-                size: 110,
+                // Cột định danh, nằm trong dải ghim ⇒ không cho ẩn (CONVENTIONS mục 5.6).
+                size: 140,
+                enableHiding: false,
                 meta: { columnLabel: t('category.list.column.code') },
                 cell: ({ row }) => (
                     <span className="text-muted-foreground font-mono text-xs">
@@ -223,7 +229,9 @@ export default function CategoryListPage() {
             {
                 id: 'name',
                 header: t('category.list.column.name'),
-                // Cột định danh — ẩn đi thì không biết đang xem danh mục nào.
+                // Cột ghim ⇒ bắt buộc khai `size` để dải ghim không lệch khi cuộn (mục 5.6).
+                size: 260,
+                // Cột tên — ẩn đi thì không biết đang xem danh mục nào.
                 enableHiding: false,
                 meta: { columnLabel: t('category.list.column.name') },
                 cell: ({ row }) => (
@@ -253,14 +261,18 @@ export default function CategoryListPage() {
                 id: 'sortOrder',
                 header: t('category.list.column.sortOrder'),
                 size: 100,
-                meta: { columnLabel: t('category.list.column.sortOrder') },
-                cell: ({ row }) => row.original.sortOrder ?? '—',
+                // Số thứ tự sắp xếp ⇒ căn phải cho thẳng cột chữ số (CONVENTIONS mục 5.6).
+                meta: { columnLabel: t('category.list.column.sortOrder'), align: 'right' },
+                cell: ({ row }) => (
+                    <span className="tabular-nums">{row.original.sortOrder ?? '—'}</span>
+                ),
             },
             {
                 id: 'status',
                 header: t('category.list.column.status'),
                 size: 140,
-                meta: { columnLabel: t('category.list.column.status') },
+                // Badge ⇒ căn giữa (CONVENTIONS mục 5.6).
+                meta: { columnLabel: t('category.list.column.status'), align: 'center' },
                 cell: ({ row }) =>
                     row.original.status === EntityStatus.ACTIVE ? (
                         <StatusBadge tone="success">{t('category.list.statusActive')}</StatusBadge>
@@ -275,12 +287,12 @@ export default function CategoryListPage() {
                 // Đường vào mọi thao tác — không cho ẩn, và không có gì để sort.
                 enableHiding: false,
                 enableSorting: false,
-                meta: { columnLabel: t('category.list.column.actions') },
+                meta: { columnLabel: t('category.list.column.actions'), align: 'center' },
                 cell: ({ row }) => {
                     const category = row.original
                     const isActive = category.status === EntityStatus.ACTIVE
                     return (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-1">
                             {/* Nut Chi tiet LUON hien, khong gate theo quyen (CONVENTIONS muc 5.3). */}
                             <Button
                                 variant="ghost"

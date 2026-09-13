@@ -10,6 +10,7 @@ export default {
             resultLabel: 'customers',
             addButton: 'Add customer',
             column: {
+                phone: 'PHONE',
                 customer: 'CUSTOMER',
                 contact: 'CONTACT',
                 branch: 'BRANCH',

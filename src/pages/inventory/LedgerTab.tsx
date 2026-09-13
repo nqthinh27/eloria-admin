@@ -117,6 +117,8 @@ export function LedgerTab() {
             {
                 accessorKey: 'code',
                 header: t('inventory.ledger.column.code'),
+                // Cột ghim ⇒ bắt buộc khai `size` để dải ghim không lệch khi cuộn (mục 5.6).
+                size: 190,
                 // Cột định danh (mã phiếu) — không cho ẩn, người dùng sẽ không biết đang xem phiếu nào.
                 enableHiding: false,
                 // `code` là cột thật của `WarehouseLedger` ⇒ backend sort được.
@@ -128,17 +130,26 @@ export function LedgerTab() {
             {
                 accessorKey: 'name',
                 header: t('inventory.ledger.column.name'),
+                // Cột tên, nằm trong dải ghim ⇒ bắt buộc khai `size` (mục 5.6).
+                size: 240,
+                // Cột tên — không cho ẩn (cùng cột mã là hai thứ nhận ra phiếu).
+                enableHiding: false,
                 // `name` là cột thật của `WarehouseLedger` ⇒ backend sort được.
                 meta: { sortField: 'name', columnLabel: t('inventory.ledger.column.name') },
                 cell: ({ row }) => (
-                    <span className="font-medium">{row.original.name ?? '—'}</span>
+                    <span className="block truncate font-medium">{row.original.name ?? '—'}</span>
                 ),
             },
             {
                 accessorKey: 'type',
                 header: t('inventory.ledger.column.type'),
                 // `type` (IN/OUT/TRANSFER) là cột thật của `WarehouseLedger` ⇒ backend sort được.
-                meta: { sortField: 'type', columnLabel: t('inventory.ledger.column.type') },
+                // Badge ⇒ căn giữa (CONVENTIONS mục 5.6).
+                meta: {
+                    sortField: 'type',
+                    columnLabel: t('inventory.ledger.column.type'),
+                    align: 'center',
+                },
                 cell: ({ row }) => (
                     <StatusBadge tone={TYPE_TONE[row.original.type]}>
                         {t(`inventory.ledger.type.${row.original.type}`)}
@@ -181,7 +192,11 @@ export function LedgerTab() {
                  * để tách khỏi `status` 0/1 của bản ghi), nhưng **cột thật trong entity vẫn tên
                  * `status`** ⇒ `sortField` phải là `status`, gửi `ledgerStatus` sẽ 500.
                  */
-                meta: { sortField: 'status', columnLabel: t('inventory.ledger.column.status') },
+                meta: {
+                    sortField: 'status',
+                    columnLabel: t('inventory.ledger.column.status'),
+                    align: 'center',
+                },
                 cell: ({ row }) => (
                     <StatusBadge tone={STATUS_TONE[row.original.status]}>
                         {t(`inventory.ledger.status.${row.original.status}`)}
@@ -217,14 +232,14 @@ export function LedgerTab() {
                 // Đường vào mọi thao tác (xem/gửi duyệt/duyệt/từ chối) — không cho ẩn, và không có gì để sort.
                 enableHiding: false,
                 enableSorting: false,
-                meta: { columnLabel: t('inventory.ledger.column.actions') },
+                meta: { columnLabel: t('inventory.ledger.column.actions'), align: 'center' },
                 cell: ({ row }) => {
                     const ledger = row.original
                     const own = isOwnLedger(ledger)
                     const waiting = ledger.status === EWarehouseLedgerStatus.WAITING_APPROVAL
 
                     return (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-1">
                             <Button
                                 variant="ghost"
                                 size="icon"

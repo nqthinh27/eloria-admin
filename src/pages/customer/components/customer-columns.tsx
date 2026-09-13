@@ -34,6 +34,11 @@ type CustomerColumnActions = {
  * ⚠️ **Sort phía server** (CONVENTIONS mục 5.2): `id` cột ở FE khác tên field backend nên phải khai
  * `meta.sortField`. Cột **CHI NHÁNH bị khoá sort** vì `branchName` chỉ có ở DTO, không phải cột
  * thật của `SysUser` — sort vào đó backend trả **500**, xem CLAUDE.md mục "Sort phía server".
+ *
+ * Thứ tự cột theo CONVENTIONS mục 5.6: **STT → định danh → tên**. `CustomerResDTO` **không có
+ * `code`**, và `id` là UUID vô nghĩa với người dùng ⇒ trường định danh custom là **SĐT** — vừa là
+ * khoá duy nhất thật (backend `existsByPhoneNumber` toàn cục), vừa là thứ nhân viên dùng để tra
+ * khách ở quầy. Vì vậy SĐT được **tách khỏi** ô ghép tên+SĐT cũ thành cột riêng đứng trước cột tên.
  */
 export function buildCustomerColumns(
     t: TFunction<['customer', 'common']>,
@@ -41,11 +46,23 @@ export function buildCustomerColumns(
 ): ColumnDef<Customer, unknown>[] {
     return [
         {
+            id: 'phoneNumber',
+            header: t('customer.list.column.phone'),
+            size: 150,
+            // Cột định danh (SĐT là khoá duy nhất của khách) — không cho ẩn, và được ghim khi cuộn.
+            enableHiding: false,
+            // `phoneNumber` là cột thật của `SysUser` ⇒ backend sort được.
+            meta: { sortField: 'phoneNumber', columnLabel: t('customer.list.column.phone') },
+            cell: ({ row }) => (
+                <span className="font-mono text-xs">{row.original.phoneNumber}</span>
+            ),
+        },
+        {
             id: 'customer',
             header: t('customer.list.column.customer'),
-            // Cột định danh — không cho ẩn, người dùng sẽ không biết đang xem hồ sơ của ai.
+            size: 240,
+            // Cột tên — không cho ẩn, người dùng sẽ không biết đang xem hồ sơ của ai.
             enableHiding: false,
-            // Ô ghép tên + SĐT; sort theo tên (field chính người dùng đọc trước).
             meta: { sortField: 'fullName', columnLabel: t('customer.list.column.customer') },
             cell: ({ row }) => {
                 const customer = row.original
@@ -55,10 +72,7 @@ export function buildCustomerColumns(
                         <span className="bg-accent text-accent-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-medium">
                             {initial}
                         </span>
-                        <div className="min-w-0">
-                            <p className="font-medium">{customer.fullName}</p>
-                            <p className="text-muted-foreground text-xs">{customer.phoneNumber}</p>
-                        </div>
+                        <p className="truncate font-medium">{customer.fullName}</p>
                     </div>
                 )
             },
@@ -90,14 +104,23 @@ export function buildCustomerColumns(
             meta: {
                 sortField: 'membershipPoint',
                 columnLabel: t('customer.list.column.membershipPoint'),
+                // Số đếm ⇒ căn phải cho thẳng cột chữ số (CONVENTIONS mục 5.6).
+                align: 'right',
             },
-            cell: ({ row }) => formatNumber(row.original.membershipPoint ?? 0),
+            cell: ({ row }) => (
+                <span className="tabular-nums">{formatNumber(row.original.membershipPoint ?? 0)}</span>
+            ),
         },
         {
             id: 'status',
             header: t('customer.list.column.status'),
             size: 130,
-            meta: { sortField: 'status', columnLabel: t('customer.list.column.status') },
+            meta: {
+                sortField: 'status',
+                columnLabel: t('customer.list.column.status'),
+                // Badge trong cột hẹp cố định ⇒ căn giữa cho cân (CONVENTIONS mục 5.6).
+                align: 'center',
+            },
             cell: ({ row }) =>
                 row.original.status === EntityStatus.ACTIVE ? (
                     <StatusBadge tone="success">{t('customer.list.statusActive')}</StatusBadge>
@@ -119,11 +142,11 @@ export function buildCustomerColumns(
             // Đường vào mọi thao tác — không cho ẩn, và không có gì để sort.
             enableHiding: false,
             enableSorting: false,
-            meta: { columnLabel: t('customer.list.column.actions') },
+            meta: { columnLabel: t('customer.list.column.actions'), align: 'center' },
             cell: ({ row }) => {
                 const customer = row.original
                 return (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                         <Button
                             variant="ghost"
                             size="icon"
