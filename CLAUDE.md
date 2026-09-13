@@ -47,15 +47,22 @@ d:\Project\35.eloria\
 Khi cần biết shape dữ liệu, ưu tiên **đọc source backend** (`35.1.eloria-backend/src/main/java/vn/com/eloria/`)
 thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs/api`**, chỉ fetch khi user ra lệnh (CONVENTIONS mục 1).
 
-### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**, **2026-08-29**, **2026-09-07**, **2026-09-09**
+### Tích hợp backend — khảo sát `/v3/api-docs/api` ngày **2026-08-06**, cập nhật **2026-08-08**, **2026-08-09**, **2026-08-10**, **2026-08-11**, **2026-08-21**, **2026-08-29**, **2026-09-07**, **2026-09-09**, **2026-09-12**
 
+> **Khảo sát lại 2026-09-12:** backend lên **118 path** (+9). Domain mới: **Đổi / Trả / Hoàn tiền**
+> (`/return/**` 9 endpoint) — thứ **Phase 13** chờ từ đầu. Entity mới: `ReturnRequest` +
+> `ReturnDetail`. Nguồn: `docs/api/doi-tra-p11.md`. Đã kiểm thử thật **~85 case, khớp tài liệu
+> 100%**, xem mục "Domain Đổi / Trả / Hoàn tiền" ở cuối phần này.
+> ⇒ **BE17 đóng; Phase 13 đã code xong ⇒ TOÀN BỘ 17 PHASE HOÀN THÀNH.**
+>
 > **Khảo sát lại 2026-09-09 (lần 2):** backend lên **109 path** (+9 trong ngày). Domain mới:
 > **Ca làm việc & Bán quầy** (`/work-shift/**` 8 + `POST /pos/order`) — thứ **Phase 15** đang chờ,
 > nay có **cả quy trình duyệt ca**. Entity mới: `WorkShift`. Nguồn: `docs/api/ca-lam-viec-p10.md`.
 > Đã kiểm thử thật **23/23 PASS**, xem mục "Domain Ca làm việc & Bán quầy" ở cuối phần này.
 > ⇒ **BE19 · BE24 · BE25 đều đóng; Phase 15 đã code xong.**
 >
-> ⚠️ **Vẫn KHÔNG có** API đổi/trả (`refund|return|exchange`: **0 path**) ⇒ **Phase 13 vẫn bị chặn**.
+> ⚠️ *(Câu "vẫn KHÔNG có API đổi/trả ⇒ Phase 13 bị chặn" ghi ở đây **đã lỗi thời** — backend bổ
+> sung đủ 9 endpoint ngày 2026-09-12, xem hộp trên cùng.)*
 
 > **Khảo sát lại 2026-09-07:** backend lên **100 path** (+12). Hai domain mới:
 > **Khuyến mại** (`/promotion/**` 5 + `/coupon/**` 2) và **Quản lý giá** (`/price/**` 3 +
@@ -63,8 +70,8 @@ thay vì đoán — nhưng **nguồn sự thật chính thức là `/v3/api-docs
 > Nguồn: `docs/api/khuyen-mai-p9.md` · `docs/api/quan-ly-gia-p8.md`. Xem mục
 > "Domain Khuyến mại & Coupon" ở cuối phần này.
 >
-> ⚠️ *(Ghi chép 2026-09-07, **phần ca làm việc đã lỗi thời** — xem hộp 2026-09-09 phía trên.)*
-> Vẫn KHÔNG có API đổi/trả (`refund|return|exchange`: 0 path) ⇒ **Phase 13 vẫn bị chặn**.
+> ⚠️ *(Ghi chép 2026-09-07, **phần ca làm việc VÀ phần đổi/trả đều đã lỗi thời** — ca làm việc xem
+> hộp 2026-09-09, đổi/trả xem hộp 2026-09-12, cả hai ở phía trên.)*
 
 > **Khảo sát lại 2026-08-29 (lần 2 — backend đã làm xong Phase 7):** backend lên **88 path**
 > (+5). ⚠️ **Ghi chép buổi sáng cùng ngày ("vẫn 83 path, Phase 12 bị chặn") KHÔNG CÒN ĐÚNG** —
@@ -715,9 +722,12 @@ Bán tại quầy không có khâu giao vận ⇒ backend rút gọn vòng đờ
 ⚠️ **Hệ quả cần biết: đơn POS đã thu tiền thì KHÔNG huỷ được nữa.** Vì `pay` đóng đơn thành
 `COMPLETED` ngay, `POST /order/{id}/cancel` trả **`error.order.alreadyClosed`** ⇒ **không hoàn tiền
 và không trả tồn được** qua API. Đo thật 2026-08-22. Trước đây đơn POS còn ở `PENDING` nên huỷ thoải
-mái. FE hiện đã coi `COMPLETED` là trạng thái đóng (ẩn nút Huỷ + Thu tiền) nên **không ai bấm nhầm**,
-nhưng nghiệp vụ **đổi/trả hàng tại quầy sẽ không có đường đi** cho tới khi có API đổi/trả riêng
-(Phase 13, `type: REFUND` mới chỉ là enum). **Cần hỏi user/backend** nếu quầy có nhu cầu huỷ đơn vừa bán.
+mái. FE hiện đã coi `COMPLETED` là trạng thái đóng (ẩn nút Huỷ + Thu tiền) nên **không ai bấm nhầm**.
+
+✅ **Lỗ hổng này đã được bịt từ 2026-09-12**: nghiệp vụ trả hàng tại quầy nay đi qua **phiếu đổi/trả**
+(`POST /return`, xem mục "Domain Đổi / Trả / Hoàn tiền") — hoàn tiền và trả tồn đều có đường đi, chỉ
+khác là **không huỷ đơn gốc** mà lập một phiếu trả độc lập (đơn giữ nguyên `COMPLETED`/`PAID`).
+⇒ Ghi chép cũ *"không có đường đi cho tới khi có API đổi/trả riêng"* **không còn đúng**.
 
 ### Giảm giá đơn hàng — **2 TẦNG, khảo sát lại api-docs + kiểm thử thật 2026-08-21**
 
@@ -907,9 +917,9 @@ hoàn toàn với kết quả đo thật của FE**.
 - **`POST /websocket`** (`SendWsBodyDTO`) xuất hiện lần đầu — chưa rõ mục đích, **cần hỏi user/backend**
   trước khi dùng; không tự ý nối realtime.
 
-**Vẫn chưa có** API: đổi/trả (`type: REFUND` mới chỉ là enum trên `OrderResDTO`, không có endpoint
-riêng) ⇒ **Phase 13** vẫn chờ backend. *(Khuyến mại đã có 2026-09-07 ⇒ Phase 14 xong; ca làm việc
-đã có 2026-09-09 ⇒ Phase 15 xong — ghi chép cũ liệt kê 2 mục này **không còn đúng**.)*
+⚠️ *(Ghi chép cũ "vẫn chưa có API đổi/trả ⇒ Phase 13 chờ backend" **không còn đúng** — backend đã
+có đủ 9 endpoint `/return/**` từ 2026-09-12, xem mục "Domain Đổi / Trả / Hoàn tiền". `EOrderType.REFUND`
+vẫn là enum chết như cũ: đổi/trả nằm ở bảng `return_request` riêng, **không** sinh đơn `REFUND`.)*
 
 Ngoài bậc role, backend còn **tự giới hạn phạm vi dữ liệu** (ghi trong `description` từng endpoint):
 ADMIN chỉ thấy/tạo nhân viên chi nhánh mình và chỉ gán được role STAFF; điều chuyển chi nhánh chỉ SUPER_ADMIN.
@@ -1130,6 +1140,130 @@ này**; số tiền chuẩn của ca là `expectedCash` do backend tính.
 subKey lỗi: `error.workShift.{alreadyOpen, notOpen, notFound, invalidStatus, branchForbidden}` ·
 `error.branch.required` (SA chưa chọn chi nhánh) · `error.stock.insufficient` (hết hàng khi bán
 quầy — rollback sạch cả đơn, đo thật tồn không đổi khi 1 trong 2 dòng thiếu hàng).
+
+### Domain Đổi / Trả / Hoàn tiền — **MỚI 2026-09-12** (118 path), đã kiểm thử API thật
+
+> Nguồn: `35.1.eloria-backend/docs/api/doi-tra-p11.md`. FE đã **đo thật ~85 case** (trọn vòng đời
+> trả · đổi ngang giá · đổi lệch giá · trả không hoá đơn · RBAC 4 tài khoản · data-scope · tích hợp
+> quỹ ca · mọi đường lỗi) — **khớp tài liệu**, không có điểm lệch nào. ⇒ **BE17 đã đóng; Phase 13
+> code xong.**
+
+| Nhóm | Role tối thiểu | Endpoint |
+|---|---|---|
+| Đọc | `STAFF` | `POST /return/search` · `GET /return/{id}` |
+| Tạo yêu cầu **trả** | `STAFF` | `POST /return` |
+| Tạo yêu cầu **đổi** | `STAFF` | `POST /return/exchange` (ngang giá) · `POST /return/exchange-diff` (lệch giá) |
+| Duyệt / từ chối | **`ADMIN`** | `POST /return/{id}/approve` · `/reject` |
+| Quyết toán tiền | **`ADMIN`** | `POST /return/{id}/refund` |
+| Nhận hàng vào kho | **`ADMIN`** | `POST /return/{id}/receive-stock` |
+
+**Vòng đời:**
+
+```
+(STAFF) create → PENDING_APPROVAL ─(ADMIN+ approve)→ APPROVED ─┬─ /refund ────────┐
+                        └─────────(ADMIN+ reject)─→ REJECTED   └─ /receive-stock ─┴→ COMPLETED
+```
+
+- ⚠️ **`APPROVED → COMPLETED` là TỰ ĐỘNG, không có endpoint "hoàn tất"**: backend chuyển khi đã xong
+  **cả hai** việc — quyết toán tiền *(bỏ qua nếu phiếu không phát sinh tiền)* **và** nhận hàng vào
+  kho. Gọi hai việc theo **thứ tự nào cũng được** (đo thật cả 2 chiều).
+- Phiếu **không sửa, không xoá** (bản ghi lịch sử tiền/hàng) — sai thì từ chối rồi tạo phiếu mới.
+  Phiếu `REJECTED` là **ngõ cụt**, duyệt lại ⇒ `error.return.invalidStatus`.
+- ⚠️ **Backend KHÔNG chặn tự duyệt** — ADMIN tạo phiếu rồi tự duyệt được (đo thật), **khác hẳn**
+  phiếu kho Phase 10 vốn trả `error.warehouseLedger.cannotApproveOwn`. Đừng khoá nút ở FE.
+- ⚠️ **`reject` ghi lý do vào `description`** (dạng `"Từ chối: …"`), **không** vào `reason`
+  (`reason` giữ nguyên lý do khách trả hàng) ⇒ màn chi tiết phải **đổi nhãn field theo `status``,
+  giống cách ca `REJECTED` hiển thị lý do từ chối.
+- Mã phiếu: **`TH-{branchCode}-{yyyyMMdd}-{seq}`** (trả) · **`DOI-…`** (đổi), fallback viết tắt tên
+  chi nhánh giống mã đơn/mã ca.
+
+**Tiền — nằm trên phiếu trả, KHÔNG đụng `order_payment`:**
+
+```
+returnedAmount   = tiền hàng khách trả về (giá khách THỰC TRẢ)
+deliveredAmount  = tiền hàng giao mới (0 với phiếu trả thuần)
+refundAmount     = phải trả lại khách    │ tối đa 1 trong 2 khác 0
+collectAmount    = phải thu thêm của khách ┘
+```
+
+- **Đơn gốc giữ nguyên `COMPLETED` / `PAID` / `paidAmount`** — đã đo thật, phiếu trả là bản ghi độc
+  lập, không sửa ngược lại đơn. **Phí ship không hoàn.**
+- **Giá quyết toán đã phân bổ chiết khấu + khuyến mại của đơn gốc**:
+  `hệ số = (subtotal − discountAmount) / Σ lineTotal`; `giá/đv = (lineTotal / qty) × hệ số`.
+  Đo thật trên đơn `subtotal 1.000.000 − giảm 120.000`, dòng `lineTotal 980.000` qty 2 ⇒ trả 1 cái
+  được **440.000** đúng công thức. ⇒ **FE tuyệt đối không tự tính lại giá hoàn.**
+- ⚠️ **`STORE_CREDIT` · `POINT` · `VOUCHER` chưa hỗ trợ** ⇒ `error.return.methodNotSupported`
+  (chưa có sổ quỹ tiền treo). FE chỉ bày `CASH` · `CARD` · `QR` · `COD`.
+- Quyết toán **1 lần duy nhất** (`error.return.alreadyRefunded`); phiếu đổi **ngang giá** gọi vào ⇒
+  `error.return.nothingToSettle` ⇒ FE phải tự ẩn nút.
+
+**Tích hợp quỹ ca (Phase 15) — đã kiểm chứng thật:** `/refund` **tự gắn `shiftId`** = ca đang mở của
+người quyết toán, và tiền vào thẳng công thức chốt ca. Đo thật: mở ca 500.000 → hoàn 500.000 bằng
+`CASH` → chốt ca ra `expectedCash = 0`, `cashDifference = 0`. ✓
+*(Nhớ: `expectedCash` **luôn `null` khi ca chưa chốt** — chỉ tính lúc chốt.)*
+`POST /return/search` có filter **`shiftId`** để đối soát.
+
+**Tồn kho:**
+
+| Loại dòng | Đụng tồn lúc nào | Chiều |
+|---|---|---|
+| `DELIVERED` (hàng giao mới khi đổi) | **approve** | **Trừ** — hết hàng ⇒ `error.stock.insufficient` |
+| `RETURNED` + `RESALABLE` | **receive-stock** | **Cộng**, qua một phiếu kho **`IN` + `ACCEPTED` tự sinh** |
+| `RETURNED` + `DEFECTIVE` | — | Không cộng tồn (muốn ghi huỷ thì dùng `POST /stock-disposal`) |
+
+Đo thật đủ 3 chiều: đổi size ⇒ approve trừ tồn SKU mới `80 → 79` · nhận `RESALABLE` ⇒ tồn
+`90 → 91` + sinh phiếu `PN-676090` (`IN`/`ACCEPTED`) · nhận `DEFECTIVE` ⇒ tồn `82 → 82` và
+`warehouseLedgerId = null`.
+
+⚠️ **Mọi dòng `RETURNED` phải có tình trạng** — thiếu ⇒ `error.return.conditionRequired`.
+`defaultCondition` áp cho dòng không liệt kê trong `lines`. Chỉ gọi được **1 lần**
+(`error.return.stockAlreadyReceived`).
+
+**Trả/đổi KHÔNG hoá đơn:** bỏ `orderId`, khi đó mỗi dòng **bắt buộc** `skuId` **và** `unitAmount`
+(nhân viên nhập tay giá quyết toán) — thiếu ⇒ `error.return.lineInvalid`. **Không có** ràng buộc
+"trả vượt số đã mua" vì không có đơn đối chiếu; ADMIN duyệt là chốt chặn duy nhất.
+
+**RBAC & data-scope (đo thật 4 tài khoản):** đọc + tạo là `[STAFF]`; duyệt/từ chối/quyết toán/nhận
+kho là `[ADMIN]` (STAFF gọi ⇒ **403**).
+⚠️ **STAFF thấy MỌI phiếu của chi nhánh mình**, không chỉ phiếu mình tạo (đo thật: STAFF và ADMIN
+cùng trả 4/4) — **khác hẳn** màn Ca làm việc nơi STAFF chỉ thấy ca của chính mình.
+ADMIN chi nhánh khác ⇒ **403 `error.forbidden`** cả `approve` lẫn `GET /{id}`.
+`branchId` chỉ SUPER_ADMIN dùng được.
+
+⚠️ **Sort của `/return/search`: `staffName` và `lines` gây HTTP 500** (field DTO-only ⇒
+`PropertyReferenceException`) ⇒ hai cột đó **bắt buộc `enableSorting: false`**. Sort được (đo thật
+200): `code` · `status` · `type` · `reason` · `returnedAmount` · `deliveredAmount` · `refundAmount` ·
+`collectAmount` · `refundedAt` · `approvedAt` · `createdDate` · `id` · `orderId` · **`orderCode`** ·
+**`customerName`** · **`branchName`**.
+
+⚠️ **`lines` trả `null` ở `POST /return/search`**, chỉ populate ở `GET /return/{id}` (cố ý tránh
+N+1 — giống `lines` của phiếu kho, `categories` của sản phẩm). ⇒ **Không dựng được cột SẢN PHẨM ở
+bảng danh sách** như mockup `06-doi-tra.png` vẽ, và mọi dialog cần `lines` (nhận hàng vào kho) phải
+`getById` trước khi mở.
+
+⚠️ **Không có cách biết "dòng đơn còn trả được mấy cái"** — `OrderDetailResDTO` **không có**
+`returnedQuantity`, mà `/return/search` lại trả `lines: null` ⇒ FE phải `search(orderId)` rồi
+`GET /return/{id}` **từng phiếu** để cộng (**N+1**, xem `ReturnCreateDialog#loadReturnable`). Phiếu
+`REJECTED` không tính. Đây là **BE26** — xem PLAN mục B.
+
+⚠️ **FE LUÔN dùng `/return/exchange-diff`, không bao giờ dùng `/return/exchange`.** Giá quyết toán
+do backend phân bổ nên FE **không đoán được** ngang giá hay lệch giá; đoán sai thì `/exchange` trả
+`error.return.exchangePriceDiff` và người dùng lãnh lỗi vô nghĩa. Đã đo thật: **`/exchange-diff`
+nhận cả hai trường hợp**, ngang giá trả `refund = collect = 0`.
+
+subKey lỗi: `error.return.{notExisted, invalidStatus, lineRequired, lineInvalid, orderNotReturnable,
+orderLineNotFound, quantityExceeded, exchangePriceDiff, alreadyRefunded, nothingToSettle,
+methodNotSupported, stockAlreadyReceived, conditionRequired}` · `error.stock.insufficient` ·
+`error.concurrentModification` · `error.staff.hasOpenReturns`.
+⚠️ Guard **trạng thái chạy trước**: gọi `receive-stock` trên phiếu đã `COMPLETED` trả
+`error.return.invalidStatus` chứ **không** phải `stockAlreadyReceived` (mã đó chỉ nổ khi phiếu còn
+`APPROVED`) ⇒ FE xử lý cả hai mã như nhau.
+
+**Cố ý ngoài phạm vi (backend ghi rõ):** store credit · **báo cáo doanh thu P7 CHƯA trừ hàng trả**
+(`report/sales` · `report/profit` · `dashboard/summary` vẫn tính trên `order_sale` COMPLETED — báo
+cáo xuất-nhập-tồn thì **đã đúng**) · khuyến mại không được gỡ khi trả hàng (`usage_count` và
+`membershipPoint` giữ nguyên) · không có thời hạn đổi/trả · **đổi hàng không sinh đơn bán mới** nên
+SKU giao mới không vào doanh thu.
 
 ### Tài khoản test (môi trường dev local)
 

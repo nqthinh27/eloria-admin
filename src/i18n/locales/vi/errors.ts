@@ -113,6 +113,23 @@ export default {
             invalidStatus: 'Thao tác không hợp lệ với trạng thái ca hiện tại.',
             branchForbidden: 'Bạn không có quyền với ca này.',
         },
+        // Domain đổi / trả / hoàn tiền (Phase 13) — key trích từ `docs/api/doi-tra-p11.md`,
+        // đã kiểm chứng phát sinh thật 2026-09-12.
+        return: {
+            notExisted: 'Phiếu đổi/trả không tồn tại.',
+            invalidStatus: 'Thao tác không hợp lệ với trạng thái phiếu hiện tại.',
+            lineRequired: 'Phiếu phải có ít nhất 1 dòng hàng.',
+            lineInvalid: 'Dòng hàng thiếu thông tin bắt buộc (mã SKU hoặc giá quyết toán).',
+            orderNotReturnable: 'Đơn gốc chưa hoàn tất nên không trả hàng được. Đơn chưa xong thì huỷ đơn.',
+            orderLineNotFound: 'Dòng hàng không thuộc đơn gốc đã chọn.',
+            quantityExceeded: 'Số lượng trả vượt quá số đã mua (đã trừ số đã trả ở các phiếu trước).',
+            exchangePriceDiff: 'Hàng đổi lệch giá so với hàng trả — hãy dùng chế độ đổi khác giá.',
+            alreadyRefunded: 'Phiếu này đã được quyết toán tiền.',
+            nothingToSettle: 'Phiếu không phát sinh tiền nên không cần quyết toán.',
+            methodNotSupported: 'Hình thức này chưa được hỗ trợ. Hãy chọn tiền mặt, thẻ, QR hoặc COD.',
+            stockAlreadyReceived: 'Phiếu này đã nhận hàng vào kho.',
+            conditionRequired: 'Phải chọn tình trạng (bán lại / hàng lỗi) cho mọi dòng hàng trả.',
+        },
         stock: {
             insufficient: 'Không đủ tồn khả dụng để xuất/chuyển.',
             countNoDiff: 'Kiểm kê không có chênh lệch nào so với tồn hệ thống.',

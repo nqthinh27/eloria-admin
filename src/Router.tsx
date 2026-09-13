@@ -7,7 +7,6 @@ import { ERole } from './types/common'
 import Dashboard from './pages/Dashboard'
 import Forbidden from './pages/Forbidden'
 import NotMatch from './pages/NotMatch'
-import Placeholder from './pages/Placeholder'
 import StaffListPage from './pages/staff/StaffListPage'
 import BranchListPage from './pages/staff/BranchListPage'
 import AuditLogPage from './pages/staff/AuditLogPage'
@@ -19,6 +18,7 @@ import PosPage from './pages/pos/PosPage'
 import ShiftListPage from './pages/shift/ShiftListPage'
 import OrderListPage from './pages/orders/OrderListPage'
 import PromotionListPage from './pages/promotion/PromotionListPage'
+import ReturnListPage from './pages/returns/ReturnListPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
@@ -57,10 +57,12 @@ export default function Router() {
                         */}
                         <Route path="shifts" element={<ShiftListPage />} />
                         <Route path="orders" element={<OrderListPage />} />
-                        <Route
-                            path="returns"
-                            element={<Placeholder titleKey="menu.returns" phase={13} />}
-                        />
+                        {/*
+                          `[STAFF]` — backend cho STAFF xem **mọi phiếu của chi nhánh mình**
+                          (khác Ca làm việc); duyệt/từ chối/quyết toán/nhận kho gate `[ADMIN]`
+                          bên trong màn.
+                        */}
+                        <Route path="returns" element={<ReturnListPage />} />
                         <Route path="customers" element={<CustomerListPage />} />
                         <Route path="products" element={<ProductListPage />} />
                         <Route path="categories" element={<CategoryListPage />} />

@@ -4,7 +4,7 @@
 > agent **chỉ thực hiện đúng phase được chỉ định**, không tự làm lấn sang phase khác.
 > Đọc [CONVENTIONS.md](CONVENTIONS.md) trước khi bắt đầu bất kỳ phase nào.
 
-Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**). **Phase 14 (Khuyến mại) đã xong 2026-09-07.** **Phase 16 (Hoàn thiện) đã xong 2026-09-08.** Phase 13 & 15 vẫn chờ backend ⇒ **chỉ còn Phase 17 (Mở rộng Khuyến mại) là làm được**.
+Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**). **Phase 14 (Khuyến mại) đã xong 2026-09-07.** **Phase 16 (Hoàn thiện) đã xong 2026-09-08.** **Phase 15 (Ca làm việc) đã xong 2026-09-09.** **Phase 13 (Đổi/Trả) đã xong 2026-09-12** ⇒ **trọn 17 phase hoàn thành**; chỉ còn Phase 17 (Mở rộng Khuyến mại) là phần mở rộng tuỳ chọn.
 
 > ## ✅ **PHASE 11 ĐÃ XONG (2026-08-18)** — Bán hàng & Đơn hàng
 >
@@ -172,11 +172,14 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | **BE14** | **Gom nhóm 2 chiều cho `/report/sales`** — `groupBy` chỉ nhận **một** giá trị nên biểu đồ "doanh thu theo tháng × chi nhánh" của mockup `01` phải gọi **1 request/chi nhánh** rồi ghép ở FE. | ⏳ Chờ backend. **Không chặn** (hiện 3 chi nhánh). Chuỗi mở rộng lên hàng chục chi nhánh thì phải xin `groupBy` 2 chiều hoặc endpoint riêng — **không** tăng số request. |
 | **BE13** | **Export Excel/PDF báo cáo** (`POST /report/{type}/export`) — backend ghi "đợt sau", hiện chỉ trả JSON. | ⏳ Chờ backend. FE **chưa dựng nút** "Xuất dữ liệu" của mockup `01` vì sẽ là nút chết. |
 | **BE10** | **`costPrice` trả về cho cả STAFF** — backend không lọc field theo role, STAFF `GET /product/{id}` vẫn đọc được giá vốn (đo thật 2026-08-29). FE đang giấu bằng gate `canWrite` ở UI ⇒ **che giao diện, không phải bảo mật**. | ⏳ Cần hỏi user: nếu giá vốn là số liệu nhạy cảm thật thì xin backend lọc field theo role. Không chặn việc gì. |
-| **BE17** | **API đổi/trả cho Phase 13** — chưa có gì: 0 endpoint, 0 entity, 0 DTO (rà soát lại **2026-09-07**: backend lên **100 path** nhưng **không có gì** cho đổi/trả — grep `refund|return|exchange` trên path: **0**; `domain/` không có entity nào). `EOrderType.REFUND` là enum chết (`OrderServiceImpl:259` set cứng `PURCHASE`); `STORE_CREDIT` không có ví/sổ số dư. **Kèm lỗ hổng nghiệp vụ**: đơn POS đã thu tiền là `COMPLETED` ⇒ `/cancel` trả `error.order.alreadyClosed` ⇒ **hiện không có cách nào trả hàng/hoàn tiền tại quầy**. | ⛔ **CHẶN CỨNG Phase 13.** Cần soạn yêu cầu API gửi backend (theo mẫu `phase-12-report-api-request.md` đã hiệu quả) + chốt phạm vi với user trước. |
+| **BE17** | **API đổi/trả cho Phase 13** — trước đây không có gì: 0 endpoint, 0 entity, 0 DTO. Kèm lỗ hổng nghiệp vụ: đơn POS đã thu tiền là `COMPLETED` ⇒ `/cancel` trả `error.order.alreadyClosed` ⇒ không có cách nào trả hàng/hoàn tiền tại quầy. | ✅ **ĐÃ XONG (2026-09-12)** — backend làm **9 endpoint** `/return/**`, api-docs lên **118 path**, entity `ReturnRequest` + `ReturnDetail`. FE kiểm thử thật **~85 case, khớp tài liệu 100%** rồi mới code. **Phase 13 đã code xong ⇒ trọn 17 phase hoàn thành.** Lỗ hổng "không trả được hàng tại quầy" cũng được bịt: lập **phiếu trả độc lập**, đơn gốc giữ nguyên `COMPLETED`/`PAID`. |
 | **BE18** | **`POST /promotion/{id}/update-status` trả `data: null`** — api-docs khai trả `PromotionResDTO` nhưng JSON thật là `{"code":1,"message":"Thành công","data":null}` (đo thật 2026-09-07). Trạng thái **có lưu đúng** (`GET` lại thấy `RUNNING`). | ⏳ Nên xin backend trả đúng DTO cho khớp api-docs. **Không chặn** — FE **phải refetch** sau khi đổi trạng thái, không được tin response. |
 | **BE19** | **API ca làm việc cho Phase 15** — trước đây không có entity `WorkShift`, 0 endpoint khớp `shift`. | ✅ **ĐÃ XONG (2026-09-09)** — backend làm **9 endpoint** (`/work-shift/**` 8 + `POST /pos/order`), api-docs lên **109 path**, kèm **quy trình duyệt ca** (`WAITING_APPROVAL → OPEN`). FE kiểm thử thật **23/23 PASS**. **Phase 15 đã code xong.** |
 | **BE24** | **Không có API tra cứu lịch sử ca** — chỉ có 3 endpoint `open`/`close`/`current`; `search`/`{id}` đều 404 và `OrderSearchReqDTO` không có `shiftId` ⇒ ca đã chốt không xem lại được. | ✅ **ĐÃ XONG (2026-09-09 lần 2)** — backend thêm `POST /work-shift/search` + `GET /work-shift/{id}` + **`OrderSearchReqDTO.shiftId`**, đúng cả 3 phần FE xin ở `docs/backend-request-shift-history.md`. FE đã dựng **màn Ca làm việc** (duyệt ca + lịch sử + chi tiết kèm đơn trong ca). ⚠️ Sort `staffName`/`branchName` vẫn **500** (field DTO-only) ⇒ 2 cột đó khai `enableSorting: false`. |
 | **BE25** | **Đơn bán qua `POST /order` không vào `expectedCash`** — endpoint này không gắn `shiftId` (luôn `null`) nên chốt ca báo thiếu quỹ đúng bằng toàn bộ tiền đã bán. | ✅ **ĐÃ XONG (2026-09-09 lần 2)** — backend chọn đúng **Cách A** FE đề xuất: `POST /order` **tự gắn ca đang mở** cho đơn `channel=POS` của STAFF (và bắt buộc STAFF phải có ca `OPEN`). ⇒ **luồng thu tiền 2 bước giữ nguyên** mà số kiểm quỹ vẫn đúng. Đo thật API: đầu ca 500k + `/pos/order` 500k + đơn 2 bước 500k ⇒ `expectedCash = 1.500.000`, lệch **0**; kiểm chứng lại qua UI: đầu ca 1.000.000 + bán 450.000 ⇒ kỳ vọng 1.450.000, lệch **0**. ⚠️ ADMIN/SUPER_ADMIN bán POS **không cần ca** ⇒ tiền của họ `shiftId: null`, không vào ca nào (thiết kế backend). |
+| **BE26** | **Không biết được dòng đơn còn trả được mấy cái** — `OrderDetailResDTO` không có `returnedQuantity`/`returnableQuantity`, mà `POST /return/search` lại trả **`lines: null`** ⇒ FE phải `search({orderId})` rồi `GET /return/{id}` **từng phiếu** để cộng lại (**N+1 request**). Backend thì có sẵn con số này (nó dùng để chặn `error.return.quantityExceeded`). | ⏳ **Không chặn** — FE đã tự tính ở `ReturnCreateDialog#loadReturnable()`, một đơn thường chỉ 0–2 phiếu nên chi phí chấp nhận được. Nên xin backend thêm **`returnedQuantity`** vào `OrderDetailResDTO` (rẻ nhất), hoặc populate `lines` ở `/return/search` khi có lọc `orderId`. |
+| **BE27** | **Sort `/return/search` theo `staffName` hoặc `lines` trả HTTP 500** (field DTO-only ⇒ `PropertyReferenceException` rơi vào handler `Exception` chung — đúng pattern đã gặp ở mọi module). | ⏳ **Không chặn** — 2 cột đó khai `enableSorting: false` theo CONVENTIONS mục 5.2. Đáng sửa chung một lượt cho toàn bộ `/search` (trả **400** thay vì 500). |
+| **BE28** | **Báo cáo doanh thu (P7) chưa trừ hàng trả** — `report/sales` · `report/profit` · `dashboard/summary` vẫn tính trên `order_sale` COMPLETED, trong khi tiền đã hoàn nằm ở `return_request`. Backend **ghi rõ là cố ý ngoài phạm vi P11**. Báo cáo **xuất-nhập-tồn thì đã đúng** (hàng trả vào qua phiếu kho `ACCEPTED`). | ⏳ **Không chặn Phase 13**, nhưng **doanh thu sẽ bị thổi phồng** đúng bằng tiền đã hoàn kể từ khi có đổi/trả thật. Cần chốt với user: xin backend trừ hàng trả, hay chấp nhận và ghi chú trên màn Báo cáo. |
 | **BE20** | **Quản lý giá (backend P8) đã xong nhưng FE không có màn** — 5 endpoint `/price/**` + `/price-change-log/search`. | ❌ **ĐÓNG (user chốt 2026-09-08): KHÔNG LÀM màn Quản lý giá.** Nhóm API này **cố ý bỏ trống**. Giá bán tiếp tục dùng `product.price`, backend tự fallback khi `sku_price` rỗng ⇒ không phải đổi gì ở FE. Xem hộp cuối Phase 17. |
 | **BE21** | **Promotion không có số đếm theo trạng thái** — `BaseListResponse<PromotionResDTO>` chỉ có `{total, data}`, **không** có `activeTotal`/`inactiveTotal` như staff/branch, và không có endpoint thống kê. ⇒ 3 thẻ "Đang chạy / Sắp chạy / Đã kết thúc" của mockup `16` **chỉ đếm được trên trang hiện tại**. | ⏳ Nên xin backend trả số đếm theo `EPromotionStatus` (hoặc thêm `BaseListResStatus`). **Không chặn** — 3 thẻ đã được gỡ bỏ (user chốt 2026-09-07). Có số đúng thì bàn lại ở **Phase 17 mục 17.2**. |
 | **BE22** | **Coupon sai không báo lỗi** — `couponCode` không tồn tại trả `200` với `{applied:false}`, y hệt ca không nhập mã. | ✅ **ĐÃ XONG (2026-09-08)** — backend chọn **Cách A**: trả **`400 error.promotion.codeInvalid`** khi có gửi mã mà mã không dùng được (đo thật ở `cart/preview`). FE đã nối ô nhập mã ở POS + bắt riêng mã lỗi này. |
@@ -2205,50 +2208,73 @@ SUPER_ADMIN = toàn chuỗi.
 
 ---
 
-## Phase 13 — Đổi / Trả ⛔ **BỊ CHẶN — backend chưa có API** *(rà soát lại 2026-09-07)*
+## Phase 13 — Đổi / Trả ✅ **ĐÃ XONG (2026-09-12)**
 
 **Thiết kế:** `06-doi-tra.png`. **Phụ thuộc Phase 11** (cần đơn hàng để trả).
 
-> ### ⛔ Kết quả rà soát điều kiện khởi động — **2026-09-03**, **rà lại 2026-09-07: KHÔNG ĐỔI**
->
-> ⚠️ **Cập nhật 2026-09-07:** backend đã lên **100 path** (làm xong Quản lý giá + Khuyến mại)
-> nhưng **không thêm gì cho đổi/trả**: grep `refund|return|exchange` trên toàn bộ path vẫn **0 kết quả**,
-> `domain/` vẫn không có entity nào, `OrderServiceImpl:259` vẫn set cứng `PURCHASE`. Bảng bên dưới
-> **vẫn đúng nguyên văn**. Theo `35.1.eloria-backend/PLAN.md`, đổi/trả là **P11 — ưu tiên #12**
-> (phase gần cuối của backend) ⇒ còn lâu mới có.
->
-> Đã fetch `/v3/api-docs/api` + đọc source backend. **Không đủ điều kiện bắt đầu.**
+> ### ✅ Kết quả rà soát điều kiện khởi động — **2026-09-12** (gọi API thật, không chỉ đọc docs)
 >
 > | Kiểm tra | Kết quả |
 > |---|---|
-> | Số path api-docs | **88** — *y hệt* 2026-08-29, backend **không thêm gì** kể từ Phase 7 |
-> | Endpoint đổi/trả | ❌ **Không có** — grep `refund`/`return`/`exchange` trên toàn bộ path: **0 kết quả** |
-> | `RefundResource`/`ReturnResource` | ❌ **Không tồn tại** — `web/rest/` có 21 Resource, không cái nào cho đổi-trả |
-> | Entity | ❌ **Không có** `Refund`/`ReturnOrder`/`ReturnDetail` trong `domain/` (21 file, đã liệt kê hết) |
-> | Schema DTO | ❌ **0 schema** khớp `refund|return|exchange` trong `components.schemas` |
-> | `EOrderType.REFUND` | ⚠️ **Enum chết** — có trong enum `["PURCHASE","REFUND"]` nhưng `OrderServiceImpl` **set cứng `PURCHASE`** khi tạo đơn; không API nào tạo được đơn `REFUND` |
-> | `EPaymentStatus.REFUNDED` | ⚠️ **Chỉ dùng nội bộ** cho luồng *huỷ đơn đã thu* (`/order/{id}/cancel` tự sinh dòng hoàn tiền), **không phải** luồng trả hàng |
-> | `STORE_CREDIT` | ⚠️ Có trong `EPaymentMethod` nhưng **không có ví/sổ store-credit** — không bảng, không API cộng/trừ số dư |
+> | Số path api-docs | **118** (+9 so với 2026-09-09) |
+> | Endpoint đổi/trả | ✅ **9** — `POST /return/search` · `GET /return/{id}` · `POST /return` · `/return/exchange` · `/return/exchange-diff` · `/return/{id}/approve` · `/reject` · `/refund` · `/receive-stock` |
+> | Entity | ✅ `ReturnRequest` + `ReturnDetail` (`return_request` / `return_detail`) |
+> | Schema DTO | ✅ `CreateReturnReqDTO` · `CreateExchangeReqDTO` · `RefundReturnReqDTO` · `RejectReturnReqDTO` · `ReceiveStockReqDTO` · `ReturnResDTO` · `ReturnDetailResDTO` · `ReturnSearchReqDTO` |
+> | RBAC | ✅ **đo thật**: STAFF `approve` ⇒ **403**, STAFF `search`/`create` ⇒ **200**, ADMIN chi nhánh khác ⇒ **403** |
+> | Tích hợp quỹ ca (P15) | ✅ `/refund` tự gắn `shiftId`; mở ca 500.000 → hoàn 500.000 `CASH` → chốt ca `expectedCash = 0`, lệch **0** |
 >
-> **⇒ Không có đường nào làm Phase 13 bằng API thật.** Mọi thứ phase này cần — phiếu trả, dòng hàng
-> trả, kho nhận hàng trả, luồng duyệt của ADMIN — đều **chưa tồn tại ở backend**.
+> **Nguồn:** [`35.1.eloria-backend/docs/api/doi-tra-p11.md`](../35.1.eloria-backend/docs/api/doi-tra-p11.md).
 >
-> **Thêm một chặn nghiệp vụ (đã ghi ở CLAUDE.md):** đơn POS thu tiền xong **nhảy thẳng `COMPLETED`**
-> ⇒ `/order/{id}/cancel` trả `error.order.alreadyClosed` ⇒ **hiện không có cách nào hoàn tiền/trả
-> tồn cho đơn bán tại quầy**. Đây chính là lỗ hổng mà Phase 13 phải bịt, nhưng bịt bằng gì thì
-> backend chưa cấp.
->
-> **Việc cần làm trước khi code:** soạn yêu cầu API gửi backend (giống
-> [`docs/handoff/phase-12-report-api-request.md`](docs/handoff/phase-12-report-api-request.md) đã
-> làm cho Phase 12 — cách này **đã chứng minh hiệu quả**, backend làm xong trong ngày). Cần chốt
-> với user: phạm vi đổi/trả (có cho trả không hoá đơn không · có store credit không · ai duyệt).
+> **Đã kiểm thử end-to-end ~85 case, khớp tài liệu 100%** (chi tiết ở CLAUDE.md mục
+> "Domain Đổi / Trả / Hoàn tiền"): trọn vòng đời trả hàng · đổi ngang giá · đổi lệch giá · trả không
+> hoá đơn · hệ số phân bổ giá quyết toán · động tồn 3 chiều · toàn bộ đường lỗi · data-scope 4 tài khoản.
 
-- Tạo yêu cầu trả: có hoá đơn (quét/nhập mã) hoặc không (tìm theo khách).
-- Đổi cùng giá (size/màu) và **đổi khác giá** (tự tính thu thêm / trả lại).
-- Hoàn tiền: tiền mặt / chuyển khoản / store credit *(khớp `EPaymentMethod` đã có:
-  `CASH` · `STORE_CREDIT` …)*; đơn trả dùng `EOrderType.REFUND` + `EPaymentStatus.REFUNDED`.
-- Chọn kho nhận hàng trả (bán lại / hàng lỗi) — nối vào phiếu kho của Phase 10.
-- Trạng thái "STAFF tạo — chờ ADMIN duyệt" rõ ràng.
+### Đã làm
+
+- **Màn `/returns`** (`ReturnListPage`) — bảng phiếu + băng cảnh báo "N yêu cầu đang chờ duyệt",
+  lọc theo **trạng thái · loại phiếu · chi nhánh** (chi nhánh chỉ SUPER_ADMIN), tìm theo mã phiếu /
+  mã đơn gốc / tên / SĐT khách.
+- **Dialog tạo yêu cầu** — gộp 4 nghiệp vụ trong một form: `trả | đổi` × `theo hoá đơn | không hoá đơn`.
+  Tìm đơn (chỉ đơn `COMPLETED`), chọn dòng hàng kèm **số còn trả được**, nhập SL/lý do từng dòng;
+  nhánh không hoá đơn thì chọn SKU + nhập giá quyết toán tay.
+- **Modal chi tiết** — thông tin phiếu · khối quyết toán · hàng hoá tách 2 nhóm (khách trả về /
+  giao mới) kèm tình trạng nhận kho.
+- **4 hành động `[ADMIN]`**: duyệt (ConfirmDialog, cảnh báo riêng cho phiếu đổi vì **trừ tồn ngay**) ·
+  từ chối (bắt buộc lý do) · quyết toán tiền · nhận hàng vào kho (chọn tình trạng từng dòng).
+- Gỡ `src/mocks/return.ts` + viết lại `src/types/return.ts` theo DTO thật; thêm namespace i18n
+  `return` (vi + en) và 13 `subKey` lỗi mới.
+- Gỡ `src/pages/Placeholder.tsx` — `/returns` là route giữ chỗ **cuối cùng**, không còn nơi nào dùng.
+
+### 6 quyết định kỹ thuật đáng nhớ
+
+1. **Phiếu đổi LUÔN gửi qua `/return/exchange-diff`, không bao giờ `/return/exchange`.** Giá quyết
+   toán do backend phân bổ (chiết khấu 2 tầng + KM của đơn gốc) nên **FE không đoán được** ngang giá
+   hay lệch giá; đoán sai thì `/exchange` trả `error.return.exchangePriceDiff` — lỗi vô nghĩa với
+   người dùng. Đo thật: `/exchange-diff` xử lý **cả hai**, ngang giá trả `refund = collect = 0`.
+2. **Số "còn trả được" phải tự tính bằng N+1 request** — backend không trả sẵn (xem **BE26**).
+   Phiếu `REJECTED` không tính, khớp cách backend đếm khi chặn `quantityExceeded`.
+3. **Không dựng cột SẢN PHẨM** dù mockup vẽ ("Áo sơ mi linen S → M"): `/return/search` trả
+   **`lines: null`** ⇒ cột sẽ rỗng ở mọi dòng. Cùng lý do đã bỏ cột "Tổng SL" ở màn Phiếu kho.
+   Hệ quả: mọi dialog cần `lines` (nhận hàng vào kho) phải `getById` trước khi mở.
+4. **Chỉ bày 4 hình thức quyết toán** (`CASH`/`CARD`/`QR`/`COD`) — `STORE_CREDIT`/`POINT`/`VOUCHER`
+   trả `error.return.methodNotSupported`, bày ra rồi báo lỗi là đánh đố.
+5. **Ẩn nút "Quyết toán" khi phiếu không phát sinh tiền** (đổi ngang giá ⇒ `nothingToSettle`) và khi
+   đã quyết toán (`alreadyRefunded`) — chặn ở UI thay vì để backend dội lỗi.
+6. **Không khoá nút duyệt với phiếu do chính mình tạo**: backend **cho phép tự duyệt** ở module này
+   (đo thật), khác hẳn phiếu kho P5.
+
+### Điểm lệch mockup có chủ đích
+
+| Mockup `06` | Thực tế | Vì sao |
+|---|---|---|
+| Cột **SẢN PHẨM** | ❌ bỏ | `lines: null` ở API danh sách (xem quyết định 3) |
+| Nút **"Duyệt"** đứng thẳng trên cột | ⇒ nằm trong `(...)` | CONVENTIONS mục 5.3 chỉ cho nút "Chi tiết" ở ngoài |
+| Cụm tab `STAFF｜ADMIN｜SA` trên top bar | ❌ không implement | CONVENTIONS mục 6.4 — demo của bản thiết kế |
+
+### Còn lại cho backend
+
+**BE26** (số còn trả được) · **BE27** (sort `staffName` ⇒ 500) · **BE28** (báo cáo doanh thu chưa
+trừ hàng trả — **đáng lưu ý nhất về nghiệp vụ**). Cả ba **không chặn** màn này.
 
 ---
 

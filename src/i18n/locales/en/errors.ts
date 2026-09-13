@@ -102,6 +102,22 @@ export default {
             invalidStatus: 'This action is not valid for the current shift status.',
             branchForbidden: 'You do not have permission for this shift.',
         },
+        // Returns / exchanges / refunds (Phase 13).
+        return: {
+            notExisted: 'Return request not found.',
+            invalidStatus: 'This action is not allowed in the request\u2019s current status.',
+            lineRequired: 'The request needs at least one line.',
+            lineInvalid: 'A line is missing required data (SKU or settlement price).',
+            orderNotReturnable: 'The original order is not completed yet, so it cannot be returned. Cancel the order instead.',
+            orderLineNotFound: 'That line does not belong to the selected order.',
+            quantityExceeded: 'Return quantity exceeds what was purchased (minus earlier returns).',
+            exchangePriceDiff: 'The exchanged items differ in price — use the different-price exchange instead.',
+            alreadyRefunded: 'This request has already been settled.',
+            nothingToSettle: 'This request has no money to settle.',
+            methodNotSupported: 'That method is not supported yet. Choose cash, card, QR or COD.',
+            stockAlreadyReceived: 'Stock for this request has already been received.',
+            conditionRequired: 'Every returned line needs a condition (resalable / defective).',
+        },
         stock: {
             insufficient: 'Not enough available stock to issue/transfer.',
             countNoDiff: 'The stock count shows no difference from system stock.',
