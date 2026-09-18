@@ -22,6 +22,8 @@ chi tiết nằm ở các file được trỏ tới, đừng chép ngược vào
 | Thiếu API, gặp bug backend | skill **request-backend** |
 | Xong task / kết thúc phiên | skill **handoff** |
 | Review sau task · rà luật mới toàn repo | skill **review-phase** |
+| Viết đặc tả SRS cho một màn / toàn hệ thống (`docs/srs/`) | skill **srs** — tự gọi **sequence-diagram** cho luồng phức tạp |
+| Vẽ sequence diagram (Mermaid) một luồng FE, trace code thật | skill **sequence-diagram** |
 
 ## Lệnh
 

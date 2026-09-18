@@ -473,6 +473,8 @@ src/
 | `update-api-doc` | User ra lệnh khảo sát api-docs / đo API thật |
 | `request-backend` | Soạn yêu cầu gửi backend + đăng ký BE# ở PLAN mục B |
 | `handoff` | Kết thúc task/phiên: cổng lint+build, bàn giao, ghi history, cập nhật PLAN |
+| `srs` | Viết/cập nhật SRS `docs/srs/srs-<slug>.md` từ nguồn sự thật FE + traceability matrix; luồng phức tạp gọi `sequence-diagram` |
+| `sequence-diagram` | Vẽ sequence diagram Mermaid bằng trace code thật FE (Page → api → api-client → backend), mỗi bước map `file:dòng` |
 
 ---
 
