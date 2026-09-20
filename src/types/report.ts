@@ -127,6 +127,38 @@ export type DashboardSummary = ReportDateRange & {
     statusBreakdown: StatusCount[]
     /** Tối đa 5 dòng, backend đã sắp sẵn. */
     topProducts: TopProductRow[]
+    /**
+     * Khách mới (`sys_user role=CUSTOMER`) tạo trong kỳ `[fromDate,toDate]`. Backend bổ sung 2026-09-20.
+     * ⚠️ **Toàn chuỗi luôn** — khách hàng không có `branch_id`, **không đổi theo `branchId`/scope**.
+     */
+    newCustomers: number
+    /**
+     * Số **phiếu kho** `WAITING_APPROVAL` — snapshot lúc gọi (không theo kỳ), theo scope chi nhánh.
+     * ⚠️ **Chưa gồm** duyệt chiết khấu đơn và phiếu đổi/trả chờ duyệt (backend để kỳ sau) — đừng tự cộng
+     * thêm bằng cách gọi `order/search`/`return/search` ở FE.
+     */
+    pendingApproval: number
+    /** Tình trạng kho — snapshot hiện tại (không theo kỳ), theo scope chi nhánh. */
+    warehouseStatus: WarehouseStatus
+}
+
+/**
+ * Khối `warehouseStatus` của `GET /dashboard/summary` (backend 2026-09-20). Thay cho 4 số FE từng
+ * định tự tính qua `sku/search` + `stock-item/search` — dùng thẳng, tránh lệch cách tính.
+ */
+export type WarehouseStatus = {
+    /** SKU `ACTIVE` (distinct) có dòng tồn trong phạm vi. */
+    activeSkuCount: number
+    /** `SUM(stock_item.total)` trong phạm vi. */
+    availableStock: number
+    /** SKU `ACTIVE` có `total = 0`. */
+    outOfStockSkuCount: number
+    /**
+     * SKU `ACTIVE` còn tồn nhưng **không có đơn COMPLETED nào bán ra trong 60 ngày gần nhất** (cửa sổ
+     * trượt tính từ lúc gọi, **không liên quan `fromDate`/`toDate`**); SKU chưa từng bán cũng tính.
+     * Đếm distinct SKU sau khi xét từng dòng SKU×chi nhánh ⇒ xem toàn chuỗi có thể cao hơn thực tế.
+     */
+    slowMovingSkuCount: number
 }
 
 /* ------------------------------------------------------------------ *

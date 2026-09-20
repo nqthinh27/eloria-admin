@@ -64,6 +64,10 @@ kèm shape đề xuất.
 
 ### 2.4 Khối "Tình trạng kho"
 
+> ✅ **ĐÃ GIAO 2026-09-20** — backend thêm `newCustomers` · `pendingApproval` · `warehouseStatus{4 số}` vào
+> `GET /dashboard/summary` (gồm cả "chậm luân chuyển > 60 ngày"). **Còn thiếu:** "Nhập kho tuần này / Xuất bán
+> tuần này". `pendingApproval` mới chỉ đếm phiếu kho. Chi tiết: [docs/backend/bao-cao.md](../backend/bao-cao.md).
+
 FE **tự làm được 3/4 dòng** bằng `sku/search` + `stock-item/search` (dùng `total`/`activeTotal`).
 **Chỉ thiếu:**
 

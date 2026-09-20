@@ -59,6 +59,9 @@ Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08
 > - **Lệch mockup**: giữ thẻ theo thiết kế nhưng hiện **`—` + tooltip** cho phần backend chưa có API
 >   (Khách mới · Hàng chờ duyệt · Tình trạng kho: tổng SKU/hết hàng/chậm luân chuyển >60 ngày ·
 >   % so hôm qua · mục tiêu doanh thu). Không bịa số, không để ô trống không giải thích.
+>   ✅ **CẬP NHẬT 2026-09-20:** backend đã bổ sung **Khách mới · Hàng chờ duyệt (chỉ phiếu kho) · Tình trạng kho**
+>   vào `/dashboard/summary` ⇒ FE hiện **số thật** ([bao-cao.md](docs/backend/bao-cao.md)). Vẫn còn `—`/thiếu:
+>   % so hôm qua · mục tiêu doanh thu · nhập/xuất kho tuần này.
 >
 > **Lệch mockup có chủ đích (ghi chú tại chỗ trong code):**
 > - **Cột "Danh mục"** ở bảng top sản phẩm: `TopProductRow` **không có danh mục**, và tra thêm qua

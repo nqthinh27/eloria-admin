@@ -78,20 +78,20 @@ function shortVnd(value: number): string {
     return String(value)
 }
 
-/** Ô số liệu mockup có vẽ nhưng backend **chưa có API** ⇒ hiện `—` kèm tooltip giải thích. */
-function UnavailableStat({ label }: { label: string }) {
-    const { t } = useTranslation('report')
+/**
+ * Một dòng số liệu trong khối "Tình trạng kho". `hint` nói rõ **số này tính theo gì** (kỳ / thời điểm
+ * hiện tại / toàn chuỗi) vì 3 nhóm số cùng nằm một thẻ nhưng phạm vi khác nhau — dễ bị đọc nhầm.
+ */
+function StockStat({ label, value, hint }: { label: string; value: number; hint: string }) {
     return (
         <Tooltip>
             <TooltipTrigger asChild>
                 <div className="bg-muted/40 flex cursor-help items-center justify-between rounded-lg px-3 py-2">
                     <span className="text-muted-foreground text-sm">{label}</span>
-                    <span className="text-muted-foreground text-sm font-semibold">
-                        {t('report.common.notAvailable')}
-                    </span>
+                    <span className="text-sm font-semibold tabular-nums">{formatNumber(value)}</span>
                 </div>
             </TooltipTrigger>
-            <TooltipContent>{t('report.dashboard.unavailable.tooltip')}</TooltipContent>
+            <TooltipContent>{hint}</TooltipContent>
         </Tooltip>
     )
 }
@@ -116,12 +116,16 @@ function UnavailableStat({ label }: { label: string }) {
  * Backend *có* hỗ trợ STAFF gọi `/dashboard/summary` (`scope: STAFF_SELF`) nhưng FE **cố ý không
  * dùng** nhánh đó: dashboard là công cụ quản lý, nhân viên bán hàng không cần xem doanh thu chi nhánh.
  *
+ * ## Khối "Tình trạng kho" — ✅ có số thật từ 2026-09-20
+ *
+ * Backend bổ sung `newCustomers` · `pendingApproval` · `warehouseStatus{…}` vào `/dashboard/summary`
+ * (`docs/api/fe-handoff-dashboard-warehouse-status.md` của repo backend). Trước đó khối này hiển thị `—`.
+ * ⚠️ `pendingApproval` **chỉ đếm phiếu kho** chờ duyệt (chưa gồm chiết khấu / đổi-trả).
+ *
  * ## ⚠️ Lệch mockup có chủ đích — backend chưa có API
  *
  * User chốt: **giữ khối theo mockup nhưng hiển thị `—`** kèm tooltip, thay vì bỏ hẳn.
- * Chưa có nguồn dữ liệu: **Khách mới** · **Hàng chờ duyệt** · **Tình trạng kho** (tổng SKU đang
- * bán / tồn khả dụng / hết hàng / **chậm luân chuyển > 60 ngày** — `StockItem` không có ngày xuất
- * bán gần nhất, xem báo cáo Phase 10) · **nhập/xuất kho tuần này** · **% so với hôm qua** và
+ * Còn thiếu nguồn dữ liệu: **nhập/xuất kho tuần này** · **% so với hôm qua** và
  * **mục tiêu doanh thu** (`DashboardSummaryResDTO` chỉ trả số liệu **một kỳ**, không có kỳ trước
  * để so, cũng không có bảng mục tiêu) · nút **Xuất dữ liệu** (backend ghi export là "đợt sau"
  * ⇒ dựng bây giờ là nút chết).
@@ -413,28 +417,44 @@ export default function Dashboard() {
                         </SectionCard>
 
                         {/*
-                         * "Tình trạng kho" của mockup — giữ khối theo thiết kế nhưng mọi dòng đều
-                         * `—`: backend chưa có API nào trả các số này (user chốt 2026-08-29).
+                         * "Tình trạng kho" của mockup — số thật từ `/dashboard/summary` (backend bổ sung
+                         * 2026-09-20). ⚠️ Ba nhóm số có **phạm vi khác nhau** nên mỗi dòng có tooltip:
+                         * kho + hàng chờ duyệt = snapshot hiện tại theo chi nhánh; khách mới = theo kỳ
+                         * đang chọn nhưng **toàn chuỗi** (không đổi khi SUPER_ADMIN lọc chi nhánh).
                          */}
                         <SectionCard
-                            title={t('report.dashboard.unavailable.stockStatus')}
-                            description={t('report.dashboard.unavailable.tooltip')}>
+                            title={t('report.dashboard.stockStatus.title')}
+                            description={t('report.dashboard.stockStatus.description')}>
                             <div className="space-y-2">
-                                <UnavailableStat label={t('report.dashboard.unavailable.totalSku')} />
-                                <UnavailableStat
-                                    label={t('report.dashboard.unavailable.availableStock')}
+                                <StockStat
+                                    label={t('report.dashboard.stockStatus.totalSku')}
+                                    value={data.warehouseStatus.activeSkuCount}
+                                    hint={t('report.dashboard.stockStatus.snapshotHint')}
                                 />
-                                <UnavailableStat
-                                    label={t('report.dashboard.unavailable.outOfStock')}
+                                <StockStat
+                                    label={t('report.dashboard.stockStatus.availableStock')}
+                                    value={data.warehouseStatus.availableStock}
+                                    hint={t('report.dashboard.stockStatus.snapshotHint')}
                                 />
-                                <UnavailableStat
-                                    label={t('report.dashboard.unavailable.slowMoving')}
+                                <StockStat
+                                    label={t('report.dashboard.stockStatus.outOfStock')}
+                                    value={data.warehouseStatus.outOfStockSkuCount}
+                                    hint={t('report.dashboard.stockStatus.snapshotHint')}
                                 />
-                                <UnavailableStat
-                                    label={t('report.dashboard.unavailable.newCustomers')}
+                                <StockStat
+                                    label={t('report.dashboard.stockStatus.slowMoving')}
+                                    value={data.warehouseStatus.slowMovingSkuCount}
+                                    hint={t('report.dashboard.stockStatus.slowMovingHint')}
                                 />
-                                <UnavailableStat
-                                    label={t('report.dashboard.unavailable.pendingApproval')}
+                                <StockStat
+                                    label={t('report.dashboard.stockStatus.newCustomers')}
+                                    value={data.newCustomers}
+                                    hint={t('report.dashboard.stockStatus.newCustomersHint')}
+                                />
+                                <StockStat
+                                    label={t('report.dashboard.stockStatus.pendingApproval')}
+                                    value={data.pendingApproval}
+                                    hint={t('report.dashboard.stockStatus.pendingApprovalHint')}
                                 />
                             </div>
                         </SectionCard>

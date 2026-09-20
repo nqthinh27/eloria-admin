@@ -96,16 +96,23 @@ export default {
             },
             /* Không có trong `TopProductRow`; tra thêm cũng không được — xem top-products-card.tsx. */
             categoryUnavailable: 'Báo cáo không trả danh mục của sản phẩm',
-            /* Thẻ mockup vẽ nhưng backend chưa có API — hiển thị "—" kèm giải thích. */
-            unavailable: {
-                newCustomers: 'Khách mới',
-                pendingApproval: 'Hàng chờ duyệt',
-                stockStatus: 'Tình trạng kho',
+            /* Khối "Tình trạng kho" — số thật từ `/dashboard/summary` (backend 2026-09-20). */
+            stockStatus: {
+                title: 'Tình trạng kho',
+                description: 'Kho & hàng chờ duyệt: số tại thời điểm hiện tại',
                 totalSku: 'Tổng SKU đang bán',
                 availableStock: 'Tồn khả dụng',
                 outOfStock: 'SKU hết hàng',
                 slowMoving: 'Chậm luân chuyển > 60 ngày',
-                tooltip: 'Backend chưa có API cho số liệu này',
+                newCustomers: 'Khách mới',
+                pendingApproval: 'Hàng chờ duyệt',
+                snapshotHint: 'Số tại thời điểm hiện tại, không đổi theo kỳ đã chọn. Theo chi nhánh đang xem.',
+                slowMovingHint:
+                    'SKU còn tồn nhưng không bán được đơn nào trong 60 ngày gần nhất (tính từ hôm nay, không theo kỳ đã chọn; SKU chưa từng bán cũng tính). Xem toàn chuỗi có thể cao hơn thực tế vì SKU chậm ở chi nhánh này có thể bán tốt ở chi nhánh khác.',
+                newCustomersHint:
+                    'Khách hàng đăng ký mới trong kỳ đã chọn. Luôn tính toàn chuỗi, không đổi khi lọc chi nhánh (khách hàng không thuộc chi nhánh nào).',
+                pendingApprovalHint:
+                    'Chỉ tính phiếu kho đang chờ duyệt (chưa gồm duyệt chiết khấu và đổi/trả). Số tại thời điểm hiện tại.',
             },
         },
 

@@ -97,15 +97,22 @@ export default {
             /* Not in `TopProductRow`; cannot be looked up — see top-products-card.tsx. */
             categoryUnavailable: 'The report does not return the product category',
             /* Tiles drawn in the mockup with no backend API yet — rendered as "—". */
-            unavailable: {
-                newCustomers: 'New customers',
-                pendingApproval: 'Pending approval',
-                stockStatus: 'Stock status',
+            stockStatus: {
+                title: 'Stock status',
+                description: 'Stock & pending approval: figures as of right now',
                 totalSku: 'Active SKUs',
                 availableStock: 'Available stock',
                 outOfStock: 'Out-of-stock SKUs',
                 slowMoving: 'Slow moving > 60 days',
-                tooltip: 'The backend has no API for this figure yet',
+                newCustomers: 'New customers',
+                pendingApproval: 'Pending approval',
+                snapshotHint: 'Figure as of right now, unaffected by the selected period. Follows the branch being viewed.',
+                slowMovingHint:
+                    'SKUs still in stock with no sale in the last 60 days (counted from today, not the selected period; never-sold SKUs count too). Chain-wide may read higher than reality since a SKU slow in one branch can sell well in another.',
+                newCustomersHint:
+                    'Customers registered within the selected period. Always chain-wide and unchanged by the branch filter (customers belong to no branch).',
+                pendingApprovalHint:
+                    'Counts warehouse tickets awaiting approval only (discount and return approvals are not included). Figure as of right now.',
             },
         },
 

@@ -70,6 +70,25 @@ mã SKU, `label` = tên SP.
 - ⚠️ `TopProductRow` = `{skuId, skuCode, productName, itemsSold, netRevenue}` — không danh mục, không
   ảnh (tra thêm `product/search` cũng vô ích vì `categories` luôn rỗng ở list) ⇒ cột "Danh mục" hiện `—`.
 
+## Tình trạng kho · Khách mới · Hàng chờ duyệt trên Dashboard (2026-09-20, đo thật)
+
+Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-dashboard-warehouse-status.md`. **Thuần additive** — `GET /dashboard/summary`
+thêm 3 field (không đổi field cũ): `newCustomers` · `pendingApproval` · `warehouseStatus{activeSkuCount, availableStock,
+outOfStockSkuCount, slowMovingSkuCount}`. FE: `types/report.ts` (`DashboardSummary`, `WarehouseStatus`) + khối "Tình trạng kho" ở `Dashboard.tsx`.
+
+| Field | Theo kỳ? | Phạm vi |
+|---|---|---|
+| `newCustomers` | **Có** (`fromDate`–`toDate`) | **Toàn chuỗi luôn** — không đổi khi SUPER_ADMIN lọc `branchId` (khách không có `branch_id`) |
+| `pendingApproval` | Không (snapshot) | Theo scope chi nhánh. ⚠️ **Chỉ đếm phiếu kho** `WAITING_APPROVAL` — **chưa gồm** chiết khấu / đổi-trả (backend để kỳ sau; FE **không** tự cộng bằng `order/search`/`return/search`) |
+| `warehouseStatus.*` | Không (snapshot) | Theo scope chi nhánh |
+| `slowMovingSkuCount` | Không — cửa sổ **60 ngày trượt** tính từ lúc gọi | SKU còn tồn, không có đơn COMPLETED trong 60 ngày (chưa từng bán cũng tính). Xem toàn chuỗi có thể cao hơn thực tế |
+
+**Đã đo (2026-09-20, `superadmin` + `adminbranch` + `hkadmin`):** chuỗi `activeSku 27 · tồn 1680 · hết 2 · chậm 13`;
+theo chi nhánh: Trung tâm `15 · 1336 · 1 · 5` + Hoàn Kiếm `12 · 344 · 1 · 8` + Cầu Giấy `0` ⇒ **cộng khớp** chuỗi (27 SKU, 1680 tồn).
+Đối chiếu `stock-item/search`: tổng `total` = 1680, SKU `total=0` = 2 ⇒ **khớp**. `newCustomers` = 5 ở mọi chi nhánh (đúng "toàn chuỗi");
+kỳ 1 ngày ⇒ `0` (đúng "theo kỳ"). ADMIN tự bị ép về chi nhánh mình (`scope: BRANCH`).
+**Chưa đo:** `slowMovingSkuCount` với dữ liệu bán thật (chưa tự tính lại bằng đơn COMPLETED); `STAFF` (Dashboard là ADMIN+).
+
 ## Doanh thu sau hoàn — BE28 (2026-09-13, đo thật)
 
 Backend **giữ nguyên nghĩa GỘP** của `revenue`/`totalRevenue` và **thêm field mới**:
