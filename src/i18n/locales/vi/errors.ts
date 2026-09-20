@@ -157,6 +157,14 @@ export default {
         concurrentModification:
             'Đơn vừa được người khác cập nhật. Vui lòng tải lại và thử lại.',
 
+        // Tài khoản ngân hàng & VietQR — key trích từ `Constants.SUBKEY` backend.
+        bankAccount: {
+            notExisted: 'Tài khoản ngân hàng không tồn tại.',
+            existed: 'Tài khoản ngân hàng này (cùng mã BIN và số tài khoản) đã tồn tại.',
+            inactive: 'Tài khoản đã tắt, không thể đặt làm mặc định.',
+            noDefault: 'Chưa cấu hình tài khoản ngân hàng mặc định. Vui lòng liên hệ Super Admin.',
+        },
+
         // Địa chỉ hành chính
         address: {
             provinceInvalid: 'Tỉnh/Thành không hợp lệ.',

@@ -232,6 +232,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **15** | ✅ **Ca làm việc (mở ca / duyệt ca / chốt ca)** (**API thật**) | 11 | `02` |
 | **16** | ✅ Hoàn thiện: audit i18n · a11y · responsive · tài liệu | tất cả | — |
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
+| **18** | ✅ **Quản lý Tài khoản ngân hàng** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 11 | *(không mockup — pattern `04`/`07`)* |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
@@ -2919,6 +2920,47 @@ Sau sửa: lint 0 lỗi, build sạch, kiểm chứng UI luồng duyệt **8/8 P
 >
 > Hệ quả chấp nhận: không đặt được giá riêng theo kênh · không lên lịch đổi giá · không điều
 > chỉnh giá hàng loạt · **không có lịch sử đổi giá** (sửa là ghi đè). Cần lại thì mở lại phase này.
+
+---
+
+## Phase 18 — Quản lý Tài khoản ngân hàng ✅ **ĐÃ XONG (2026-09-20)**
+
+> **Báo cáo cuối phase:** [docs/handoff/phien-2026-09-20-phase-18-tai-khoan-ngan-hang.md](docs/handoff/phien-2026-09-20-phase-18-tai-khoan-ngan-hang.md).
+> Cả 3 điểm "cần đo" bên dưới **đã đo bằng API thật** (sort 12/12 đều 200 · tắt TK mặc định ⇒ mất
+> mặc định, `GET /default` ⇒ `noDefault` · `update-status` trả `data: null`). **Chưa xem UI trên
+> trình duyệt** — việc 1 của bảng "Việc còn lại" trong file bàn giao.
+
+> **User yêu cầu 2026-09-20.** Trước đó QR thu tiền dùng TK ngân hàng cấu hình tay/seed vì FE chưa có
+> màn ghi. Đặc tả hành vi + cột + thao tác: [docs/backend/ngan-hang-qr.md](docs/backend/ngan-hang-qr.md)
+> (mục "Đặc tả màn Tài khoản ngân hàng").
+
+**Không chờ backend** — 8 endpoint `/bank-account/*` đã có; `src/api/bank-account.ts` và
+`src/types/bank-account.ts` **đã sẵn** đủ hàm ghi.
+
+### Quyết định user chốt
+- **Chỉ SUPER_ADMIN có màn này.** Role khác **không thấy menu, không vào được route**; việc *xem* TK
+  ngân hàng của họ chỉ là gián tiếp ở luồng tạo đơn/thu QR (`getDefault`, `orderQr` — giữ `[STAFF]`,
+  **không đụng**).
+
+### Việc cần làm
+1. Route `/bank-accounts` + guard `SUPER_ADMIN` (403 khi gõ URL) · mục menu `minRole: ERole.SUPER_ADMIN`
+   (nhóm "Hệ thống") · i18n `menu.bankAccounts` + namespace mới VI/EN.
+2. `BankAccountPage` bằng **DataTable** (skill `create-table`): cột · toolbar · cột THAO TÁC — theo đặc tả.
+3. Form Thêm/Sửa (`detail-modal`): validate `bankBin` 6 chữ số, độ dài tối đa theo backend; checkbox
+   "Đặt làm mặc định" **chỉ ở form Thêm** (Sửa không đổi được cờ này).
+4. Thao tác: Đặt mặc định · Bật/Tắt · Xoá — `confirm-dialog`; **cảnh báo riêng khi tắt/xoá TK đang
+   mặc định** + banner khi hệ thống không có TK mặc định (backend không chặn ⇒ POS mất QR).
+5. i18n subKey `error.bankAccount.*` đủ VI+EN.
+6. Cập nhật comment đầu `src/types/bank-account.ts` ("chưa có màn hình") và `src/api/bank-account.ts`.
+
+### Cần đo thật trước/khi code (chưa kiểm chứng — mới đọc source)
+- Danh sách field sort được của `/bank-account/search` (theo skill create-table/README mục Sort).
+- Tắt/xoá TK mặc định thực sự để hệ thống không còn mặc định (đúng như source) — và `GET /default` lúc đó trả `noDefault`.
+- `update-status` trả gì (source: `void`; type FE đang khai `BankAccount`) — sửa type nếu lệch.
+
+### Ngoài phạm vi
+Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK mặc định · TK theo chi nhánh
+(backend dùng chung toàn chuỗi).
 
 
 ---

@@ -145,6 +145,14 @@ export default {
         concurrentModification:
             'This order was just updated by someone else. Please reload and try again.',
 
+        // Bank accounts & VietQR — keys taken from backend `Constants.SUBKEY`.
+        bankAccount: {
+            notExisted: 'Bank account not found.',
+            existed: 'This bank account (same BIN and account number) already exists.',
+            inactive: 'The account is disabled and cannot be set as default.',
+            noDefault: 'No default bank account is configured. Please contact a Super Admin.',
+        },
+
         address: {
             provinceInvalid: 'Invalid province/city.',
             wardInvalid: 'Invalid ward.',

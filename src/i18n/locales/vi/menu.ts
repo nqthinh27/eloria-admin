@@ -14,6 +14,7 @@ export default {
         staff: 'Nhân viên',
         branch: 'Chi nhánh',
         auditLog: 'Nhật ký hệ thống',
+        bankAccounts: 'Tài khoản ngân hàng',
         customers: 'Khách hàng',
         products: 'Sản phẩm',
         categories: 'Danh mục SP',

@@ -14,6 +14,7 @@ import viOrder from './locales/vi/order'
 import viReport from './locales/vi/report'
 import viPromotion from './locales/vi/promotion'
 import viReturn from './locales/vi/return'
+import viBankAccount from './locales/vi/bankAccount'
 import enCommon from './locales/en/common'
 import enErrors from './locales/en/errors'
 import enAuth from './locales/en/auth'
@@ -26,6 +27,7 @@ import enOrder from './locales/en/order'
 import enReport from './locales/en/report'
 import enPromotion from './locales/en/promotion'
 import enReturn from './locales/en/return'
+import enBankAccount from './locales/en/bankAccount'
 
 export const SUPPORTED_LANGUAGES = ['vi', 'en'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
@@ -49,6 +51,7 @@ const resources = {
         report: viReport,
         promotion: viPromotion,
         return: viReturn,
+        bankAccount: viBankAccount,
     },
     en: {
         common: enCommon,
@@ -63,6 +66,7 @@ const resources = {
         report: enReport,
         promotion: enPromotion,
         return: enReturn,
+        bankAccount: enBankAccount,
     },
 }
 
@@ -94,6 +98,7 @@ i18n
             'inventory',
             'order',
             'return',
+            'bankAccount',
         ],
         defaultNS: 'common',
         /*

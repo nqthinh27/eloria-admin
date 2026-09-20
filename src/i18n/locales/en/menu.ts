@@ -14,6 +14,7 @@ export default {
         staff: 'Staff',
         branch: 'Branches',
         auditLog: 'System Audit Log',
+        bankAccounts: 'Bank accounts',
         customers: 'Customers',
         products: 'Products',
         categories: 'Categories',

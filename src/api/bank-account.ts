@@ -1,5 +1,5 @@
 import { apiClient, search } from '@/lib/api-client'
-import type { BaseListResStatus, SearchPagination } from '@/types/common'
+import type { BaseListResStatus, EntityStatus, SearchPagination } from '@/types/common'
 import type {
     BankAccount,
     BankAccountSearchReq,
@@ -68,12 +68,19 @@ export const bankAccountApi = {
         return apiClient.post<BankAccount>(`/bank-account/${id}/set-default`)
     },
 
-    /** `[SUPER_ADMIN] POST /bank-account/update-status` — bật/tắt (0/1). Xoá dùng `remove()`. */
-    updateStatus(id: string, status: number) {
-        return apiClient.post<BankAccount>('/bank-account/update-status', { id, status })
+    /**
+     * `[SUPER_ADMIN] POST /bank-account/update-status` — bật/tắt (0/1). Xoá dùng `remove()`.
+     * Response **không có `data`** (source: `BaseResponse` rỗng). ⚠️ Tắt TK đang mặc định ⇒ backend
+     * tự bỏ cờ mặc định.
+     */
+    updateStatus(id: string, status: EntityStatus) {
+        return apiClient.post<null>('/bank-account/update-status', { id, status })
     },
 
-    /** `[SUPER_ADMIN] DELETE /bank-account/{id}` — xoá mềm (`status = -1`). */
+    /**
+     * `[SUPER_ADMIN] DELETE /bank-account/{id}` — xoá mềm (`status = -1`).
+     * ⚠️ Backend **không chặn** xoá TK đang mặc định ⇒ FE phải cảnh báo trước.
+     */
     remove(id: string) {
         return apiClient.delete<void>(`/bank-account/${id}`)
     },

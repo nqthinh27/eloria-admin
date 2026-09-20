@@ -4,6 +4,7 @@ import {
     Building2,
     ClipboardList,
     Clock,
+    Landmark,
     LayoutGrid,
     LayoutDashboard,
     Package,
@@ -78,6 +79,13 @@ export const mainMenu: MenuGroupType[] = [
                 minRole: ERole.ADMIN,
             },
             { titleKey: 'menu.customers', url: '/customers', icon: Users, minRole: ERole.STAFF },
+            // Ghi TK ngân hàng là `[SUPER_ADMIN]`; role khác chỉ đọc gián tiếp ở luồng thu QR.
+            {
+                titleKey: 'menu.bankAccounts',
+                url: '/bank-accounts',
+                icon: Landmark,
+                minRole: ERole.SUPER_ADMIN,
+            },
         ],
     },
     {

@@ -19,6 +19,7 @@ import ShiftListPage from './pages/shift/ShiftListPage'
 import OrderListPage from './pages/orders/OrderListPage'
 import PromotionListPage from './pages/promotion/PromotionListPage'
 import ReturnListPage from './pages/returns/ReturnListPage'
+import BankAccountPage from './pages/bank-account/BankAccountPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
@@ -74,6 +75,11 @@ export default function Router() {
                         <Route path="branch" element={<BranchListPage />} />
                         <Route path="audit-log" element={<AuditLogPage />} />
                         <Route path="promotions" element={<PromotionListPage />} />
+                    </Route>
+
+                    {/* `[SUPER_ADMIN]` — mọi API ghi của /bank-account/*; ADMIN/STAFF gõ URL ⇒ 403. */}
+                    <Route element={<RoleRoute minRole={ERole.SUPER_ADMIN} />}>
+                        <Route path="bank-accounts" element={<BankAccountPage />} />
                     </Route>
 
                     <Route path="403" element={<Forbidden />} />

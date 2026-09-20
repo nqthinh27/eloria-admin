@@ -4,9 +4,8 @@ import type { EntityStatus, SearchReq } from '@/types/common'
  * Domain **Tài khoản ngân hàng & VietQR** — API thật, khảo sát `/v3/api-docs/api` **2026-08-21**
  * (backend Phase 6b). 8 endpoint `/bank-account/*`.
  *
- * Mục đích với FE hiện tại: **sinh ảnh VietQR cho đơn hàng** ở luồng thu tiền chuyển khoản.
- * Phần CRUD tài khoản là `[SUPER_ADMIN]` và **chưa có màn hình** — khai type ở đây để phase sau
- * dựng màn Cấu hình không phải đoán lại shape.
+ * Dùng ở 2 nơi: **sinh ảnh VietQR cho đơn hàng** (luồng thu tiền chuyển khoản) và màn
+ * **Tài khoản ngân hàng** (`pages/bank-account/`, Phase 18) — CRUD là `[SUPER_ADMIN]`.
  *
  * ⚠️ Tài khoản ngân hàng **dùng chung toàn chuỗi, KHÔNG theo chi nhánh** (javadoc
  * `BankAccountResource`: "Dùng chung toàn chuỗi (không branch data-scope)").
