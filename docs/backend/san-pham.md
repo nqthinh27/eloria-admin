@@ -36,6 +36,12 @@ Response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus` (có `act
   qua), trả **toàn bộ** SKU hiện có của sản phẩm.
 - `POST /product/{id}/images` là **multipart** (field `files`, tối đa 10), **thay toàn bộ gallery**
   theo thứ tự file ⇒ api-client bỏ header `Content-Type` khi body là `FormData`.
+- **Thương hiệu** (đã đo 2026-09-20, màn `/brands` — PLAN Phase 19): `BrandResDTO` `{id, code, name, address, logoUrl,
+  description, status, createdDate, lastModifiedDate}`; create/update **cùng bộ field** (`code` ≤50 · `name` ≤150 ·
+  `address` ≤255 · `logoUrl` ≤256 · `description` ≤500; `code`+`name` bắt buộc). Backend chuẩn hoá `code` (bỏ
+  khoảng trắng + IN HOA), trùng (không phân biệt hoa/thường) ⇒ `error.brand.codeExisted`; **`PUT` đổi được `code`**.
+  `update-status`/`DELETE` trả `data: null`; xoá thương hiệu còn sản phẩm ⇒ `error.brand.hasProducts` (code 8).
+  `keyword` khớp `code`/`name`. Sort 12/12 (`code`,`name`,`address`,`status`,`createdDate`,`description` × 2 chiều) đều 200.
 - **Không có `DELETE /product/{id}`** (405). Xoá danh mục/thương hiệu bị chặn khi còn ràng buộc:
   `error.category.hasChildren` · `error.brand.hasProducts`. `DELETE /color|size/{id}` là **hard delete**
   (chặn nếu còn SKU tham chiếu).

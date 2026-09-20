@@ -204,6 +204,15 @@ export type Brand = {
     lastModifiedDate: string
 }
 
+/** `CreateBrandReqDTO` = `UpdateBrandReqDTO` (cùng bộ field). `code` tối đa 50, `name` 150, `address` 255, `logoUrl` 256, `description` 500. */
+export type BrandPayload = {
+    code: string
+    name: string
+    address?: string
+    logoUrl?: string
+    description?: string
+}
+
 /** `ColorResDTO`. */
 export type Color = {
     id: string

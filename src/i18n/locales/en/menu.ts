@@ -18,6 +18,7 @@ export default {
         customers: 'Customers',
         products: 'Products',
         categories: 'Categories',
+        brands: 'Brands',
         inventory: 'Inventory',
         promotions: 'Promotions',
     },

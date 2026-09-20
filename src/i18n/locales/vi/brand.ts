@@ -1,0 +1,80 @@
+export default {
+    brand: {
+        pageTitle: 'Thương hiệu',
+        pageDescription: 'Quản lý thương hiệu dùng để phân loại sản phẩm',
+
+        list: {
+            addButton: 'Thêm thương hiệu',
+            searchPlaceholder: 'Tìm mã, tên thương hiệu…',
+            allStatuses: 'Tất cả trạng thái',
+            resultLabel: 'thương hiệu',
+            empty: 'Chưa có thương hiệu nào',
+            statusActive: 'Hoạt động',
+            statusInactive: 'Ngừng hoạt động',
+            noValue: '—',
+            column: {
+                code: 'Mã',
+                name: 'Thương hiệu',
+                address: 'Địa chỉ',
+                description: 'Mô tả',
+                status: 'Trạng thái',
+                createdDate: 'Ngày tạo',
+                lastModifiedDate: 'Cập nhật lần cuối',
+                actions: 'Thao tác',
+            },
+            actionEdit: 'Sửa',
+            actionActivate: 'Bật hoạt động',
+            actionDeactivate: 'Ngừng hoạt động',
+            actionDelete: 'Xoá',
+        },
+
+        form: {
+            addTitle: 'Thêm thương hiệu',
+            editTitle: 'Sửa thương hiệu',
+            code: 'Mã thương hiệu',
+            codePlaceholder: 'VD: ELORIA',
+            name: 'Tên thương hiệu',
+            namePlaceholder: 'Nhập tên thương hiệu',
+            address: 'Địa chỉ',
+            addressPlaceholder: 'Trụ sở / xuất xứ (không bắt buộc)',
+            logoUrl: 'Đường dẫn logo',
+            logoUrlPlaceholder: 'https://… (không bắt buộc)',
+            description: 'Mô tả',
+            descriptionPlaceholder: 'Giới thiệu ngắn về thương hiệu (không bắt buộc)',
+            submitCreate: 'Thêm thương hiệu',
+            submitUpdate: 'Lưu thay đổi',
+            submitting: 'Đang xử lý…',
+            validation: {
+                codeRequired: 'Vui lòng nhập mã thương hiệu',
+                codeMaxLength: 'Mã thương hiệu tối đa 50 ký tự',
+                nameRequired: 'Vui lòng nhập tên thương hiệu',
+                nameMaxLength: 'Tên thương hiệu tối đa 150 ký tự',
+                addressMaxLength: 'Địa chỉ tối đa 255 ký tự',
+                logoUrlMaxLength: 'Đường dẫn logo tối đa 256 ký tự',
+                descriptionMaxLength: 'Mô tả tối đa 500 ký tự',
+            },
+        },
+
+        statusConfirm: {
+            activateTitle: 'Bật hoạt động thương hiệu?',
+            activateDescription: 'Thương hiệu "{{name}}" sẽ được bật hoạt động trở lại.',
+            activateSubmit: 'Bật hoạt động',
+            deactivateTitle: 'Ngừng hoạt động thương hiệu?',
+            deactivateDescription: 'Thương hiệu "{{name}}" sẽ chuyển sang ngừng hoạt động.',
+            deactivateSubmit: 'Ngừng hoạt động',
+        },
+        deleteConfirm: {
+            title: 'Xoá thương hiệu?',
+            description:
+                'Thương hiệu "{{name}}" sẽ bị xoá. Không xoá được nếu còn sản phẩm đang gán thương hiệu này.',
+            submit: 'Xoá thương hiệu',
+        },
+
+        toast: {
+            created: 'Thêm thương hiệu thành công',
+            updated: 'Cập nhật thương hiệu thành công',
+            statusUpdated: 'Cập nhật trạng thái thương hiệu thành công',
+            deleted: 'Xoá thương hiệu thành công',
+        },
+    },
+}

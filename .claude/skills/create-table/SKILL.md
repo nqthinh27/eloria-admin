@@ -53,6 +53,7 @@ tiết + checklist thi công. Màn **card grid** (Chi nhánh, Sản phẩm) khô
   | Danh mục SP | `sortOrder` | chỉ dùng lúc sắp lại menu danh mục |
   | Khuyến mại | `type` · `channel` | `type` đọc được từ cột GIÁ TRỊ |
   | Ca làm việc | `openingCash` | người quản lý soi TIỀN KỲ VỌNG + LỆCH QUỸ |
+| Thương hiệu | `description` | văn bản dài tới 500 ký tự, đã có trong modal chi tiết |
 
   *(Thêm màn mới có ẩn cột ⇒ cập nhật bảng này.)*
 

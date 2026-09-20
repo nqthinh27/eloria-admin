@@ -18,6 +18,7 @@ export default {
         customers: 'Khách hàng',
         products: 'Sản phẩm',
         categories: 'Danh mục SP',
+        brands: 'Thương hiệu',
         inventory: 'Kho hàng',
         promotions: 'Khuyến mại',
     },

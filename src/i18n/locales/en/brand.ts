@@ -1,0 +1,80 @@
+export default {
+    brand: {
+        pageTitle: 'Brands',
+        pageDescription: 'Manage the brands used to classify products',
+
+        list: {
+            addButton: 'Add brand',
+            searchPlaceholder: 'Search brand code or name…',
+            allStatuses: 'All statuses',
+            resultLabel: 'brands',
+            empty: 'No brands yet',
+            statusActive: 'Active',
+            statusInactive: 'Inactive',
+            noValue: '—',
+            column: {
+                code: 'Code',
+                name: 'Brand',
+                address: 'Address',
+                description: 'Description',
+                status: 'Status',
+                createdDate: 'Created',
+                lastModifiedDate: 'Last updated',
+                actions: 'Actions',
+            },
+            actionEdit: 'Edit',
+            actionActivate: 'Activate',
+            actionDeactivate: 'Deactivate',
+            actionDelete: 'Delete',
+        },
+
+        form: {
+            addTitle: 'Add brand',
+            editTitle: 'Edit brand',
+            code: 'Brand code',
+            codePlaceholder: 'e.g. ELORIA',
+            name: 'Brand name',
+            namePlaceholder: 'Enter the brand name',
+            address: 'Address',
+            addressPlaceholder: 'Headquarters / origin (optional)',
+            logoUrl: 'Logo URL',
+            logoUrlPlaceholder: 'https://… (optional)',
+            description: 'Description',
+            descriptionPlaceholder: 'Short introduction of the brand (optional)',
+            submitCreate: 'Add brand',
+            submitUpdate: 'Save changes',
+            submitting: 'Processing…',
+            validation: {
+                codeRequired: 'Please enter the brand code',
+                codeMaxLength: 'Brand code is at most 50 characters',
+                nameRequired: 'Please enter the brand name',
+                nameMaxLength: 'Brand name is at most 150 characters',
+                addressMaxLength: 'Address is at most 255 characters',
+                logoUrlMaxLength: 'Logo URL is at most 256 characters',
+                descriptionMaxLength: 'Description is at most 500 characters',
+            },
+        },
+
+        statusConfirm: {
+            activateTitle: 'Activate this brand?',
+            activateDescription: 'Brand "{{name}}" will be set active again.',
+            activateSubmit: 'Activate',
+            deactivateTitle: 'Deactivate this brand?',
+            deactivateDescription: 'Brand "{{name}}" will be set inactive.',
+            deactivateSubmit: 'Deactivate',
+        },
+        deleteConfirm: {
+            title: 'Delete this brand?',
+            description:
+                'Brand "{{name}}" will be deleted. It cannot be deleted while products still use this brand.',
+            submit: 'Delete brand',
+        },
+
+        toast: {
+            created: 'Brand added',
+            updated: 'Brand updated',
+            statusUpdated: 'Brand status updated',
+            deleted: 'Brand deleted',
+        },
+    },
+}

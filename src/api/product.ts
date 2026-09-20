@@ -7,6 +7,7 @@ import type {
 } from '@/types/common'
 import type {
     Brand,
+    BrandPayload,
     Category,
     CategoryPayload,
     CategorySearchReq,
@@ -136,13 +137,33 @@ export const categoryApi = {
 }
 
 /**
- * Danh mục nền dùng để dựng form sản phẩm (chọn thương hiệu, sinh ma trận SKU).
- * Chưa có màn CRUD riêng cho brand/color/size — ngoài phạm vi Phase 9 (mockup không vẽ, menu không có mục).
+ * Thương hiệu — đọc `[STAFF]` (dropdown ở form Sản phẩm), ghi `[SUPER_ADMIN]` (màn Thương hiệu, Phase 19).
+ * Chưa có màn CRUD riêng cho color/size — ngoài phạm vi (mockup không vẽ, menu không có mục).
  */
 export const brandApi = {
     /** `[STAFF] POST /brand/search`. */
     search(body: { keyword?: string; status?: EntityStatus }, pagination?: SearchPagination, signal?: AbortSignal) {
         return search<BaseListResStatus<Brand>>('/brand/search', body, pagination, { signal })
+    },
+
+    /** `[SUPER_ADMIN] POST /brand` — backend chuẩn hoá `code` (bỏ khoảng trắng, IN HOA); trùng ⇒ `error.brand.codeExisted`. */
+    create(payload: BrandPayload) {
+        return apiClient.post<Brand>('/brand', payload)
+    },
+
+    /** `[SUPER_ADMIN] PUT /brand/{id}` — **nhận cả `code`** (khác Sản phẩm). */
+    update(id: string, payload: BrandPayload) {
+        return apiClient.put<Brand>(`/brand/${id}`, payload)
+    },
+
+    /** `[SUPER_ADMIN] POST /brand/update-status` — bật/tắt (0/1); response `data: null`. */
+    updateStatus(id: string, status: EntityStatus) {
+        return apiClient.post<null>('/brand/update-status', { id, status })
+    },
+
+    /** `[SUPER_ADMIN] DELETE /brand/{id}` — xoá mềm; còn sản phẩm tham chiếu ⇒ `error.brand.hasProducts`. */
+    remove(id: string) {
+        return apiClient.delete<null>(`/brand/${id}`)
     },
 }
 

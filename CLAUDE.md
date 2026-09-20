@@ -58,6 +58,7 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
   lại: Phase 17 (mở rộng Khuyến mại) — để cuối, tuỳ chọn. Màn Quản lý giá **không làm** (user chốt).
   **Phase 18 (Quản lý Tài khoản ngân hàng, chỉ SUPER_ADMIN) đã xong 2026-09-20** — route
   `/bank-accounts`, đặc tả ở [docs/backend/ngan-hang-qr.md](docs/backend/ngan-hang-qr.md).
+  **Phase 19 (Quản lý Thương hiệu, chỉ SUPER_ADMIN) đã xong 2026-09-20** — route `/brands`.
 - Backend: **118 path** (2026-09-13). Việc chờ backend còn mở: **BE2 · BE3 · BE4 · BE6 · BE7 · BE10 ·
   BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30** — chi tiết ở PLAN mục B.
 - Dòng thời gian phase & khảo sát backend: [docs/history.md](docs/history.md) ·

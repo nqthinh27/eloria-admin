@@ -11,6 +11,7 @@ import {
     Percent,
     ShoppingCart,
     Store,
+    Tags,
     UserRound,
     Users,
     type LucideIcon,
@@ -103,6 +104,8 @@ export const mainMenu: MenuGroupType[] = [
                 icon: LayoutGrid,
                 minRole: ERole.STAFF,
             },
+            // Ghi thương hiệu là `[SUPER_ADMIN]`; role khác chỉ đọc gián tiếp ở dropdown form Sản phẩm.
+            { titleKey: 'menu.brands', url: '/brands', icon: Tags, minRole: ERole.SUPER_ADMIN },
             { titleKey: 'menu.inventory', url: '/inventory', icon: Boxes, minRole: ERole.STAFF },
             {
                 titleKey: 'menu.promotions',

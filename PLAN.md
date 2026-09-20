@@ -233,6 +233,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **16** | ✅ Hoàn thiện: audit i18n · a11y · responsive · tài liệu | tất cả | — |
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 | **18** | ✅ **Quản lý Tài khoản ngân hàng** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 11 | *(không mockup — pattern `04`/`07`)* |
+| **19** | ✅ **Quản lý Thương hiệu** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 9 | *(không mockup — pattern `04`/`07`)* |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
@@ -2965,7 +2966,21 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## E. Quy trình mỗi phase
+## Phase 19 — Quản lý Thương hiệu ✅ **ĐÃ XONG (2026-09-20)**
+
+> **User yêu cầu 2026-09-20**, áp **cùng phân quyền như Phase 18**: chỉ SUPER_ADMIN có màn (menu + route
+> `/brands`, nhóm "Sản phẩm & kho"). Backend `[STAFF]` đọc / `[SUPER_ADMIN]` ghi; STAFF/ADMIN vẫn đọc
+> thương hiệu ở dropdown form Sản phẩm (`brandApi.search`, không đổi).
+> Bàn giao: [docs/handoff/phien-2026-09-20-phase-19-thuong-hieu.md](docs/handoff/phien-2026-09-20-phase-19-thuong-hieu.md).
+
+- Code: `src/pages/product/BrandListPage.tsx` + `components/brand-{columns,form-dialog,detail-modal,logo}` ·
+  `brandApi` (thêm create/update/updateStatus/remove) · `BrandPayload` · i18n namespace `brand` VI+EN.
+- Bảng: MÃ → THƯƠNG HIỆU (logo + tên) → ĐỊA CHỈ → MÔ TẢ (**ẩn sẵn**) → TRẠNG THÁI → NGÀY TẠO → THAO TÁC.
+  Menu `(...)`: Sửa · Bật/Ngừng hoạt động · Xoá. Chi tiết chỉ đọc; sửa qua form (chuẩn hoá `code` lúc gõ).
+- Đã đo API thật: sort 12/12 = 200 · `code` chuẩn hoá (`"zz test 1"` → `ZZTEST1`) · trùng ⇒ `codeExisted` ·
+  `PUT` đổi được `code` · `update-status`/`DELETE` trả `data: null` · xoá thương hiệu còn sản phẩm ⇒
+  `error.brand.hasProducts`. **Chưa xem UI trên trình duyệt.**
+
 
 1. Đọc [CONVENTIONS.md](CONVENTIONS.md) + **mở file mockup** của phase trong [design/](design/).
 2. Code đúng phạm vi phase, không lấn phase khác.
