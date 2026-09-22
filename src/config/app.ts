@@ -1,3 +1,5 @@
+import { runtimeEnv } from './runtime-env'
+
 type AppConfigType = {
     /** Tên hiển thị của ứng dụng (logo, tiêu đề trang). */
     name: string
@@ -6,18 +8,23 @@ type AppConfigType = {
 }
 
 export const appConfig: AppConfigType = {
-    name: import.meta.env.VITE_APP_NAME ?? "Eloria Admin",
+    name: runtimeEnv('VITE_APP_NAME') ?? "Eloria Admin",
     description: "Cổng quản trị hệ thống nội bộ",
 }
 
-/** Base path khi deploy vào thư mục con — dùng để dựng URL tới asset trong `public/`. */
+/**
+ * Base path khi deploy vào thư mục con — dùng để dựng URL tới asset trong `public/`.
+ *
+ * ⚠️ **Build-time**, không đổi được lúc chạy: Vite ghi đường dẫn asset thẳng vào `index.html`
+ * lúc build. Muốn đổi phải build lại image với `--build-arg VITE_BASE_URL=...`.
+ */
 export const baseUrl = import.meta.env.VITE_BASE_URL ?? ""
 
 /** Base URL của API. Luôn same-origin, xem CONVENTIONS mục 2. */
-export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "/v1.0/api"
+export const apiBaseUrl = runtimeEnv('VITE_API_BASE_URL') ?? "/v1.0/api"
 
 /** Bật mock cho các module backend chưa có API (PLAN Phase 6). */
-export const useMock = import.meta.env.VITE_USE_MOCK === "true"
+export const useMock = runtimeEnv('VITE_USE_MOCK') === "true"
 
 /**
  * **Letterhead hoá đơn** — thông tin thương hiệu cấp *hệ thống*, dùng cho bản in
@@ -36,11 +43,11 @@ export const storeConfig = {
      * Khoảng trắng giữa các ký tự là **cố ý**: đó chính là hình thức của logo, không phải lỗi
      * gõ. Giữ nguyên chuỗi này khi in.
      */
-    brandMark: import.meta.env.VITE_STORE_BRAND_MARK ?? "é l o r i a",
+    brandMark: runtimeEnv('VITE_STORE_BRAND_MARK') ?? "é l o r i a",
     /** Hotline chung toàn chuỗi. Bỏ trống ⇒ hoá đơn tự lùi về SĐT chi nhánh. */
-    hotline: import.meta.env.VITE_STORE_HOTLINE ?? "0865 698 683",
-    website: import.meta.env.VITE_STORE_WEBSITE ?? "eloria.com.vn",
-    email: import.meta.env.VITE_STORE_EMAIL ?? "eloria.co.support@gmail.com",
+    hotline: runtimeEnv('VITE_STORE_HOTLINE') ?? "0865 698 683",
+    website: runtimeEnv('VITE_STORE_WEBSITE') ?? "eloria.com.vn",
+    email: runtimeEnv('VITE_STORE_EMAIL') ?? "eloria.co.support@gmail.com",
     /** Chính sách đổi trả in ở chân hoá đơn. */
-    returnPolicyDays: Number(import.meta.env.VITE_STORE_RETURN_DAYS ?? 7),
+    returnPolicyDays: Number(runtimeEnv('VITE_STORE_RETURN_DAYS') ?? 7),
 } as const

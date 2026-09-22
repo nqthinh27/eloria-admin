@@ -1,0 +1,150 @@
+# Eloria Admin (FE) — file này chạy Ở SERVER, chỉ `pull` image đã build sẵn, KHÔNG build.
+#
+# Quy trình A — chuyển image bằng file (không cần registry, khớp `pull_policy: never` bên dưới):
+#   [máy local]  docker build -t eloria/eloria-admin:1.0.0 .
+#                docker save eloria/eloria-admin:1.0.0 | gzip > eloria-admin-1.0.0.tar.gz
+#                scp eloria-admin-1.0.0.tar.gz root@<server>:~/1.fe/
+#   [server]     docker load < eloria-admin-1.0.0.tar.gz
+#                docker compose up -d
+#
+# Quy trình B — qua registry (đổi `pull_policy` thành `always`):
+#   [máy local]  docker build -t <registry>/eloria-admin:<tag> .
+#                docker push  <registry>/eloria-admin:<tag>
+#   [server]     docker compose pull && docker compose up -d
+#
+# ┌ MỌI BIẾN DƯỚI ĐÂY ĐỀU ÁP DỤNG LÚC CHẠY ────────────────────────────────────┐
+# │ Sửa xong chỉ cần `docker compose up -d --force-recreate`, KHÔNG build lại.  │
+# │ Cơ chế: container sinh /config.js từ các biến VITE_*, bundle React đọc file │
+# │ đó thay cho hằng số nướng lúc build. Xem src/config/runtime-env.ts.         │
+# │                                                                            │
+# │ Ngoại lệ duy nhất — VITE_BASE_URL (deploy vào thư mục con): là tham số      │
+# │ build, phải `docker build --build-arg VITE_BASE_URL=/admin/ ...` ở local.   │
+# │                                                                            │
+# │ Cấu hình nginx KHÔNG đi qua biến môi trường — tự viết rồi mount, xem khối   │
+# │ `volumes` bên dưới.                                                        │
+# └────────────────────────────────────────────────────────────────────────────┘
+
+services:
+  admin:
+    # Ghim tag phiên bản thay vì `latest` để rollback được.
+    # Đi qua registry thì thêm tiền tố host: ghcr.io/<org>/eloria-admin:1.0.0, <host>:5000/…
+    image: eloria/eloria-admin:1.0.0
+    container_name: eloria-admin
+    restart: unless-stopped
+    # `never`: image được nạp sẵn trên server bằng `docker save` + `docker load`, đừng đi tìm
+    # registry (Docker Hub sẽ trả "pull access denied" vì không có repo tên như vậy).
+    # Có registry riêng rồi thì đổi thành `always` để mỗi lần `up -d` tự kéo bản mới nhất.
+    pull_policy: never
+
+    environment:
+      TZ: "Asia/Ho_Chi_Minh"
+
+      # ── Ứng dụng ────────────────────────────────────────────────────────────
+      VITE_APP_NAME: "Eloria quản trị"
+      # true ⇒ HashRouter. Giữ "false": nginx đã có SPA fallback.
+      VITE_USE_HASH_ROUTE: "false"
+      # BẮT BUỘC đường dẫn tương đối (same-origin) — cookie refresh_token là HttpOnly,
+      # không Secure/SameSite. Địa chỉ backend thật khai trong `proxy_pass` của conf nginx.
+      VITE_API_BASE_URL: "/v1.0/api"
+      # Dữ liệu mock cho module chưa có API. Production để "false".
+      VITE_USE_MOCK: "false"
+
+      # ── Letterhead hoá đơn in ───────────────────────────────────────────────
+      # Khoảng trắng giữa các ký tự của brand mark là CỐ Ý (wordmark).
+      VITE_STORE_BRAND_MARK: "é l o r i a"
+      # Khai rỗng ("") ⇒ hoá đơn lùi về SĐT chi nhánh do backend trả.
+      VITE_STORE_HOTLINE: "0865 698 683"
+      VITE_STORE_WEBSITE: "eloria.com.vn"
+      VITE_STORE_EMAIL: "eloria.co.support@gmail.com"
+      VITE_STORE_RETURN_DAYS: "7"
+
+    # Conf nginx — chạy TLS thì BẮT BUỘC mount, vì cert nằm ngoài image và domain phải khai
+    # trong conf. Đổi conf xong chỉ cần restart, không build lại image.
+    # ⚠️ Bind-mount trỏ vào file/thư mục KHÔNG tồn tại thì Docker tạo một THƯ MỤC cùng tên và
+    # nginx chết lúc khởi động — `mkdir -p certbot/conf certbot/www` trước khi `up -d`.
+    # ⚠️ Conf tự viết phải giữ: SPA fallback về /index.html · /config.js không cache ·
+    # proxy /v1.0 cùng origin (cookie refresh_token là HttpOnly, không Secure/SameSite) ·
+    # location /.well-known/acme-challenge/ ở cổng 80 (bịt là không gia hạn được cert).
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      # Cert của Let's Encrypt. nginx chỉ ĐỌC, certbot mới là bên ghi.
+      - ./certbot/conf:/etc/letsencrypt:ro
+      # Nơi nginx phục vụ file thử thách ACME (khớp `root /var/www/certbot` trong nginx.conf).
+      - ./certbot/www:/var/www/certbot:ro
+
+    ports:
+      # 80 chỉ để ACME challenge + redirect sang HTTPS, không phục vụ app.
+      - "80:80"
+      - "443:443"
+
+    # Cần khi backend chạy trực tiếp trên máy server (Linux). Trên Docker Desktop
+    # host.docker.internal đã có sẵn, dòng này vô hại.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    healthcheck:
+      test: ["CMD", "wget", "--no-check-certificate", "--spider", "-q", "https://localhost/index.html"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # certbot — KHÔNG chạy thường trực, chỉ gọi thủ công bằng `docker compose run`.
+  # `profiles` giữ nó nằm ngoài `docker compose up`.
+  # ───────────────────────────────────────────────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["tools"]
+    # BẮT BUỘC cho chế độ --standalone (cấp cert lần đầu): certbot tự nghe cổng 80 TRONG
+    # container, thiếu khai `ports` ở đây thì `--service-ports` không có gì để publish ra host
+    # ⇒ Let's Encrypt gõ cổng 80 của server không ai trả lời ("Connection refused").
+    # Chế độ --webroot (gia hạn) không cần cổng này, nhưng để đây không hại gì vì service chỉ
+    # được tạo khi gọi `docker compose run`, không tự khởi động cùng `up`.
+    ports:
+      - "80:80"
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CẤP CERT LẦN ĐẦU — làm TRƯỚC `up -d`, vì thiếu file cert thì nginx không khởi động nổi.
+#
+#  0. Trỏ bản ghi DNS A của domain về IP server rồi kiểm tra đã phân giải đúng chưa:
+#       dig +short admin.eloria.com.vn
+#     Mở firewall cổng 80 và 443. Cổng 80 phải ĐANG TRỐNG ở bước 2.
+#
+#  1. Tạo sẵn thư mục volume:
+#       mkdir -p certbot/conf certbot/www
+#
+#  2. Cấp cert ở chế độ standalone — certbot tự dựng web server tạm ở cổng 80:
+#       docker compose run --rm --service-ports certbot certonly --standalone \
+#         -d admin.eloria.com.vn \
+#         --email admin@eloria.com.vn --agree-tos --no-eff-email
+#     Chạy thử thì thêm `--dry-run`. Let's Encrypt giới hạn 5 lần cấp/tuần/domain, nghịch
+#     không có --dry-run rất dễ bị khoá tới tuần sau.
+#
+#  3. Sửa `admin.eloria.com.vn` trong nginx.conf thành domain thật (3 chỗ), rồi:
+#       docker compose up -d
+#
+# GIA HẠN — cert Let's Encrypt sống 90 ngày. Dùng webroot nên KHÔNG phải tắt nginx:
+#       docker compose run --rm certbot renew --webroot -w /var/www/certbot
+#       docker compose exec admin nginx -s reload
+#
+#     Tự động bằng cron trên server (`crontab -e`). certbot tự bỏ qua cert chưa tới hạn nên
+#     chạy hằng tuần là an toàn:
+#       0 3 * * 1 cd /root/1.fe && docker compose run --rm certbot renew --webroot -w /var/www/certbot && docker compose exec admin nginx -s reload
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Backend chạy trong compose khác ⇒ nối chung network để `proxy_pass` trong conf nginx gọi được
+# backend theo tên service (vd http://eloria-backend:8080).
+# networks:
+#   default:
+#     name: eloria-net
+#     external: true

@@ -25,3 +25,11 @@ dist-ssr
 
 .env
 .github/*
+# Sinh trong lúc build image (xem Dockerfile), không commit.
+.env.production
+
+# Cert Let's Encrypt sinh trên server, không commit.
+certbot/
+
+*.zip
+*.tar

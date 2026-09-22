@@ -1,0 +1,29 @@
+node_modules
+dist
+dist-ssr
+.git
+.gitignore
+.github
+.claude
+.vscode
+.idea
+
+# KHÔNG đưa .env vào image: image phải trung tính với môi trường, giá trị đọc lúc chạy từ
+# docker-compose.yml. `.env.production` được Dockerfile sinh ra SAU bước COPY nên không ảnh hưởng.
+.env
+.env.*
+!.env.example
+
+# Tài liệu / thiết kế — không ảnh hưởng bundle.
+docs
+design
+*.md
+
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+
+*.log
+npm-debug.log*
+*.local
