@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
+import { format } from 'date-fns'
 import { z } from 'zod'
 
 import { setFormErrorFromApi } from '@/lib/form-error'
@@ -105,6 +106,15 @@ const buildSchema = (t: (key: string) => string) =>
                     code: z.ZodIssueCode.custom,
                     path: ['targetId'],
                     message: t('promotion.validation.targetIdRequired'),
+                })
+            }
+
+            /* Backend (2026-09-25): ngày bắt đầu phải ≥ hôm nay — so chuỗi `yyyy-MM-dd` theo giờ địa phương. */
+            if (values.startDate && values.startDate < format(new Date(), 'yyyy-MM-dd')) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ['startDate'],
+                    message: t('promotion.validation.startDatePast'),
                 })
             }
 

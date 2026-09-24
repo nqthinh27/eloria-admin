@@ -156,6 +156,8 @@ export default {
          */
         concurrentModification:
             'Đơn vừa được người khác cập nhật. Vui lòng tải lại và thử lại.',
+        /** Preview giỏ/KM bắt buộc `channel` (backend 2026-09-25). */
+        channelRequired: 'Phải chọn kênh bán (Online / Tại quầy / Khác).',
 
         // Tài khoản ngân hàng & VietQR — key trích từ `Constants.SUBKEY` backend.
         bankAccount: {
@@ -198,7 +200,8 @@ export default {
             codeInvalid: 'Mã giảm giá không hợp lệ hoặc không áp dụng được cho đơn này.',
             invalidValue: 'Mức giảm không hợp lệ. Giảm theo % phải trong khoảng 0–100, giảm tiền phải lớn hơn 0.',
             targetRequired: 'Vui lòng chọn đối tượng áp dụng cho phạm vi đã chọn.',
-            invalidDate: 'Khoảng thời gian áp dụng không hợp lệ.',
+            invalidDate: 'Khoảng thời gian không hợp lệ: ngày bắt đầu phải từ hôm nay, ngày kết thúc không được trước ngày bắt đầu.',
+            notEditable: 'Chỉ sửa được chương trình khi còn ở trạng thái Nháp.',
             invalidStatus: 'Không thể chuyển sang trạng thái này từ trạng thái hiện tại.',
             branchForbidden: 'Bạn chỉ được tạo/sửa khuyến mại cho chi nhánh của mình.',
         },

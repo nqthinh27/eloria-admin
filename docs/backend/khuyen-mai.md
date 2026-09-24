@@ -23,6 +23,15 @@
 - Tạo mới luôn ra `DRAFT`, phải `update-status` sang `RUNNING` mới hiệu lực. Chuyển hợp lệ:
   `DRAFT→SCHEDULED|RUNNING|ENDED` · `SCHEDULED→RUNNING|PAUSED|ENDED` · `RUNNING→PAUSED|ENDED` ·
   `PAUSED→RUNNING|ENDED`; sai ⇒ `error.promotion.invalidStatus`.
+- **Cập nhật backend 2026-09-25** (đọc từ `git diff` repo backend, **chưa đo API thật**):
+  - `PUT /promotion/{id}` **chỉ sửa được khi còn `DRAFT`**, sai ⇒ `400 error.promotion.notEditable`
+    (FE ẩn mục "Sửa" với KM khác DRAFT). Không có API hạ về DRAFT.
+  - Ngày (tạo + sửa): `startDate ≥ hôm nay` (theo ngày, giờ VN) và `endDate ≥ startDate` (được **bằng**);
+    sai ⇒ `error.promotion.invalidDate`. FE chặn trước ở `promotion-form-dialog.tsx`.
+  - **Cron** mỗi 10 phút (`app.promotion.lifecycle-cron`): `SCHEDULED→RUNNING` khi tới `startDate`,
+    `RUNNING→ENDED` khi qua `endDate`; không đụng DRAFT/PAUSED ⇒ trạng thái có thể đổi mà không ai bấm.
+  - ⚠️ **`channel` BẮT BUỘC** ở `cart/preview` và `promotion/preview` (thiếu ⇒ `400 error.order.channelRequired`).
+    `POST /order` vẫn mặc định `ONLINE`.
 - ⚠️ **`update-status` trả `data: null`** dù api-docs khai DTO (BE18) — trạng thái có lưu đúng ⇒
   **bắt buộc refetch**, không gán response vào state.
 - BE21: list KM không có `activeTotal`/đếm theo trạng thái ⇒ 3 thẻ đếm của mockup `16` đã gỡ (user chốt).
@@ -61,4 +70,4 @@
   (`branchId` khác ⇒ `error.promotion.branchForbidden`). STAFF `POST /promotion` ⇒ 403, `search` ⇒ 200.
 
 subKey lỗi: `error.promotion.{notExisted, codeExisted, codeInvalid, invalidValue, targetRequired,
-invalidDate, invalidStatus, branchForbidden}`.
+invalidDate, invalidStatus, branchForbidden, notEditable}` · `error.order.channelRequired`.

@@ -171,8 +171,8 @@ export type PromotionStatusReq = {
  */
 export type PromotionPreviewReq = {
     branchId?: string | null
-    /** Mặc định `ONLINE` nếu bỏ trống. */
-    channel?: EOrderChannel
+    /** ⚠️ BẮT BUỘC (backend 2026-09-25) — thiếu ⇒ `400 error.order.channelRequired`. */
+    channel: EOrderChannel
     customerId?: string | null
     couponCode?: string | null
     lines: OrderLineReq[]

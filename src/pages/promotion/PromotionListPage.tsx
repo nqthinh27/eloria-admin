@@ -87,9 +87,9 @@ export default function PromotionListPage() {
 
     /*
      * Cột ẩn sẵn (CONVENTIONS mục 5.6): LOẠI đã đọc được ngay từ cột GIÁ TRỊ (`10%` ⇒ PERCENT,
-     * `50.000đ` ⇒ FIXED) nên lặp lại là thừa; KÊNH áp dụng hầu hết là "tất cả kênh".
+     * `50.000đ` ⇒ FIXED) nên lặp lại là thừa; KÊNH áp dụng hiển thị mặc định.
      */
-    const table = useTableState([], { type: false, channel: false })
+    const table = useTableState([], { type: false })
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     const [formPromotion, setFormPromotion] = useState<Promotion | null | 'new'>(null)
@@ -289,11 +289,14 @@ export default function PromotionListPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                            onSelect={() => setFormPromotion(promotion)}>
-                                            <Pencil className="size-4" />
-                                            {t('promotion.list.actionEdit')}
-                                        </DropdownMenuItem>
+                                        {/* Backend chỉ cho sửa khi KM còn DRAFT (`error.promotion.notEditable`). */}
+                                        {promotion.status === EPromotionStatus.DRAFT && (
+                                            <DropdownMenuItem
+                                                onSelect={() => setFormPromotion(promotion)}>
+                                                <Pencil className="size-4" />
+                                                {t('promotion.list.actionEdit')}
+                                            </DropdownMenuItem>
+                                        )}
                                         {/*
                                           Không có mục Xoá: backend **không có** `DELETE /promotion/{id}`.
                                           Kết thúc chương trình = chuyển trạng thái sang `ENDED`.

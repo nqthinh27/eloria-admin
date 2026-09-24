@@ -144,6 +144,8 @@ export default {
          */
         concurrentModification:
             'This order was just updated by someone else. Please reload and try again.',
+        /** Preview giỏ/KM bắt buộc `channel` (backend 2026-09-25). */
+        channelRequired: 'A sales channel (Online / POS / Other) is required.',
 
         // Bank accounts & VietQR — keys taken from backend `Constants.SUBKEY`.
         bankAccount: {
@@ -176,7 +178,8 @@ export default {
             codeInvalid: 'This discount code is invalid or does not apply to this order.',
             invalidValue: 'Invalid discount value. Percentage must be between 0 and 100; fixed amount must be greater than 0.',
             targetRequired: 'Please select a target for the chosen scope.',
-            invalidDate: 'The promotion date range is invalid.',
+            invalidDate: 'Invalid date range: the start date must be today or later, and the end date cannot be before the start date.',
+            notEditable: 'A promotion can only be edited while it is in Draft status.',
             invalidStatus: 'This status transition is not allowed from the current status.',
             branchForbidden: 'You can only create or edit promotions for your own branch.',
         },

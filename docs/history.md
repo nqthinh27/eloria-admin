@@ -10,6 +10,7 @@
 
 | Ngày | Sự kiện | Chi tiết ở |
 |---|---|---|
+| 2026-09-25 | **Đồng bộ backend chưa commit**: `channel` bắt buộc ở 2 preview (FE POS đã gửi sẵn `POS`) · KM chỉ sửa khi DRAFT (ẩn "Sửa") · ngày bắt đầu ≥ hôm nay · cron tự chuyển trạng thái KM. Cột "Kênh áp dụng" bật mặc định. Chưa đo API thật | [handoff](handoff/phien-2026-09-25-dong-bo-backend-khuyen-mai-preview.md) · [khuyen-mai.md](backend/khuyen-mai.md) |
 | 2026-09-20 | **Dashboard: backend bổ sung `newCustomers` · `pendingApproval` · `warehouseStatus`** vào `/dashboard/summary` (additive). FE bỏ `—` ở khối "Tình trạng kho", hiện số thật; đo 3 role, tổng chi nhánh khớp chuỗi & khớp `stock-item` | [handoff](handoff/phien-2026-09-20-dashboard-tinh-trang-kho.md) · [bao-cao.md](backend/bao-cao.md) |
 | 2026-09-20 | **Phase 19 Quản lý Thương hiệu XONG** (chỉ SUPER_ADMIN; route `/brands`). Đo API thật: sort 12/12 đều 200, `code` tự chuẩn hoá, xoá thương hiệu còn SP bị chặn `hasProducts` | [handoff](handoff/phien-2026-09-20-phase-19-thuong-hieu.md) · [san-pham.md](backend/san-pham.md) · PLAN Phase 19 |
 | 2026-09-20 | **Phase 18 Quản lý Tài khoản ngân hàng XONG** (chỉ SUPER_ADMIN; route `/bank-accounts`). Đo API thật: sort 6 field đều 200, tắt/xoá TK mặc định **không bị chặn** ⇒ hệ thống mất mặc định (`noDefault`) ⇒ FE cảnh báo trước + banner | [handoff](handoff/phien-2026-09-20-phase-18-tai-khoan-ngan-hang.md) · [ngan-hang-qr.md](backend/ngan-hang-qr.md) · PLAN Phase 18 |

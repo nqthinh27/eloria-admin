@@ -396,8 +396,12 @@ export type CreateOrderReq = {
 /** `CartPreviewReqDTO` — cùng bộ field tính tiền của `CreateOrderReq`, bỏ phần thông tin khách. */
 export type CartPreviewReq = {
     branchId?: string
-    /** Kênh bán — ảnh hưởng KM nào được áp (KM khai `channel: POS` không áp cho đơn ONLINE). */
-    channel?: EOrderChannel
+    /**
+     * Kênh bán — ảnh hưởng KM nào được áp (KM khai `channel: POS` không áp cho đơn ONLINE).
+     * ⚠️ **BẮT BUỘC** (backend 2026-09-25): thiếu ⇒ `400 error.order.channelRequired`, không còn
+     * mặc định `ONLINE` âm thầm. Màn POS luôn gửi `POS`.
+     */
+    channel: EOrderChannel
     discountAmount?: number
     discountPercent?: number
     shippingFee?: number
