@@ -163,6 +163,14 @@ export default {
         image: {
             notAvailable: 'The image could not be loaded.',
         },
+        file: {
+            typeNotAllowed: 'Only jpg, jpeg, png, gif or webp images are accepted (no SVG or renamed files).',
+            /** HTTP 413 — backend limit 2MB per file, 4MB per request. */
+            tooLarge: 'The file exceeds the allowed size (max 2MB per image).',
+        },
+        rateLimit: {
+            exceeded: 'Too many requests. Please try again in a few minutes.',
+        },
 
         input: {
             invalid: 'The submitted data is invalid.',

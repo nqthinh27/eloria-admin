@@ -177,6 +177,14 @@ export default {
         image: {
             notAvailable: 'Không tải được ảnh.',
         },
+        file: {
+            typeNotAllowed: 'Chỉ chấp nhận ảnh jpg, jpeg, png, gif hoặc webp (không nhận SVG hay file đổi đuôi).',
+            /** HTTP 413 — trần backend 2MB/file, 4MB/request. */
+            tooLarge: 'File vượt quá dung lượng cho phép (tối đa 2MB mỗi ảnh).',
+        },
+        rateLimit: {
+            exceeded: 'Thao tác quá nhanh, vui lòng thử lại sau ít phút.',
+        },
 
         // Dữ liệu đầu vào / hệ thống
         input: {

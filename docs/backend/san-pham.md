@@ -34,8 +34,18 @@ Response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus` (có `act
   cùng bộ field (danh mục sửa được `code`).
 - `POST /product/{id}/generate-sku` nhận `{colorIds[], sizeIds[]}`, **idempotent** (ô đã có SKU thì bỏ
   qua), trả **toàn bộ** SKU hiện có của sản phẩm.
-- `POST /product/{id}/images` là **multipart** (field `files`, tối đa 10), **thay toàn bộ gallery**
-  theo thứ tự file ⇒ api-client bỏ header `Content-Type` khi body là `FormData`.
+- `POST /product/{id}/images` là **multipart theo slot** (backend 2026-09-25, **BREAKING**, đọc từ handoff
+  backend, **chưa đo API thật**): field `image1`..`image10` = `image_link1..10`; chỉ gửi slot muốn thêm/thay
+  (slot ghi đè ⇒ backend tự xoá ảnh cũ; slot không gửi giữ nguyên); ≥ 1 slot, không thì 400
+  `error.input.invalid`. `DELETE /product/{id}/images/{slot}` (1–10) xoá hẳn; slot trống ⇒ 404
+  `error.image.notAvailable`. api-client bỏ header `Content-Type` khi body là `FormData`.
+- ⚠️ `images[]` của response là mảng URL **đã lọc slot rỗng** ⇒ FE suy slot = vị trí + 1, chỉ đúng khi không
+  có lỗ hổng ⇒ FE **chỉ cho xoá ảnh cuối** cho tới khi backend trả `imagesBySlot` (xem handoff 2026-09-26).
+- Dung lượng (`spring.servlet.multipart`): **2MB/file · 4MB/request**, vượt ⇒ HTTP 413 `error.file.tooLarge`
+  ⇒ FE chặn file > 2MB và chia lô request ≤ ~3.9MB (`product-detail-modal.tsx#chunkBySize`).
+- Upload ảnh kiểm **nội dung thật**: chỉ jpg/jpeg/png/gif/webp (**không SVG**), sai ⇒
+  `error.file.typeNotAllowed`. Rate limit ⇒ HTTP 429 `error.rateLimit.exceeded` (`GET /image` 120/60s theo IP;
+  `update-avatar` 5/60s; `product/{id}/images` POST/DELETE 100/60s theo tài khoản).
 - **Thương hiệu** (đã đo 2026-09-20, màn `/brands` — PLAN Phase 19): `BrandResDTO` `{id, code, name, address, logoUrl,
   description, status, createdDate, lastModifiedDate}`; create/update **cùng bộ field** (`code` ≤50 · `name` ≤150 ·
   `address` ≤255 · `logoUrl` ≤256 · `description` ≤500; `code`+`name` bắt buộc). Backend chuẩn hoá `code` (bỏ

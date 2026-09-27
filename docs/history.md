@@ -10,6 +10,7 @@
 
 | Ngày | Sự kiện | Chi tiết ở |
 |---|---|---|
+| 2026-09-26 | **Backend hardening lưu file**: `POST /product/{id}/images` đổi sang **theo slot** (`image1..10`) + `DELETE .../images/{slot}` (BREAKING). FE sửa tab Ảnh (thêm/thay/xoá ảnh cuối), bỏ SVG khỏi `accept`, thêm i18n `file.typeNotAllowed` · `rateLimit.exceeded`. Chưa đo API thật | [handoff](handoff/phien-2026-09-26-anh-san-pham-theo-slot.md) · [san-pham.md](backend/san-pham.md) |
 | 2026-09-25 | **Đồng bộ backend chưa commit**: `channel` bắt buộc ở 2 preview (FE POS đã gửi sẵn `POS`) · KM chỉ sửa khi DRAFT (ẩn "Sửa") · ngày bắt đầu ≥ hôm nay · cron tự chuyển trạng thái KM. Cột "Kênh áp dụng" bật mặc định. Chưa đo API thật | [handoff](handoff/phien-2026-09-25-dong-bo-backend-khuyen-mai-preview.md) · [khuyen-mai.md](backend/khuyen-mai.md) |
 | 2026-09-20 | **Dashboard: backend bổ sung `newCustomers` · `pendingApproval` · `warehouseStatus`** vào `/dashboard/summary` (additive). FE bỏ `—` ở khối "Tình trạng kho", hiện số thật; đo 3 role, tổng chi nhánh khớp chuỗi & khớp `stock-item` | [handoff](handoff/phien-2026-09-20-dashboard-tinh-trang-kho.md) · [bao-cao.md](backend/bao-cao.md) |
 | 2026-09-20 | **Phase 19 Quản lý Thương hiệu XONG** (chỉ SUPER_ADMIN; route `/brands`). Đo API thật: sort 12/12 đều 200, `code` tự chuẩn hoá, xoá thương hiệu còn SP bị chặn `hasProducts` | [handoff](handoff/phien-2026-09-20-phase-19-thuong-hieu.md) · [san-pham.md](backend/san-pham.md) · PLAN Phase 19 |

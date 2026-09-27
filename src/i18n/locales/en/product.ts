@@ -18,6 +18,13 @@ export default {
             noBrand: 'No brand assigned',
             noImage: 'No image',
             skuCount: '{{count}} SKUs',
+            actionView: 'View details',
+        },
+
+        viewer: {
+            previous: 'Previous image',
+            next: 'Next image',
+            close: 'Close',
         },
 
         form: {
@@ -129,9 +136,14 @@ export default {
             title: 'Product images',
             uploadButton: 'Upload images',
             uploading: 'Uploading…',
-            hint: 'Up to 10 images. A new upload replaces the entire existing gallery.',
+            hint: 'Up to 10 images (jpg, png, gif, webp; 2MB each). New uploads fill the next empty slots; use the buttons on an image to replace or delete it.',
+            replace: 'Replace this image',
+            delete: 'Delete this image',
+            deleteTitle: 'Delete this product image?',
+            deleteDescription: 'The image will be permanently removed from the product.',
             empty: 'This product has no images yet',
             tooMany: 'You can select at most 10 images',
+            fileTooLarge: 'Each image must be 2MB or smaller. Please choose smaller images.',
         },
 
         toast: {
@@ -140,6 +152,7 @@ export default {
             skuGenerated: 'SKU matrix generated successfully',
             skuStatusUpdated: 'SKU status updated successfully',
             imagesUploaded: 'Product images updated successfully',
+            imageDeleted: 'Product image deleted',
         },
     },
 

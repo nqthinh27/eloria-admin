@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Barcode, ImageIcon, Loader2, Pencil, Plus, Upload } from 'lucide-react'
+import { Barcode, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload } from 'lucide-react'
 
 import { productApi, skuApi } from '@/api/product'
 import { toastSuccess, toastWarning } from '@/lib/toast'
@@ -8,6 +8,7 @@ import { formatDate, formatVnd } from '@/lib/format'
 import { apiBaseUrl } from '@/config/app'
 import { EGender, EntityStatus } from '@/types/common'
 import type { Color, Product, Size, Sku } from '@/types/product'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { StatusBadge } from '@/components/status-badge'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,6 +25,34 @@ function imageSrc(url: string) {
 }
 
 const MAX_IMAGES = 10
+/** Chỉ nhận đúng định dạng backend cho phép (2026-09-25) — **không còn SVG**. */
+const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp'
+/**
+ * Trần dung lượng của backend (`spring.servlet.multipart`): **2MB/file**, **4MB/request**. Vượt ⇒
+ * `413 error.file.tooLarge` — nhưng Tomcat có thể cắt kết nối trước khi kịp trả JSON (trình duyệt
+ * chỉ thấy lỗi mạng) ⇒ FE chặn file quá cỡ từ trước và **chia lô** request theo trần tổng.
+ */
+const MAX_FILE_BYTES = 2 * 1024 * 1024
+/** Chừa ~100KB cho phần bao multipart (boundary, header từng field) dưới trần 4MB. */
+const MAX_REQUEST_BYTES = 4 * 1024 * 1024 - 100 * 1024
+
+/** Gom các slot thành lô mà tổng dung lượng mỗi lô không vượt `MAX_REQUEST_BYTES`. */
+function chunkBySize<T extends { file: File }>(items: T[]): T[][] {
+    const batches: T[][] = []
+    let batch: T[] = []
+    let size = 0
+    for (const item of items) {
+        if (batch.length > 0 && size + item.file.size > MAX_REQUEST_BYTES) {
+            batches.push(batch)
+            batch = []
+            size = 0
+        }
+        batch.push(item)
+        size += item.file.size
+    }
+    if (batch.length > 0) batches.push(batch)
+    return batches
+}
 /** Số SKU mỗi lần tải — bảng SKU dùng infinite scroll, cuộn tới cuối thì nối thêm trang sau. */
 const SKU_PAGE_SIZE = 20
 
@@ -93,6 +122,9 @@ export function ProductDetailModal({
     const [generateOpen, setGenerateOpen] = useState(false)
     const [uploading, setUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    /** Slot (1–10) đang được **thay** ảnh; `null` = đang thêm ảnh mới vào các slot trống kế tiếp. */
+    const replaceSlotRef = useRef<number | null>(null)
+    const [deleteSlot, setDeleteSlot] = useState<number | null>(null)
 
     const productId = product?.id ?? null
 
@@ -283,25 +315,58 @@ export function ProductDetailModal({
         }
     }
 
+    /**
+     * Ảnh theo slot (backend 2026-09-25). `images` chỉ là mảng URL đã lọc slot rỗng nên FE **suy** slot
+     * = vị trí + 1 — đúng vì mọi ảnh cũ được điền tuần tự và FE chỉ cho xoá ảnh **cuối**
+     * (xoá giữa sẽ tạo lỗ hổng làm lệch phép suy này ⇒ chờ backend trả `imagesBySlot`).
+     */
     const handleUpload = async (files: FileList | null) => {
+        const replaceSlot = replaceSlotRef.current
+        replaceSlotRef.current = null
         if (!files?.length) return
-        if (files.length > MAX_IMAGES) {
+        const used = current.images.length
+        const slots =
+            replaceSlot !== null
+                ? [{ slot: replaceSlot, file: files[0] }]
+                : Array.from(files).map((file, i) => ({ slot: used + i + 1, file }))
+        if (slots.some(({ slot }) => slot > MAX_IMAGES)) {
             toastWarning('product.images.tooMany', { ns: 'product' })
             if (fileInputRef.current) fileInputRef.current.value = ''
             return
         }
+        /* Có file vượt 2MB ⇒ huỷ cả lượt: bỏ lặng lẽ file đó sẽ làm lệch slot người dùng mong đợi. */
+        if (slots.some(({ file }) => file.size > MAX_FILE_BYTES)) {
+            toastWarning('product.images.fileTooLarge', { ns: 'product' })
+            if (fileInputRef.current) fileInputRef.current.value = ''
+            return
+        }
         setUploading(true)
+        let uploaded = false
         try {
-            await productApi.uploadImages(product.id, Array.from(files))
+            /* Tuần tự từng lô — lô lỗi thì dừng, các lô trước đã lưu vẫn được nạp lại ở `finally`. */
+            for (const batch of chunkBySize(slots)) {
+                await productApi.uploadImages(product.id, batch)
+                uploaded = true
+            }
             toastSuccess('product.toast.imagesUploaded', { ns: 'product' })
-            await loadDetail()
-            onChanged()
         } catch {
             // api-client đã toast lỗi.
         } finally {
+            if (uploaded) {
+                await loadDetail()
+                onChanged()
+            }
             setUploading(false)
             if (fileInputRef.current) fileInputRef.current.value = ''
         }
+    }
+
+    const handleDeleteImage = async () => {
+        if (deleteSlot === null) return
+        await productApi.deleteImage(product.id, deleteSlot)
+        toastSuccess('product.toast.imageDeleted', { ns: 'product' })
+        await loadDetail()
+        onChanged()
     }
 
     /** Size hợp lệ để sinh SKU = cùng `sizeGroup` với sản phẩm. */
@@ -535,8 +600,11 @@ export function ProductDetailModal({
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    disabled={uploading}
-                                    onClick={() => fileInputRef.current?.click()}>
+                                    disabled={uploading || current.images.length >= MAX_IMAGES}
+                                    onClick={() => {
+                                        replaceSlotRef.current = null
+                                        fileInputRef.current?.click()
+                                    }}>
                                     {uploading ? (
                                         <Loader2 className="size-4 animate-spin" />
                                     ) : (
@@ -552,7 +620,7 @@ export function ProductDetailModal({
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            accept={IMAGE_ACCEPT}
                             multiple
                             hidden
                             onChange={(e) => void handleUpload(e.target.files)}
@@ -565,18 +633,58 @@ export function ProductDetailModal({
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                                {current.images.map((url) => (
-                                    <img
-                                        key={url}
-                                        src={imageSrc(url)}
-                                        alt={current.name}
-                                        className="bg-muted aspect-square w-full rounded-md object-cover"
-                                    />
+                                {current.images.map((url, index) => (
+                                    <div key={url} className="relative">
+                                        <img
+                                            src={imageSrc(url)}
+                                            alt={current.name}
+                                            className="bg-muted aspect-square w-full rounded-md object-cover"
+                                        />
+                                        {canWrite && (
+                                            <div className="absolute inset-x-1 bottom-1 flex justify-end gap-1">
+                                                <Button
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="size-7"
+                                                    disabled={uploading}
+                                                    title={t('product.images.replace')}
+                                                    aria-label={t('product.images.replace')}
+                                                    onClick={() => {
+                                                        replaceSlotRef.current = index + 1
+                                                        fileInputRef.current?.click()
+                                                    }}>
+                                                    <Upload className="size-3.5" />
+                                                </Button>
+                                                {/* Chỉ xoá được ảnh cuối — xem chú thích `handleUpload`. */}
+                                                {index === current.images.length - 1 && (
+                                                    <Button
+                                                        size="icon"
+                                                        variant="destructive"
+                                                        className="size-7"
+                                                        disabled={uploading}
+                                                        title={t('product.images.delete')}
+                                                        aria-label={t('product.images.delete')}
+                                                        onClick={() => setDeleteSlot(index + 1)}>
+                                                        <Trash2 className="size-3.5" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         )}
                     </TabsContent>
                 </Tabs>
+
+                <ConfirmDialog
+                    open={deleteSlot !== null}
+                    onOpenChange={(open) => !open && setDeleteSlot(null)}
+                    variant="destructive"
+                    title={t('product.images.deleteTitle')}
+                    description={t('product.images.deleteDescription')}
+                    onConfirm={handleDeleteImage}
+                />
 
                 <SkuBarcodeDialog
                     sku={barcodeSku}

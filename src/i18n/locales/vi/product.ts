@@ -18,6 +18,13 @@ export default {
             noBrand: 'Chưa gán thương hiệu',
             noImage: 'Chưa có ảnh',
             skuCount: '{{count}} SKU',
+            actionView: 'Xem chi tiết',
+        },
+
+        viewer: {
+            previous: 'Ảnh trước',
+            next: 'Ảnh sau',
+            close: 'Đóng',
         },
 
         form: {
@@ -131,9 +138,14 @@ export default {
             title: 'Ảnh sản phẩm',
             uploadButton: 'Tải ảnh lên',
             uploading: 'Đang tải lên…',
-            hint: 'Tối đa 10 ảnh. Lần tải lên sau sẽ thay thế toàn bộ ảnh hiện có.',
+            hint: 'Tối đa 10 ảnh (jpg, png, gif, webp; mỗi ảnh ≤ 2MB). Tải thêm sẽ nối vào ô trống kế tiếp; dùng nút trên ảnh để thay hoặc xoá.',
+            replace: 'Thay ảnh này',
+            delete: 'Xoá ảnh này',
+            deleteTitle: 'Xoá ảnh sản phẩm?',
+            deleteDescription: 'Ảnh sẽ bị xoá vĩnh viễn khỏi sản phẩm.',
             empty: 'Sản phẩm chưa có ảnh nào',
             tooMany: 'Chỉ được chọn tối đa 10 ảnh',
+            fileTooLarge: 'Mỗi ảnh tối đa 2MB. Vui lòng chọn lại ảnh nhỏ hơn.',
         },
 
         toast: {
@@ -142,6 +154,7 @@ export default {
             skuGenerated: 'Sinh ma trận SKU thành công',
             skuStatusUpdated: 'Cập nhật trạng thái SKU thành công',
             imagesUploaded: 'Cập nhật ảnh sản phẩm thành công',
+            imageDeleted: 'Đã xoá ảnh sản phẩm',
         },
     },
 

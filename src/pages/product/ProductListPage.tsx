@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ImageIcon, Package, Plus } from 'lucide-react'
+import { ImageIcon, MoreVertical, Package, Plus } from 'lucide-react'
 
 import { brandApi, categoryApi, colorApi, productApi, sizeApi } from '@/api/product'
 import { toastSuccess } from '@/lib/toast'
@@ -33,6 +33,7 @@ import { useTableState } from '@/hooks/use-table-state'
 import { SearchSelect } from '@/components/search-select'
 import { ProductFormDialog } from './components/product-form-dialog'
 import { ProductDetailModal } from './components/product-detail-modal'
+import { ProductImageViewer } from './components/product-image-viewer'
 
 const ALL = 'ALL'
 const PAGE_SIZE = 12
@@ -87,6 +88,13 @@ export default function ProductListPage() {
 
     const [formProduct, setFormProduct] = useState<Product | null | 'new'>(null)
     const [detailProduct, setDetailProduct] = useState<Product | null>(null)
+    const [viewerProduct, setViewerProduct] = useState<Product | null>(null)
+
+    /** Hành động mặc định khi bấm card: xem ảnh lớn. SP chưa có ảnh ⇒ mở chi tiết thay vì viewer rỗng. */
+    const openCard = (product: Product) => {
+        if (product.images.length > 0) setViewerProduct(product)
+        else setDetailProduct(product)
+    }
 
     /**
      * `quiet` = nạp lại ngầm (nút Tải lại / sau khi ghi dữ liệu): giữ nguyên lưới đang hiển thị
@@ -314,7 +322,8 @@ export default function ProductListPage() {
                         {data.map((product) => (
                             /*
                               `Card` render ra `<div>` nên phải tự khai `role`/`tabIndex` +
-                              `Enter`/`Space` thì mới mở được chi tiết bằng bàn phím.
+                              `Enter`/`Space` thì mới mở được bằng bàn phím. Bấm card = xem ảnh
+                              lớn; nút ⋮ mở modal chi tiết (sửa/SKU/ảnh đều trong đó — user chốt 2026-09-26).
                             */
                             <Card
                                 key={product.id}
@@ -322,11 +331,11 @@ export default function ProductListPage() {
                                 tabIndex={0}
                                 aria-label={product.name}
                                 className="focus-visible:ring-ring cursor-pointer gap-0 overflow-hidden p-0 transition-shadow hover:shadow-md focus-visible:ring-2 focus-visible:outline-none"
-                                onClick={() => setDetailProduct(product)}
+                                onClick={() => openCard(product)}
                                 onKeyDown={(event) => {
                                     if (event.key !== 'Enter' && event.key !== ' ') return
                                     event.preventDefault()
-                                    setDetailProduct(product)
+                                    openCard(product)
                                 }}>
                                 <div className="bg-muted relative flex aspect-square items-center justify-center">
                                     {product.images[0] ? (
@@ -359,9 +368,25 @@ export default function ProductListPage() {
                                     <p className="text-muted-foreground text-xs">
                                         {product.brandName ?? t('product.list.noBrand')}
                                     </p>
-                                    <p className="text-primary text-lg font-semibold">
-                                        {formatVnd(product.price)}
-                                    </p>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-primary text-lg font-semibold">
+                                            {formatVnd(product.price)}
+                                        </p>
+                                        {/* Chặn nổi bọt click/phím ⇒ bấm ⋮ không mở luôn viewer ảnh của card. */}
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="size-8 shrink-0"
+                                            title={t('product.list.actionView')}
+                                            aria-label={t('product.list.actionView')}
+                                            onKeyDown={(event) => event.stopPropagation()}
+                                            onClick={(event) => {
+                                                event.stopPropagation()
+                                                setDetailProduct(product)
+                                            }}>
+                                            <MoreVertical className="size-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </Card>
                         ))}
@@ -410,6 +435,12 @@ export default function ProductListPage() {
                     sizeGroups={sizeGroups}
                     onCreate={handleCreate}
                     onUpdate={handleUpdate}
+                />
+
+                <ProductImageViewer
+                    name={viewerProduct?.name ?? null}
+                    images={viewerProduct?.images.map(imageSrc) ?? []}
+                    onOpenChange={(open) => !open && setViewerProduct(null)}
                 />
 
                 <ProductDetailModal

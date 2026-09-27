@@ -59,13 +59,20 @@ export const productApi = {
     },
 
     /**
-     * `[SUPER_ADMIN] POST /product/{id}/images` — multipart, thay **toàn bộ** gallery
-     * (tối đa 10 ảnh) theo đúng thứ tự file truyền lên.
+     * `[SUPER_ADMIN] POST /product/{id}/images` — multipart **theo slot** (backend 2026-09-25,
+     * BREAKING so với bản "thay toàn bộ"): mỗi field `image1..image10` khớp `image_link1..10`.
+     * Chỉ gửi slot muốn thêm/thay — slot ghi đè thì backend tự xoá ảnh cũ, slot không gửi giữ nguyên.
+     * Cần ≥ 1 slot, không thì 400. Gộp nhiều slot vào **một** request (rate limit 100/60s).
      */
-    uploadImages(id: string, files: File[]) {
+    uploadImages(id: string, slots: { slot: number; file: File }[]) {
         const form = new FormData()
-        files.forEach((file) => form.append('files', file))
+        slots.forEach(({ slot, file }) => form.append(`image${slot}`, file))
         return apiClient.post<Product>(`/product/${id}/images`, form)
+    },
+
+    /** `[SUPER_ADMIN] DELETE /product/{id}/images/{slot}` — slot 1–10; slot trống ⇒ 404 `error.image.notAvailable`. */
+    deleteImage(id: string, slot: number) {
+        return apiClient.delete<null>(`/product/${id}/images/${slot}`)
     },
 }
 
