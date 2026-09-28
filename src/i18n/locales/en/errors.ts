@@ -92,7 +92,6 @@ export default {
             lineRequired: 'The slip must have at least one line.',
             transferBranchRequired: 'A transfer slip requires a destination branch.',
             transferSameBranch: 'Source and destination branches must be different.',
-            cannotApproveOwn: 'You cannot approve a slip you created yourself.',
         },
         // Work shift domain (Phase 15).
         workShift: {

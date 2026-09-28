@@ -192,7 +192,7 @@ SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
 | `hkadmin` | `Admin@123` | `ADMIN` — *HN - Hoàn Kiếm* |
 
 - **Không hardcode** vào code, không làm giá trị mặc định form đăng nhập, không đưa ra ngoài dev.
-- Test duyệt phiếu kho cần **2 ADMIN khác chi nhánh** (backend chặn tự duyệt + ADMIN chỉ thấy phiếu
-  chi nhánh mình). Thay đổi menu/route theo role phải test đủ **cả 3 role**.
+- Test duyệt phiếu kho: một ADMIN tự tạo + tự duyệt được (bỏ chặn tự duyệt 2026-09-28); ADMIN chỉ
+  thấy phiếu chi nhánh mình. Thay đổi menu/route theo role phải test đủ **cả 3 role**.
 - ⚠️ DB dev có thể bị **xoá & seed lại** (đã xảy ra 2026-08-11) ⇒ **không hardcode/cache id** trong
   code hay test; luôn lấy từ API.

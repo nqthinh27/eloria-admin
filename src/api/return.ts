@@ -17,8 +17,8 @@ import type {
  * ⚠️ Khác màn Ca làm việc: **STAFF thấy mọi phiếu của chi nhánh**, không chỉ phiếu mình tạo
  * (đo thật: STAFF và ADMIN cùng trả về 4/4 phiếu).
  *
- * ⚠️ **Backend KHÔNG chặn tự duyệt** — ADMIN tạo phiếu rồi tự duyệt được (đo thật), khác hẳn
- * phiếu kho Phase 10 vốn trả `error.warehouseLedger.cannotApproveOwn`. Đừng khoá nút ở FE.
+ * ⚠️ **Backend KHÔNG chặn tự duyệt** — ADMIN tạo phiếu rồi tự duyệt được (đo thật), giống phiếu
+ * kho từ 2026-09-28. Đừng khoá nút ở FE.
  */
 export const returnApi = {
     /**

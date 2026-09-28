@@ -83,8 +83,6 @@ export default {
                 approve: 'Duyệt phiếu',
                 reject: 'Từ chối',
             },
-            /** Lý do khoá nút duyệt — backend chặn tự duyệt phiếu mình tạo. */
-            cannotApproveOwnHint: 'Không thể tự duyệt phiếu do chính mình tạo',
         },
 
         /* ---------------- Dialog chi tiết phiếu ---------------- */

@@ -25,9 +25,9 @@
   (IN cộng · OUT trừ · TRANSFER trừ nguồn + cộng đích) — đã kiểm chứng.
 - ⚠️ **`lines` trả `null` ở `POST /warehouse-ledger/search`**, chỉ populate ở `GET /{id}` ⇒ mọi chỗ đọc
   `lines` từ danh sách phải phòng null; **không dựng được cột "Tổng SL"** ở bảng nếu không muốn N+1.
-- ⚠️ **Backend chặn tự duyệt phiếu do chính mình tạo** — `createdBy` là **username** (không phải id),
-  lỗi `error.warehouseLedger.cannotApproveOwn` HTTP 403. **FE khoá nút trước**, đừng để bấm rồi lỗi.
-  *(Khác hẳn phiếu đổi/trả — module đó CHO tự duyệt, xem [doi-tra.md](doi-tra.md).)*
+- **Người tạo được tự duyệt phiếu của mình** (backend bỏ guard 2026-09-28 — approve vốn đòi ADMIN+).
+  Subkey `error.warehouseLedger.cannotApproveOwn` cũ **đã xoá** ⇒ FE không khoá nút theo `createdBy`
+  (`createdBy` là **username**, không phải id). Giống phiếu đổi/trả ([doi-tra.md](doi-tra.md)).
 - `WarehouseLedgerLineReqDTO` là **danh sách dòng phẳng** `{skuId, quantity}` — không có ma trận
   size × màu như mockup `14`. `quantity` luôn dương, chiều do `type` quyết định.
 - Lưu ý vận hành: phiếu đổi/trả nhận hàng `RESALABLE` sẽ **tự sinh** một phiếu `IN`/`ACCEPTED` (mã `PN-*`).
@@ -53,4 +53,4 @@
 ## subKey lỗi
 
 `error.warehouseLedger.{notExisted, invalidStatus, lineRequired, transferBranchRequired,
-transferSameBranch, cannotApproveOwn}` · `error.stock.{insufficient, countNoDiff}`.
+transferSameBranch}` · `error.stock.{insufficient, countNoDiff}`.

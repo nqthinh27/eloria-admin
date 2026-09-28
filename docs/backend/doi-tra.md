@@ -26,7 +26,7 @@
   cũng được (đo cả 2 chiều).
 - Phiếu **không sửa, không xoá** (bản ghi lịch sử tiền/hàng) — sai thì từ chối rồi tạo phiếu mới.
   `REJECTED` là ngõ cụt (`error.return.invalidStatus` nếu duyệt lại).
-- ⚠️ **Backend KHÔNG chặn tự duyệt** — ADMIN tạo rồi tự duyệt được (đo thật), **khác hẳn phiếu kho**.
+- ⚠️ **Backend KHÔNG chặn tự duyệt** — ADMIN tạo rồi tự duyệt được (đo thật), giống phiếu kho (từ 2026-09-28).
   Đừng khoá nút ở FE.
 - ⚠️ `reject` ghi lý do vào **`description`** (dạng `"Từ chối: …"`), **không** vào `reason` (`reason`
   giữ lý do khách trả hàng) ⇒ màn chi tiết đổi nhãn field theo `status`, giống ca `REJECTED`.

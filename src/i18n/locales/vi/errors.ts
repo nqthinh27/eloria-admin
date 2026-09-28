@@ -102,7 +102,6 @@ export default {
             lineRequired: 'Phiếu phải có ít nhất 1 dòng hàng.',
             transferBranchRequired: 'Phiếu chuyển kho cần chọn chi nhánh đích.',
             transferSameBranch: 'Chi nhánh nguồn và chi nhánh đích không được trùng nhau.',
-            cannotApproveOwn: 'Không thể tự duyệt phiếu do chính mình tạo.',
         },
         // Domain ca làm việc (Phase 15) — key trích từ `docs/api/ca-lam-viec-p10.md`.
         workShift: {

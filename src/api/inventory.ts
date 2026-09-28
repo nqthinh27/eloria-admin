@@ -67,8 +67,7 @@ export const warehouseLedgerApi = {
     /**
      * `[ADMIN] POST /warehouse-ledger/{id}/approve` — `WAITING_APPROVAL → ACCEPTED`, **ghi tồn thật**.
      *
-     * ⚠️ Backend chặn **tự duyệt phiếu do chính mình tạo** (`error.warehouseLedger.cannotApproveOwn`,
-     * HTTP 403) — FE phải ẩn nút trước, đừng để người dùng bấm rồi mới nhận lỗi.
+     * Người tạo **được tự duyệt** phiếu của mình (backend bỏ guard `cannotApproveOwn` 2026-09-28).
      */
     approve(id: string) {
         return apiClient.post<WarehouseLedger>(`/warehouse-ledger/${id}/approve`)

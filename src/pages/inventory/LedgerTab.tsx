@@ -94,16 +94,6 @@ export function LedgerTab() {
         return () => controller.abort()
     }, [refreshBranches])
 
-    /**
-     * Backend chặn **tự duyệt phiếu do chính mình tạo** (`error.warehouseLedger.cannotApproveOwn`).
-     * `createdBy` là **username**, so với `user.username` — không phải id.
-     * Khoá nút ngay ở UI kèm tooltip lý do, thay vì để bấm rồi mới nhận 403.
-     */
-    const isOwnLedger = useCallback(
-        (ledger: WarehouseLedger) => ledger.createdBy === user?.username,
-        [user?.username],
-    )
-
     /*
      * Khai trước `load` vì `toSearchSort` cần `meta.sortField` của cột để dịch id cột → field BE.
      *
@@ -235,7 +225,6 @@ export function LedgerTab() {
                 meta: { columnLabel: t('inventory.ledger.column.actions'), align: 'center' },
                 cell: ({ row }) => {
                     const ledger = row.original
-                    const own = isOwnLedger(ledger)
                     const waiting = ledger.status === EWarehouseLedgerStatus.WAITING_APPROVAL
 
                     return (
@@ -279,21 +268,15 @@ export function LedgerTab() {
                                         {canApprove && waiting && (
                                             <>
                                                 {/*
-                                                  Backend chặn tự duyệt phiếu do chính mình tạo
-                                                  (`error.warehouseLedger.cannotApproveOwn`) ⇒ khoá
-                                                  mục và nói rõ lý do ngay trong menu.
+                                                  Người tạo được tự duyệt phiếu của mình — backend bỏ
+                                                  guard `cannotApproveOwn` từ 2026-09-28, approve vốn
+                                                  đòi ADMIN+ nên không khoá theo người tạo nữa.
                                                 */}
                                                 <DropdownMenuItem
-                                                    disabled={own}
                                                     onSelect={() => setApproveLedger(ledger)}>
                                                     <Check className="size-4" />
                                                     {t('inventory.ledger.action.approve')}
                                                 </DropdownMenuItem>
-                                                {own && (
-                                                    <p className="text-muted-foreground px-2 py-1 text-xs">
-                                                        {t('inventory.ledger.cannotApproveOwnHint')}
-                                                    </p>
-                                                )}
                                                 <DropdownMenuItem
                                                     variant="destructive"
                                                     onSelect={() => setRejectLedger(ledger)}>
@@ -310,7 +293,7 @@ export function LedgerTab() {
                 },
             },
         ],
-        [t, canApprove, isOwnLedger],
+        [t, canApprove],
     )
 
     /**

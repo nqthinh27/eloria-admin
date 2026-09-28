@@ -80,7 +80,7 @@ gián tiếp, không có UI ghi riêng cho role đó.
 | Hành động | STAFF | ADMIN | SUPER_ADMIN | Nguồn |
 |---|:-:|:-:|:-:|---|
 | Xem tồn kho, tạo/gửi duyệt phiếu kho, kiểm kê | ✅ | ✅ | ✅ | [kho.md:9-13](backend/kho.md) |
-| Duyệt / từ chối phiếu kho | — | ✅ | ✅ | `LedgerTab.tsx:63` `canApprove` — chặn tự duyệt phiếu mình tạo (`error.warehouseLedger.cannotApproveOwn`) |
+| Duyệt / từ chối phiếu kho | — | ✅ | ✅ | `LedgerTab.tsx:63` `canApprove` — được tự duyệt phiếu mình tạo (backend bỏ chặn 2026-09-28) |
 | Xuất huỷ (`POST /stock-disposal`) | — | ✅ | ✅ | [kho.md:13,51](backend/kho.md) |
 | Lọc / chọn chi nhánh | — | — | ✅ | `StockTab.tsx:49`, `StockCountTab.tsx:45`, `LedgerTab.tsx:64` |
 

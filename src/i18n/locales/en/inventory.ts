@@ -82,7 +82,6 @@ export default {
                 approve: 'Approve',
                 reject: 'Reject',
             },
-            cannotApproveOwnHint: 'You cannot approve a slip you created yourself',
         },
 
         /* ---------------- Slip detail dialog ---------------- */
