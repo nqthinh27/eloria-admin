@@ -237,6 +237,9 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 | **18** | ✅ **Quản lý Tài khoản ngân hàng** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 11 | *(không mockup — pattern `04`/`07`)* |
 | **19** | ✅ **Quản lý Thương hiệu** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 9 | *(không mockup — pattern `04`/`07`)* |
+| **20** | ⏳ **CMS: Bài viết, Trang tĩnh & Banner** — *chờ backend P15* | 5, 22 | *(không mockup — pattern `04`/`07`)* |
+| **21** | ⏳ **Cấu hình Storefront, Điểm thưởng & Voucher công khai** — *chờ backend P13+P16* | 5, 8, 14 | *(không mockup)* |
+| **22** | 🆕 **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
@@ -2991,3 +2994,201 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 4. Báo cáo cuối phase: file đã đổi · quyết định kỹ thuật · giả định · phần chưa làm.
 5. **Agent khác review** theo checklist CONVENTIONS mục 10.
 6. Cập nhật cột trạng thái ở mục D và tài liệu nếu có thay đổi kiến trúc.
+
+---
+
+# NHÓM PHASE STOREFRONT/CMS (lập kế hoạch 2026-09-30 — phục vụ web bán hàng `35.3.eloria-client`)
+
+> Bối cảnh: dự án bước vào giai đoạn **web front store**. Backend mở nhóm phase storefront
+> (`35.1.eloria-backend/PLAN-storefront.md` Phase 12–17); phía admin cần thêm các màn CMS/cấu hình
+> dưới đây. Phạm vi v1 đã chốt với PO: **CÓ** bài viết + banner + trang tĩnh + ví voucher/điểm
+> thưởng đơn giản; **KHÔNG** có đánh giá sản phẩm, wishlist, bộ sưu tập, cổng thanh toán ngoài.
+> Không có mockup riêng cho các màn này — dựng theo pattern bảng/form dùng chung (skill
+> `create-table`) và cùng ngôn ngữ giao diện các phase trước.
+>
+> **Thứ tự chạy: 22 → 20 → 21.** Phase 22 (chuẩn ảnh CMS) **không chờ backend**, làm được ngay, và
+> Phase 20 dùng lại component của nó ⇒ làm 22 trước thì khỏi dựng ô upload hai lần. Phase 21 phụ
+> thuộc backend P13+P16 nên đi sau cùng.
+
+## Phase 22 — Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client 🆕 **LÀM ĐƯỢC NGAY — KHÔNG CHỜ BACKEND**
+
+> **Vì sao có phase này.** Admin upload ảnh mà không biết client sẽ render trong khung nào ⇒ ảnh bị
+> `object-cover` cắt mất mặt người/chữ, hoặc upload ảnh 500px rồi vỡ khi phóng to. Phase này đưa
+> **con số cụ thể vào đúng chỗ upload** và cho **xem trước y như trên web** trước khi bấm lưu.
+>
+> **Nguồn số liệu — không được tự chế**: [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md).
+> Tài liệu đó đo thật từ 7 mockup design (ảnh @2x, khung 1440 CSS) rồi chuẩn hoá về **7 tỉ lệ**.
+> Phase này chỉ **hiển thị và kiểm tra** theo tài liệu đó; muốn đổi số thì sửa tài liệu trước.
+>
+> **Không chờ gì cả**: dùng `FileController` + các endpoint upload đã có (`/product/{id}/images`,
+> `brand.logoUrl`, `category.imageUrl`). Nên làm **trước Phase 20** để màn Bài viết/Banner dùng lại
+> component có sẵn thay vì dựng ô upload riêng rồi sửa sau.
+
+### Điều kiện tiên quyết
+- Đọc hết `image-spec.md` (7 mã spec + §3 vùng an toàn + §5 quy tắc kiểm tra).
+- **Chốt với user trước khi code**: ① sai tỉ lệ thì **chặn hay chỉ cảnh báo** (đề xuất: **chỉ cảnh
+  báo** — khung client đều `object-cover`, admin cố ý crop là chuyện bình thường; chỉ chặn khi sai
+  định dạng / vượt dung lượng / **dưới độ phân giải tối thiểu**); ② có cần nút **"Tự cắt về đúng tỉ
+  lệ"** ngay trong admin không (crop bằng canvas phía client, **không thêm dependency** — nếu muốn
+  khung kéo-thả thì phải thêm thư viện ⇒ hỏi theo CONVENTIONS §5).
+- Không có mockup — dựng theo pattern form/dialog hiện có.
+
+### Việc cần làm
+
+1. **`src/lib/image-spec.ts`** — hằng `IMAGE_SPEC` cho 7 mã (`PRODUCT` · `CATEGORY_TILE` ·
+   `HOME_HERO` · `BANNER_WIDE` · `POST_COVER` · `OG_IMAGE` · `LOGO_SQUARE`), mỗi mã gồm: `ratio`
+   (số + nhãn hiển thị "4:5"), `recommended {w,h}`, `min {w,h}`, `maxBytes`, `accept`, `safeZone`
+   (nếu có), `note`. Kèm `inspectImageFile(file, spec)` đọc kích thước thật bằng
+   `createImageBitmap` **trước khi gửi** và trả về `{ ok | blocked | warned, reason }` theo bảng §5.
+   File này là **nửa admin của hợp đồng dùng chung** với `35.3.eloria-client/src/lib/image-frames.ts`.
+
+2. **`<ImageSpecHint spec="…" />`** — dòng gợi ý đặt ngay dưới mọi ô upload:
+   > *Tỉ lệ **4:5** · khuyến nghị **1600 × 2000 px** · tối thiểu 1000 × 1250 · JPG/WebP ≤ 2 MB*
+
+   Kèm `Tooltip`/`Popover` "Vì sao?" giải thích ảnh sẽ nằm trong khung nào bên web khách.
+
+3. **`<ImageUploadField spec="…" />`** — ô upload dùng chung, thay cho các ô rời hiện nay:
+   - kiểm tra theo §5 → **chặn** (sai định dạng / quá nặng / dưới min) hoặc **cảnh báo mềm** (lệch
+     tỉ lệ > 2 %) với nội dung nói rõ *sẽ bị cắt bao nhiêu và cắt ở đâu*;
+   - hiện kích thước ảnh đang chọn so với khuyến nghị (`1280×960 → cần ≥1000×1250`);
+   - giữ nguyên hành vi hiện có của màn Sản phẩm: upload **theo slot**, gộp nhiều slot vào một
+     request, chia lô theo trần ~3,9 MB (`chunkBySize` ở `product-detail-modal.tsx` — **tái dùng,
+     không viết lại**).
+
+4. **`<ImageFramePreview spec="…" src="…" />`** — khối xem trước **đúng khung client** ở 3
+   breakpoint **1440 / 768 / 390**, dùng chính `aspect-ratio` của `image-spec.md`:
+   - với `HOME_HERO` / `BANNER_WIDE`: **phủ overlay vùng an toàn** (§3 — hero: 960 × 1200 px chính
+     giữa; banner ngang: 1000 × 560) + chú thích *"chủ thể và chữ phải nằm trong khung sáng"*;
+   - với `OG_IMAGE`: overlay ô vuông 630 × 630 giữa (mạng xã hội crop 1:1);
+   - với `PRODUCT` / `CATEGORY_TILE` / `POST_COVER`: một tỉ lệ ở mọi breakpoint ⇒ chỉ cần 1 khung.
+
+5. **Gắn vào các màn đã có** (hồi tố, không đổi API):
+   | Màn | Trường | Mã spec |
+   |---|---|---|
+   | Sản phẩm (Phase 9) | `image_link1..10` | `PRODUCT` |
+   | Danh mục SP (Phase 9) | `imageUrl` | `CATEGORY_TILE` |
+   | Thương hiệu (Phase 19) | `logoUrl` | `LOGO_SQUARE` |
+   | Nhân viên (Phase 7) | `imageUrl` | `LOGO_SQUARE` (1:1, `object-cover`) |
+
+6. **i18n VI/EN** namespace `image` (nhãn tỉ lệ, thông điệp chặn/cảnh báo, chú thích vùng an toàn) —
+   **không nhúng số vào chuỗi dịch**, số lấy từ `IMAGE_SPEC` và nội suy.
+
+### Output mong muốn (DoD)
+- 4 thành phần ở trên chạy thật trên **Sản phẩm · Danh mục · Thương hiệu · Nhân viên**; không màn
+  nào còn `<input type="file">` trần.
+- **Kiểm thử UI thật (Chrome headless)** với bộ ảnh mẫu dựng sẵn: ① đúng spec → lưu im lặng;
+  ② dưới min (800×1000 cho `PRODUCT`) → **chặn**, nêu rõ cần ≥1000×1250; ③ lệch tỉ lệ (1:1 cho
+  `PRODUCT`) → **cảnh báo + xem trước phần bị cắt**, vẫn lưu được; ④ >2 MB → chặn trước khi gửi
+  request (kiểm Network: **không có request nào bay đi**); ⑤ sai định dạng → chặn.
+- Xem trước khớp client đo được: cùng một ảnh, khung xem trước ở admin và khung thật trên
+  storefront (`IMAGE_FRAMES`) **cắt giống hệt nhau** ở 390/768/1440 — chụp màn 2 bên đặt cạnh nhau
+  trong file bàn giao.
+- `IMAGE_SPEC` có **unit test so với snapshot ghi cứng** (sửa số mà quên cập nhật
+  `image-spec.md` ⇒ test đỏ) + review đóng phase đối chiếu đủ 3 nơi theo §6 của tài liệu.
+- Không thêm dependency mới vào `package.json` (đọc kích thước bằng `createImageBitmap`, overlay
+  bằng CSS) — trừ khi user duyệt ở quyết định ② phần tiên quyết.
+- `npm run lint` + `npm run build` sạch; dữ liệu/ảnh test dọn sạch; bàn giao
+  `docs/handoff/phien-*.md` + cập nhật PLAN/CLAUDE.md (skill `handoff`).
+
+### Ngoài phạm vi
+- **Resize/nén ảnh phía admin trước khi upload** — client đã có `next/image` tự sinh AVIF/WebP theo
+  `sizes`; nén ở admin chỉ làm mất chất lượng gốc. Chỉ **chặn** file quá nặng, không tự nén.
+- Thư viện ảnh dùng chung (media library) — chưa có backend tương ứng.
+- Lấy spec động từ `system_config` (IMG-2 trong `image-spec.md`) — v1 dùng hằng + test.
+
+---
+
+## Phase 20 — CMS: Bài viết, Trang tĩnh & Banner ⏳ **CHỜ backend P15**
+
+### Điều kiện tiên quyết
+- Backend **P15 đã đóng + có `fe-handoff-phase15`** (bảng `post`/`banner`, API CRUD +
+  `update-status` hẹn giờ) và **P14 đã đóng** nếu làm mục ④ (`customerNote`).
+- **Đo API thật trước khi code** (skill `update-api-doc`): diff api-docs, kiểm thử đủ role, quét
+  sort tìm field gây 500 — không tin tài liệu.
+- **Phase 22 đã xong** — màn Bài viết/Banner dùng lại `<ImageUploadField>` + `<ImageSpecHint>` +
+  `<ImageFramePreview>`, không dựng ô upload riêng.
+- **Chốt với user trước khi code**: ① thư viện rich text editor (dependency mới — TipTap hay tương
+  đương, phải hỏi trước khi thêm vào `package.json`); ② quyền publish (ADMIN soạn nháp /
+  SUPER_ADMIN publish?) — khớp với quyết định backend đã chốt ở P15; ③ URL storefront cho nút
+  Preview (env mới).
+- Không có mockup riêng — dựng theo pattern DataTable (skill `create-table`) + form dialog hiện có.
+
+### Việc cần làm
+1. **Màn Bài viết** (`/posts`): bảng (ẢNH · TIÊU ĐỀ · LOẠI · TRẠNG THÁI · NGÀY ĐĂNG · THAO TÁC),
+   lọc theo loại (News/Product Story/Brand Story/Campaign/**Page** = trang tĩnh) + trạng thái.
+   Form tạo/sửa: tiêu đề, slug (tự sinh, sửa được), loại, ảnh cover, tóm tắt, rich text editor,
+   gắn sản phẩm liên quan (SearchSelect), SEO meta (title/description/OG image),
+   hẹn giờ xuất bản. Nút Preview mở tab storefront.
+   **Ảnh**: cover dùng spec `POST_COVER` (16:9 · 1920×1080) và OG image dùng `OG_IMAGE`
+   (1,91:1 · 1200×630, overlay ô vuông 630×630 cho crop 1:1 của mạng xã hội) — cả hai qua
+   `<ImageUploadField>` của Phase 22, **không** để admin đoán kích thước.
+2. **Màn Banner** (`/banners`): bảng theo vị trí (HOME_HERO…), kéo/sửa `sort_order`, khoảng thời
+   gian hiệu lực, CTA link; cảnh báo khi vị trí HOME_HERO không còn banner ACTIVE (trang chủ store
+   rơi về fallback).
+   **Ảnh — phần dễ sai nhất của cả nhóm phase này**: spec đổi **theo `position`** —
+   `HOME_HERO` → 21:10 · 2520×1200; các vị trí full-bleed còn lại → `BANNER_WIDE` 9:2 · 2520×560.
+   Chọn `position` trước ⇒ ô upload tự đổi gợi ý + đổi khung xem trước. Khung xem trước **bắt buộc**
+   bật overlay vùng an toàn (hero: 960×1200 giữa · banner ngang: 1000×560 giữa) kèm câu
+   *"chủ thể và chữ phải nằm trong khung sáng — ngoài vùng này sẽ bị cắt trên điện thoại"*, vì trên
+   mobile client đổi khung sang 4:5 (hero) / 16:9 (banner ngang) và chỉ còn ~38–40 % bề ngang ảnh.
+3. **Quyền**: route/menu gate theo quyết định ② ở trên; gõ thẳng URL sai role → 403.
+4. Bổ sung nhỏ ở màn Đơn hàng: hiển thị **`customerNote`** (ghi chú của khách, backend P14) trong
+   dialog chi tiết — tách rõ khỏi ghi chú nội bộ.
+
+### Output mong muốn (DoD)
+- 2 màn `/posts` + `/banners` chạy **API thật**, đủ 4 trạng thái loading/empty/error/success; sau
+  mỗi mutation `reload()` giữ ngữ cảnh (CONVENTIONS 5.x); cột THAO TÁC theo mẫu 👁 + `(...)`.
+- Kiểm thử UI thật (Chrome headless) các luồng: tạo nháp → sửa → hẹn giờ → publish → unpublish;
+  slug trùng báo lỗi tại ô; gắn/bỏ sản phẩm liên quan; banner đổi `sort_order` + hết hiệu lực;
+  RBAC đủ role (role không đủ quyền không thấy menu + 403 khi gõ URL).
+- **Kiểm chứng chéo với storefront**: bài publish/banner mới xuất hiện trên web client (hoặc qua
+  endpoint store bằng curl nếu client chưa deploy); bài SCHEDULED chưa đến giờ KHÔNG xuất hiện.
+- **Ảnh lên web đúng khung**: upload 1 banner `HOME_HERO` đúng gợi ý (2520×1200) → mở trang chủ
+  client ở **390/768/1440**, chủ thể + chữ không bị cắt; đổi `position` trong form → gợi ý và khung
+  xem trước đổi theo; upload ảnh dưới min → bị chặn tại chỗ, không có request nào bay đi.
+- i18n VI/EN cân key (có quét rò rỉ khoá), subKey `error.post.*`/`error.banner.*` map đủ 2 ngôn ngữ;
+  `types/` đồng bộ api-docs, không bịa field; sort chỉ mở ở field đã đo 200.
+- `npm run lint` + `npm run build` sạch; dữ liệu test dọn sạch; bàn giao
+  `docs/handoff/phien-*.md` + cập nhật PLAN/CLAUDE.md (skill `handoff`).
+
+## Phase 21 — Cấu hình Storefront, Điểm thưởng & Voucher công khai ⏳ **CHỜ backend P13+P16**
+
+### Điều kiện tiên quyết
+- Backend **P13 đã đóng** (mục ① cần `GET/PUT /api/system-config`) và **P16 đã đóng** (mục ②③ cần
+  `isPublic` + `point_transaction`); có handoff tương ứng.
+- **Đo API thật trước khi code** (skill `update-api-doc`) — đặc biệt: shape của `system-config`
+  (key-value hay DTO phẳng), response `point_transaction` sort được field nào.
+- **Chốt với user**: giá trị mặc định 3 config `loyalty.*` hiển thị gợi ý trong form; có cho ADMIN
+  xem (read-only) màn cấu hình không hay chỉ SUPER_ADMIN (đề xuất: chỉ SUPER_ADMIN, như Phase 18).
+- Mục ④ cần có **đơn thật do khách đặt từ storefront** trên môi trường dev (client GĐ2 đã chạy)
+  — nếu client chưa xong thì tạo đơn qua curl `/store/checkout`.
+
+### Việc cần làm
+1. **Màn Cấu hình storefront** (`/store-settings`, SUPER_ADMIN — backend `system_config` P13):
+   chi nhánh bán online (`store.branch_id` — SearchSelect chi nhánh), phí ship
+   (`store.shipping_fee`), ngưỡng freeship, tỷ lệ tích điểm / quy đổi / trần % dùng điểm
+   (`loyalty.*`). Dùng `MoneyInput` cho ô tiền, cảnh báo trước khi đổi chi nhánh online (ảnh
+   hưởng tồn hiển thị trên web).
+2. **Khuyến mại**: thêm toggle **"Công khai trên web bán hàng"** (`isPublic`) vào form + cột/badge
+   ở bảng + bộ lọc.
+3. **CRM**: tab/khối **Điểm thưởng** trong modal chi tiết khách — số dư + lịch sử `point_transaction`
+   (EARN/REDEEM/REVERT, liên kết mã đơn).
+4. Màn Đơn hàng: bộ lọc kênh đã có sẵn tab ONLINE — kiểm tra lại luồng xử lý đơn từ store (xác
+   nhận → đóng gói → giao → thu COD/đối soát QR) chạy trơn với đơn do khách tự đặt; đơn store có
+   `customer_note` + địa chỉ từ sổ địa chỉ.
+
+### Output mong muốn (DoD)
+- Màn `/store-settings` đọc/ghi thật: đổi phí ship → `cart/preview` phía store trả phí mới (kiểm
+  bằng curl); đổi chi nhánh online có dialog xác nhận; role khác SUPER_ADMIN không thấy menu + 403.
+- Toggle `isPublic` ghi thật; kiểm chứng chéo: mã bật công khai xuất hiện ở
+  `GET /store/public/vouchers`, tắt thì biến mất (curl).
+- Khối điểm trong CRM khớp backend: complete 1 đơn test có `customerId` → số dư + dòng EARN hiện
+  đúng; duyệt trả hàng → dòng REVERT.
+- Mục ④ có **biên bản kiểm tra luồng** đơn store end-to-end trên admin (xác nhận → pack → ship →
+  thu COD/QR → complete); mọi lệch phát hiện được ghi thành `backend-request` (skill
+  `request-backend`), không sửa ngầm.
+- i18n VI/EN cân key; `types/` đồng bộ api-docs; sort chỉ mở field đã đo 200; lint + build sạch;
+  dữ liệu test dọn; bàn giao `docs/handoff/phien-*.md` + cập nhật PLAN (skill `handoff`).
+
+> **Ngoài phạm vi nhóm phase này** (chốt 2026-09-30): màn kiểm duyệt đánh giá (không có module
+> đánh giá) · quản lý bộ sưu tập · cấu hình cổng thanh toán ngoài · hạng thành viên.
