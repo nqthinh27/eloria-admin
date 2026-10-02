@@ -1,7 +1,9 @@
 # Backend — Quy ước chung & chỉ mục domain
 
 > Tri thức backend **đã kiểm chứng bằng API thật**, tách từ CLAUDE.md ngày 2026-09-13.
-> Trạng thái: **118 path** trên `/v3/api-docs/api` (khảo sát gần nhất 2026-09-13).
+> Trạng thái: **118 path** trên `/v3/api-docs/api` (khảo sát gần nhất 2026-09-13) — ⚠️ số này **chưa
+> đo lại** sau khi backend xoá `POST /register` (2026-10-01), mục auth dưới đây cập nhật theo
+> `fe-handoff-phase12-admin.md` chứ không phải đo thật.
 > Muốn khảo sát/đo lại ⇒ skill **update-api-doc** — **chỉ khi user ra lệnh** (CONVENTIONS mục 1).
 > Dòng thời gian thay đổi: [docs/history.md](../history.md).
 
@@ -9,7 +11,7 @@
 
 | Domain | File | Màn FE | Tài liệu backend (`35.1.eloria-backend/docs/api/`) |
 |---|---|---|---|
-| Hệ thống: auth · tài khoản · nhân viên · chi nhánh · nhật ký · địa chỉ | *(file này, mục cuối)* | Đăng nhập · Nhân viên · Chi nhánh · Nhật ký hệ thống | — |
+| Hệ thống: auth · tài khoản · nhân viên · chi nhánh · nhật ký · địa chỉ | *(file này, mục cuối)* | Đăng nhập · Nhân viên · Chi nhánh · Nhật ký hệ thống | `fe-handoff-phase12-admin.md` |
 | Sản phẩm · SKU · danh mục · thương hiệu · màu · size · **giá vốn** | [san-pham.md](san-pham.md) | Sản phẩm · Danh mục SP | — |
 | Khách hàng (toàn cục — Phase 3b) | [khach-hang.md](khach-hang.md) | Khách hàng | `phase-3b-khach-toan-cuc-review.md` |
 | Đơn hàng · thanh toán · giảm giá 2 tầng · luồng POS · hoá đơn · tồn-theo-đơn | [don-hang.md](don-hang.md) | POS · Đơn hàng | `ban-hang-p6.md` |
@@ -65,9 +67,23 @@ Nguồn sự thật chính thức vẫn là `/v3/api-docs/api` — không hardco
 - `POST /authenticate` body `LoginReqDTO = {username, password, rememberMe}` — field là **`username`**,
   không phải email. **Luôn gửi `rememberMe: true`** (user chốt): backend **chỉ set cookie khi cờ này bật**,
   và FE không hiển thị checkbox "Ghi nhớ đăng nhập".
-- Cookie `refresh_token`: `path=/v1.0/api/refresh; HttpOnly; Max-Age=864000` (10 ngày), không `Secure`,
+- Cookie `refresh_token`: `path=/v1.0/api/refresh; HttpOnly; Max-Age=864000` (10 ngày),
   không `SameSite` ⇒ **bắt buộc same-origin qua Vite dev proxy** (B2 — production phải cùng domain
-  hoặc backend bật `SameSite=None; Secure`).
+  hoặc backend bật `SameSite=None; Secure`). Cờ `Secure` **theo môi trường** (2026-10-01): dev qua
+  HTTP vẫn tắt, prod sau HTTPS mới bật — tên/path cookie không đổi, FE không phải sửa gì.
+- ⚠️ **Mọi lý do đăng nhập sai đều trả 1 subKey duy nhất `error.login.fail`** (2026-10-01, chống dò
+  tài khoản): sai mật khẩu, email/username không tồn tại, tài khoản đã xoá mềm — tất cả cùng
+  `{code: 15, subKey: "error.login.fail"}`. `error.email.notExisted` · `error.user.notExisted` ·
+  `error.user.notAvailable` **không còn xuất hiện ở luồng đăng nhập** (vẫn dùng ở chỗ khác, vd tạo
+  nhân viên trùng email) ⇒ màn đăng nhập **không được rẽ nhánh thông báo theo subKey**.
+- `POST /authenticate` · `/activate-account` · `/forgot-password` · `/reset-password` có **rate limit**
+  (theo username/email **và** IP): vượt ngưỡng ⇒ **429** `{code: 25, subKey: "error.rateLimit.exceeded"}`.
+  Các màn auth phải hiện thông báo chung và **thoát trạng thái loading** (đã map sẵn ở `i18n/errors`).
+- JWT access token có claim `aud: "admin"` (tách audience admin/storefront) — **FE không đọc claim này**,
+  vẫn gửi `Authorization: Bearer <token>` như cũ.
+- ❌ `POST /register` **đã bị xoá** (404 từ 2026-10-01): nhân viên không tự đăng ký, tài khoản
+  STAFF/ADMIN do ADMIN/SUPER_ADMIN tạo ở màn Nhân viên. Khách storefront đăng ký qua
+  `/v1.0/store/**` — không liên quan web admin.
 - `SysUserDTO` mang `role` (`CUSTOMER | STAFF | ADMIN | SUPER_ADMIN`), `branchId` (null với SUPER_ADMIN),
   `langKey` — nguồn dựng menu theo role và khoá bộ chọn chi nhánh. *(`coverUrl` đã bị xoá 2026-08-11.)*
 
@@ -158,16 +174,19 @@ SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
 - Ngoài bậc role, backend còn **tự giới hạn phạm vi dữ liệu** (ghi trong `description` từng endpoint):
   ADMIN chỉ thấy/tạo nhân viên chi nhánh mình, chỉ gán được role STAFF; điều chuyển chi nhánh chỉ
   SUPER_ADMIN. FE chặn ở UI nhưng **không coi đó là lớp bảo mật duy nhất**.
-- ⚠️ `CUSTOMER` là role khách storefront, **không đăng nhập web admin** — endpoint `[CUSTOMER]`
-  (`/account/me`, `/logout`) chỉ có nghĩa "cần đã đăng nhập".
+- ⚠️ `CUSTOMER` là role khách storefront, **không đăng nhập web admin**. Từ 2026-10-01 (Phase 12
+  backend) catch-all `/v1.0/api/**` yêu cầu **tối thiểu STAFF** — `/account/me` · `/logout` ·
+  `/account/change-password` · `/sys-user/update-avatar` đã đổi tag `[CUSTOMER]` → `[STAFF]`,
+  không còn endpoint nào chỉ cần "đã đăng nhập". Không ảnh hưởng web admin (luôn đăng nhập
+  STAFF/ADMIN/SUPER_ADMIN); token role lạ gọi các endpoint này giờ nhận **403** thay vì 200.
 
 ## Domain hệ thống — auth · tài khoản · nhân viên · chi nhánh · nhật ký
 
 | Nhóm | Role | Endpoint |
 |---|---|---|
-| Auth | `ANONYMOUS` | `POST /authenticate` · `/refresh` · `/register` · `/activate-account?code=` · `/forgot-password` · `/reset-password` |
-| Đăng xuất | `CUSTOMER` | `POST /logout` |
-| Tài khoản đang đăng nhập | `CUSTOMER` | `GET /account/me` · `POST /account/change-password` · `POST /sys-user/update-avatar` |
+| Auth | `ANONYMOUS` | `POST /authenticate` · `/refresh` · `/activate-account?code=` · `/forgot-password` · `/reset-password` |
+| Đăng xuất | `STAFF` | `POST /logout` |
+| Tài khoản đang đăng nhập | `STAFF` | `GET /account/me` · `POST /account/change-password` · `POST /sys-user/update-avatar` |
 | Ảnh | `ANONYMOUS` | `GET /image?imageUrl=` |
 | Địa chỉ hành chính | `STAFF` | `GET /administrative-address/provinces` · `/wards?provinceCode=` |
 | Chi nhánh — đọc | `STAFF` | `POST /branch/search` · `GET /branch/{id}` |

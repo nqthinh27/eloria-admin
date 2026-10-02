@@ -26,7 +26,14 @@ export default {
             invalid: 'Mã kích hoạt không hợp lệ hoặc đã hết hạn.',
         },
 
-        // Tài khoản người dùng
+        /*
+         * Tài khoản người dùng.
+         *
+         * ⚠️ `notExisted` / `notAvailable` (và `email.notExisted` bên dưới) **không còn phát ra ở
+         * luồng đăng nhập** từ 2026-10-01 — backend gộp mọi lý do login sai về `error.login.fail`
+         * để chống dò tài khoản. Chúng chỉ còn nổ ở chỗ khác (vd tạo nhân viên trùng email), nên
+         * **đừng** rẽ nhánh thông báo đăng nhập theo các key này.
+         */
         user: {
             notExisted: 'Tài khoản không tồn tại.',
             notAvailable: 'Tài khoản không khả dụng.',

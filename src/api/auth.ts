@@ -28,7 +28,7 @@ export const authApi = {
     },
 
     /**
-     * `[CUSTOMER] POST /logout` — thu hồi refresh token và xoá cookie.
+     * `[STAFF] POST /logout` — thu hồi refresh token và xoá cookie.
      *
      * Endpoint này BẮT BUỘC có `Authorization`, mà lúc đăng xuất access token
      * thường đã hết hạn ⇒ dễ nhận 401. Vì vậy tắt refresh và tắt toast:
@@ -41,7 +41,7 @@ export const authApi = {
         })
     },
 
-    /** `[CUSTOMER] GET /account/me`. */
+    /** `[STAFF] GET /account/me`. */
     me() {
         return apiClient.get<SysUser>('/account/me')
     },
@@ -74,7 +74,7 @@ export const authApi = {
         return apiClient.post<null>('/reset-password', payload, { skipErrorToast: true })
     },
 
-    /** `[CUSTOMER] POST /account/change-password`. */
+    /** `[STAFF] POST /account/change-password`. */
     changePassword(payload: ChangePasswordReq) {
         return apiClient.post<null>('/account/change-password', payload, { skipErrorToast: true })
     },
