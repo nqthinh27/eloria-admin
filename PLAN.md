@@ -3066,12 +3066,18 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
    | Màn | Trường | Mã spec |
    |---|---|---|
    | Sản phẩm (Phase 9) | `image_link1..10` | `PRODUCT` |
-   | Danh mục SP (Phase 9) | `imageUrl` | `CATEGORY_TILE` |
+   | Danh mục SP (Phase 9) | `imageUrl` | `CATEGORY_TILE` → **sẽ thay bằng `imageLink1/2` ở Phase 23** |
    | Thương hiệu (Phase 19) | `logoUrl` | `LOGO_SQUARE` |
    | Nhân viên (Phase 7) | `imageUrl` | `LOGO_SQUARE` (1:1, `object-cover`) |
 
 6. **i18n VI/EN** namespace `image` (nhãn tỉ lệ, thông điệp chặn/cảnh báo, chú thích vùng an toàn) —
    **không nhúng số vào chuỗi dịch**, số lấy từ `IMAGE_SPEC` và nội suy.
+
+7. **Chú thích "ảnh hover" cho 2 slot đầu của form sản phẩm** (user chốt 2026-10-06 — web khách đổi
+   ảnh sản phẩm khi rê chuột ở Trang chủ + trang danh sách): slot 1 *"Ảnh hiện mặc định ở Trang chủ
+   và trang danh sách sản phẩm"*, slot 2 *"Ảnh hiện khi khách rê chuột vào sản phẩm"*, slot 3–10
+   *"chỉ hiện ở trang chi tiết sản phẩm"*. **Không cần backend** (`image_link1..10` đã có sẵn) nên
+   làm luôn ở phase này; phần danh mục tương ứng nằm ở **Phase 23** (chờ backend P13.1).
 
 ### Output mong muốn (DoD)
 - 4 thành phần ở trên chạy thật trên **Sản phẩm · Danh mục · Thương hiệu · Nhân viên**; không màn
@@ -3192,3 +3198,123 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 > **Ngoài phạm vi nhóm phase này** (chốt 2026-09-30): màn kiểm duyệt đánh giá (không có module
 > đánh giá) · quản lý bộ sưu tập · cấu hình cổng thanh toán ngoài · hạng thành viên.
+
+---
+
+## Phase 23 — Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định ⏳ **CHỜ backend P13.1**
+
+> **Vì sao có phase này.** User chốt 2026-10-06: ô danh mục ở Trang chủ **đổi ảnh khi rê chuột**,
+> trang Sản phẩm có **cover chạy slideshow theo danh mục đang lọc**, và một **danh mục mặc định**
+> cấp ảnh cho banner cuối Trang chủ + cover trang Sản phẩm khi khách không lọc gì. Admin là nơi
+> duy nhất nhập những ảnh đó, nên **mỗi ô upload phải nói rõ ảnh sẽ hiện ở đâu và khi nào** —
+> không có chú thích thì người nhập liệu không thể biết "Ảnh 2" khác "Ảnh 1" chỗ nào.
+>
+> **Nguồn số liệu ảnh**: [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md)
+> (`CATEGORY_TILE` 4:5 cho tile · `BANNER_WIDE` 9:2 cho cover). **Dựng trên Phase 22** — dùng lại
+> `<ImageUploadField>` / `<ImageSpecHint>` / `<ImageFramePreview>`, **không viết ô upload riêng**.
+
+### Điều kiện tiên quyết
+- **Phase 22 đã đóng** (4 thành phần ảnh dùng chung + `src/lib/image-spec.ts`). Làm Phase 23 trước
+  Phase 22 ⇒ lại đẻ ô upload rời rồi phải sửa lại.
+- **Backend P13.1 đã đóng + có `fe-handoff-phase13_1-admin.md`**: `category` có `imageLink1`,
+  `imageLink2`, `coverLink1..5`, `isDefault`; `CategorySearchReqDTO` lọc được `isDefault`.
+- **Đo API thật trước khi code** (skill `update-api-doc`): shape thật của 8 trường mới trên
+  `CategoryResDTO`, và xác nhận **bật default tự gỡ default cũ phía server** (FE chỉ gửi 1 request).
+- **✅ ĐÃ CHỐT (user 2026-10-06)** — số danh mục mặc định trong bảng luôn là **0 hoặc 1**, và hai
+  thao tác xử lý **khác nhau**:
+
+  | Thao tác | Kết quả | UI |
+  |---|---|---|
+  | Bật mặc định cho B khi A đang giữ | A **tự động tắt**, B thành mặc định (0→1 hoặc 1→1) | **Không popup** — làm luôn, báo toast *"Đã chuyển danh mục mặc định từ A sang B"* |
+  | Tắt mặc định của A, không chọn ai khác | Bảng về **0 danh mục mặc định** | **Popup cảnh báo bắt buộc xác nhận** trước khi lưu — nêu rõ *"Trang chủ sẽ không còn khối ảnh ngang cho tới khi bạn đặt một danh mục mặc định khác"* |
+
+  Lý do lệch nhau: chuyển A→B **không làm mất gì** trên web khách (vẫn có ảnh, chỉ đổi ảnh) nên
+  chặn bằng dialog chỉ làm chậm; còn về 0 default là **mất hẳn một khối trên Trang chủ** — đó mới
+  là thứ đáng dừng lại hỏi.
+
+### Việc cần làm
+
+1. **Form danh mục** (`src/pages/product/components/category-form-dialog.tsx`) — thêm một khối
+   **"Hiển thị trên web bán hàng"**, tách khỏi khối thông tin nghiệp vụ:
+
+   | Ô | Spec ảnh | Chú thích **bắt buộc hiện trên giao diện** |
+   |---|---|---|
+   | **Ảnh danh mục 1** (`imageLink1`) | `CATEGORY_TILE` | *"Ảnh hiện mặc định ở lưới Danh mục ngoài Trang chủ."* |
+   | **Ảnh danh mục 2** (`imageLink2`) | `CATEGORY_TILE` | *"Ảnh hiện khi khách **rê chuột** vào ô danh mục ở Trang chủ. Bỏ trống ⇒ rê chuột không đổi ảnh."* |
+   | **Ảnh bìa 1–5** (`coverLink1..5`) | `BANNER_WIDE` | *"Ảnh bìa đầu trang Sản phẩm khi khách lọc theo danh mục này. Có nhiều ảnh thì **tự chuyển mỗi 4 giây, lặp lại vô tận**; thứ tự chạy theo số thứ tự ô."* |
+   | **Danh mục mặc định** (`isDefault`, `Switch`) | — | *"Ảnh bìa của danh mục này được dùng cho banner cuối Trang chủ và cho trang Sản phẩm khi khách không lọc danh mục. **Chỉ một danh mục được đặt mặc định** — bật ở đây sẽ tự tắt ở danh mục đang giữ. Không có danh mục mặc định ⇒ **khối ảnh ngang cuối Trang chủ bị ẩn hẳn**."* |
+
+   - Dưới cả hai ô tile thêm một dòng tổng hợp: *"Bỏ trống cả hai ⇒ web dùng ảnh mặc định của hệ
+     thống."* (đúng hành vi FE, để admin biết không bắt buộc nhập).
+   - Ô cover **cho phép thủng lỗ chỗ** (điền 1 và 4, bỏ 2–3) — backend tự nén lại; FE **không** ép
+     điền liên tiếp, chỉ hiện gợi ý *"các ô trống được bỏ qua"*.
+   - `<ImageFramePreview spec="BANNER_WIDE">` của Phase 22 cho ô cover: giữ overlay **vùng an toàn**
+     (1000 × 560 px chính giữa) + thêm cảnh báo *"tiêu đề danh mục do web tự vẽ đè lên nửa trái ảnh
+     — tránh ảnh đã có sẵn chữ ở vùng đó"*.
+
+2. **Xem trước đúng hành vi thật**, không chỉ đúng khung — đây là phần dễ bị cắt bớt nhất:
+   - **`<HoverSwapPreview>`**: ô 4:5 hiện `imageLink1`, rê chuột đổi sang `imageLink2` — y hệt web
+     khách. Chỉ có 1 ảnh ⇒ hiện ghi chú *"không có ảnh hover"* thay vì khung trống.
+   - **`<CoverSlidesPreview>`**: chạy 4s/ảnh, lặp, có nút tạm dừng để admin soi từng ảnh. Dùng
+     `prefers-reduced-motion` ⇒ đứng yên ở ảnh đầu (khớp FE).
+   - Cả hai **tái dùng** `aspect-ratio` từ `IMAGE_SPEC` (Phase 22), không gõ tỉ lệ tay.
+
+3. **Bảng danh mục** (`CategoryListPage.tsx`):
+   - Cột/badge **"Mặc định"** cho dòng `isDefault`; bộ lọc *Tất cả / Chỉ danh mục mặc định*.
+   - **Cảnh báo khi chưa có danh mục mặc định nào** (banner nhẹ trên bảng): *"Chưa đặt danh mục mặc
+     định — **banner ảnh ngang cuối Trang chủ đang bị ẩn**, và trang Sản phẩm không có ảnh bìa khi
+     khách không lọc danh mục."* + nút mở form. **Không** viết "đang dùng ảnh dự phòng" — user chốt
+     2026-10-06 là **ẩn hẳn, không có ảnh thay thế**; cảnh báo nói sai thì admin sẽ tưởng web vẫn
+     có ảnh.
+   - **Popup cảnh báo khi về 0 default** — áp cho **cả 3 đường** dẫn tới trạng thái đó, không chỉ
+     công tắc trên form: ① tắt công tắc "Danh mục mặc định", ② chuyển danh mục mặc định sang
+     `INACTIVE`, ③ xoá danh mục mặc định. Cùng một nội dung: *"Trang chủ sẽ không còn khối ảnh ngang
+     cho tới khi bạn đặt một danh mục mặc định khác."* → Huỷ / Vẫn tiếp tục. Đây là **cảnh báo, không
+     phải lỗi** — backend cho phép về 0 default, bấm tiếp tục là lưu được.
+   - **Chuyển mặc định A→B thì KHÔNG popup** (bảng ở phần tiên quyết) — chỉ toast. Đừng dùng chung
+     một dialog cho cả 2 ca.
+   - Cột ảnh đại diện trong bảng đọc `imageLink1` (fallback `imageUrl` cũ cho dữ liệu chưa backfill).
+
+4. **Modal chi tiết danh mục** (`category-detail-modal.tsx`, chỉ đọc): hiện đủ 2 tile + dải cover +
+   trạng thái mặc định, dùng lại 2 component xem trước ở mục 2.
+
+5. **Dọn `imageUrl` cũ**: form **bỏ ô `imageUrl`**, ghi vào `imageLink1`; backend tự ghi song song
+   trong thời gian quá độ (P13.1) và xoá cột ở P17 ⇒ FE **không** dựng ô riêng, **không** đọc
+   `imageUrl` ở chỗ nào khác ngoài fallback cột ảnh ở mục 3.
+
+6. **Form sản phẩm** — chú thích hover cho 2 slot đầu (**không cần backend**, `image_link1..10` đã
+   có sẵn): dưới slot 1 *"Ảnh hiện mặc định ở Trang chủ và trang danh sách sản phẩm"*, dưới slot 2
+   *"Ảnh hiện khi khách rê chuột vào sản phẩm ở Trang chủ và trang danh sách"*; slot 3–10 giữ nguyên
+   (*"chỉ hiện ở trang chi tiết sản phẩm"*). Kèm `<HoverSwapPreview>` cho cặp 1–2.
+   → Phần này **chạy được ngay cùng Phase 22**, không phải chờ P13.1; tách ra đây chỉ để gom một chỗ.
+
+7. **i18n VI/EN** — mọi chú thích ở trên nằm trong namespace `category`/`product`, **không nhúng số**
+   (4 giây, 4:5, 2520×560 nội suy từ `IMAGE_SPEC` + hằng `COVER_ROTATE_MS`).
+
+### Output mong muốn (DoD)
+- Form danh mục lưu thật đủ 8 trường mới; mở lại hiện đúng; ô cover thủng lỗ chỗ lưu/đọc lại không
+  bị dồn sai thứ tự.
+- **Bất biến "0 hoặc 1 mặc định" đo thật trên UI**: ① A đang mặc định → bật cho B → bảng chỉ còn
+  **đúng 1** badge "Mặc định" (reload vẫn đúng), **không popup**, toast nêu tên A; ② tắt mặc định
+  của A → **popup hiện ra**, bấm Huỷ ⇒ A giữ nguyên mặc định (không lưu gì), bấm Tiếp tục ⇒ bảng
+  còn **0** badge + banner cảnh báo trên bảng hiện ra; ③ popup cũng hiện khi chuyển A sang INACTIVE
+  và khi xoá A; ④ bắn 2 tab cùng bật mặc định → không màn nào hiện lỗi 500, UI tự đồng bộ sau
+  refetch. Không có lúc nào bảng hiện **2 badge** "Mặc định".
+- **Chú thích hiện đủ** ở mọi ô mới (kiểm bằng ảnh chụp màn trong file bàn giao) — tiêu chí đóng:
+  người chưa từng dùng hệ thống đọc form **không cần hỏi** "Ảnh 2 dùng làm gì".
+- **Xem trước khớp web khách**: cùng một bộ ảnh, `<HoverSwapPreview>` và `<CoverSlidesPreview>` ở
+  admin đổi ảnh **cùng thời điểm và cùng thứ tự** với storefront (GĐ1.5) — chụp 2 bên đặt cạnh nhau.
+- Trạng thái rỗng không vỡ: danh mục 0 ảnh → tile hiện ảnh mặc định, cover hiện khối trống có chữ
+  hướng dẫn; **0 danh mục mặc định → banner cảnh báo hiện ra**, và kiểm chéo sang storefront thấy
+  **khối ảnh ngang cuối Trang chủ biến mất thật** (đúng điều cảnh báo nói).
+- Kiểm tra ảnh theo §5 `image-spec.md` vẫn chạy trên ô mới (dưới min → chặn; lệch tỉ lệ → cảnh báo +
+  xem trước phần bị cắt; >1,5 MB với cover → chặn trước khi gửi request).
+- Không thêm dependency mới (hover bằng CSS, slideshow bằng `setInterval` + `IMAGE_SPEC`).
+- i18n VI/EN cân key; `types/` đồng bộ api-docs; `npm run lint` + `npm run build` sạch; ảnh/dữ liệu
+  test dọn sạch; bàn giao `docs/handoff/phien-*.md` + cập nhật PLAN/CLAUDE.md (skill `handoff`).
+
+### Ngoài phạm vi
+- Ảnh cover riêng cho mobile (IMG-1 trong `image-spec.md`) — v1 dùng **vùng an toàn**, không thêm cột.
+- Sắp xếp cover bằng kéo-thả — 5 ô cố định đủ dùng, kéo-thả cần thêm thư viện (CONVENTIONS §5).
+- Nhiều danh mục mặc định theo mùa/chiến dịch, hẹn giờ đổi cover — nếu PO muốn thì đó là module
+  `banner` (backend P15), không nhét vào `category`.
