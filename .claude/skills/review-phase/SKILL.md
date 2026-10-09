@@ -5,9 +5,35 @@ description: Review code sau khi một agent hoàn thành task/phase (checklist 
 
 # Review phase / Rà soát luật
 
-Hai chế độ. Cả hai đều kết thúc bằng `npm run lint` + `npm run build` và báo cáo dạng bảng.
+Hai chế độ. Cả hai đều kết thúc bằng `npm run lint` + `npm run build` **+ kiểm chứng UI thực tế bằng
+trình duyệt (xem mục "Kiểm chứng UI bằng browser — BẮT BUỘC")** và báo cáo dạng bảng.
 Nguyên tắc chung: phát hiện vấn đề **ngoài phạm vi** ⇒ báo cáo (việc backend thì đề xuất thành mục
 BE# ở PLAN mục B — dùng skill `request-backend`), **không tự sửa lan man**.
+
+## Kiểm chứng UI bằng browser — BẮT BUỘC (cả 2 chế độ)
+
+Đọc code + lint + build **chưa đủ** để kết luận một thay đổi UI đúng. Mọi lần review phải **kết nối
+trình duyệt và chạy màn thật**:
+
+1. **Nạp tool Chrome** (`mcp__claude-in-chrome__*`) bằng **một** lần ToolSearch (`tabs_context_mcp`,
+   `navigate`, `computer`, `read_page`, `find`, `form_input`, `read_network_requests`,
+   `read_console_messages`). Gọi `tabs_context_mcp` trước, mở **tab mới** của phiên (không dùng lại tab cũ).
+2. **Chạy app**: `npm run dev` nền (backend `localhost:8080` phải sống — kiểm bằng curl). Đăng nhập bằng
+   **tài khoản test** ở `docs/backend/README.md` (chỉ trên `localhost`; không in mật khẩu ra báo cáo). Sau
+   khi đăng nhập, **vào màn bằng menu**, đừng `navigate` thẳng URL (reload mất token in-memory).
+3. **Với từng màn/luồng bị đổi**: thao tác thật theo checklist/DoD của phase (tạo/sửa/xoá, bật-tắt, lọc,
+   sort, popup xác nhận, nhánh lỗi…), chụp màn hình, và **đối chiếu dữ liệu với API thật** (curl/fetch
+   cùng tài khoản) thay vì tin UI. Kiểm tab **Network** (không gọi trùng, đúng body/method) và **Console**
+   (không lỗi).
+4. **RBAC**: đăng nhập lại từng role liên quan, kiểm menu ẩn + gõ URL thẳng bị chặn.
+5. **Dọn dẹp**: dữ liệu/tệp test tạo ra phải xoá hoặc ghi vào mục "Dữ liệu test còn sót"; tắt dev server
+   đã mở; đóng tab đã mở.
+6. **Báo cáo tách bạch** ba nhóm: ✅ *đã nhìn tận mắt trên UI* (kèm role + bước) · 🔌 *đã đo bằng API* ·
+   ⚠️ *chưa kiểm* (kèm lý do). **Không kết luận "0 vi phạm" cho luồng UI chưa chạy thật.**
+7. Không kết nối được browser (tiện ích chưa bật, backend không chạy, tool lỗi sau 2–3 lần) ⇒ **dừng và
+   báo user**, ghi 🔴/⚠️ ở đầu báo cáo "UI chưa được kiểm chứng thực tế" — đừng im lặng bỏ qua bước này.
+   Việc không đụng UI (chỉ docs/backend, type thuần) thì ghi rõ lý do miễn.
+8. Luồng khó dựng (race 2 tab, upload file qua hộp thoại chọn file…) ⇒ nêu ra là chưa kiểm, đừng suy diễn.
 
 ## Chế độ 1 — Review sau task/phase (CONVENTIONS mục 10)
 
@@ -40,6 +66,9 @@ làm — skill `handoff` sinh ra thứ này). Không có thì tự dựng từ `
 9. **Tài liệu** (mục 9): thay đổi kiến trúc ⇒ CONVENTIONS/CLAUDE.md/docs đã cập nhật **cùng commit**;
    thay đổi hành vi API ⇒ `docs/backend/<domain>.md` đã sửa.
 
+10. **Kiểm chứng UI thực tế bằng browser** (mục riêng ở trên) — đã chạy đủ luồng của DoD phase chưa,
+    bằng chứng (ảnh chụp/bước/role) đâu.
+
 **Đầu ra** — bảng phát hiện, sắp theo mức độ:
 
 | # | File:line | Mức độ | Vi phạm mục | Vấn đề | Cách sửa đề xuất |
@@ -61,6 +90,7 @@ Khi user chốt một luật mới (thường sau một vòng review UI của us
    cứng" thay vì nhắc từng màn — đúng khẩu vị đã dùng cho 5.6 (3 luật đầu do DataTable ép).
 4. **Lập bảng Trước/Sau** cho từng nơi (format như handoff 2026-09-12: "Bảng | Sửa gì").
 5. Luật bảng ⇒ cập nhật bảng "hiện trạng cột ẩn sẵn" trong skill `create-table` nếu có thay đổi.
-6. Chạy lint + build; kiểm bằng UI thật nếu có trình duyệt, không có thì kiểm logic tầng API và
-   **ghi rõ là chưa nhìn tận mắt** (đừng báo cáo quá mức đã kiểm chứng).
+6. Chạy lint + build; **kiểm bằng UI thật qua browser** theo mục "Kiểm chứng UI bằng browser — BẮT
+   BUỘC" cho mọi màn bị sửa (không còn là tuỳ chọn); chỗ nào chưa chạy được thì **ghi rõ là chưa nhìn
+   tận mắt**.
 7. Kết quả ghi vào bàn giao phiên (skill `handoff`).

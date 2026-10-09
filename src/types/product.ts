@@ -165,17 +165,36 @@ export type Category = {
     slug: string
     level: number
     sortOrder: number | null
+    /**
+     * @deprecated P13.1 — luôn trùng `imageLink1`, backend xoá cột ở P17. Chỉ đọc làm dự phòng cho
+     * cột ảnh ở bảng; **không** dựng ô nhập riêng.
+     */
     imageUrl: string | null
     status: EntityStatus
     parentId: string | null
     parentName: string | null
+    /** Mô tả hiển thị dưới tên danh mục trên web khách (≤500). Khác `metaDescription` (SEO). */
+    description: string | null
+    /** Ảnh ô danh mục ở lưới "Shop by category" Trang chủ — tỉ lệ 4:5. */
+    imageLink1: string | null
+    /** Ảnh hiện khi khách rê chuột lên ô danh mục; trống ⇒ giữ nguyên `imageLink1`. */
+    imageLink2: string | null
+    /** 5 ô cover slideshow đầu trang Sản phẩm — có thể thủng lỗ chỗ, backend tự bỏ ô trống. */
+    coverLink1: string | null
+    coverLink2: string | null
+    coverLink3: string | null
+    coverLink4: string | null
+    coverLink5: string | null
+    /** Toàn bảng chỉ 0 hoặc 1 dòng `true`. */
+    isDefault: boolean | null
     createdDate: string
     lastModifiedDate: string
 }
 
-/** `CategorySearchReqDTO` — `parentId` lọc theo danh mục cha **trực tiếp**. */
+/** `CategorySearchReqDTO` — `parentId` lọc theo danh mục cha **trực tiếp**; `isDefault` null ⇒ không lọc. */
 export type CategorySearchReq = SearchReq & {
     parentId?: string
+    isDefault?: boolean
 }
 
 /**
@@ -185,10 +204,27 @@ export type CategorySearchReq = SearchReq & {
 export type CategoryPayload = {
     code: string
     name: string
-    /** Bỏ trống = danh mục gốc (level 0). Không được chọn chính nó hoặc con cháu của nó. */
+    /**
+     * ⚠️ **Full-update**: bỏ field (hoặc `null`) ⇒ backend hiểu là "chuyển thành danh mục gốc" và set
+     * `level = 0` (khác các field nội dung bên dưới). Form sửa **luôn** phải gửi cha hiện tại.
+     * Không được chọn chính nó hoặc con cháu của nó.
+     */
     parentId?: string
     sortOrder?: number
-    imageUrl?: string
+    /**
+     * Các field nội dung (P13.1): **bỏ hẳn/`null` ⇒ giữ nguyên**, **`""` ⇒ xoá** (cột về null).
+     * Form sửa chỉ gửi `""` cho ô **vừa bị xoá** (trước có giá trị); ô vốn trống thì bỏ field — backend lưu `""` chứ không về `null` ở cover/description.
+     */
+    description?: string
+    imageLink1?: string
+    imageLink2?: string
+    coverLink1?: string
+    coverLink2?: string
+    coverLink3?: string
+    coverLink4?: string
+    coverLink5?: string
+    /** Bật cho B khi A đang giữ ⇒ chỉ cần 1 request, server tự gỡ A. Bỏ field ⇒ giữ nguyên. */
+    isDefault?: boolean
 }
 
 /** `BrandResDTO`. */

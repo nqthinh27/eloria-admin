@@ -1,4 +1,4 @@
-import { apiClient, search } from '@/lib/api-client'
+import { apiClient, search, type ApiRequestOptions } from '@/lib/api-client'
 import type {
     BaseListRes,
     BaseListResStatus,
@@ -122,14 +122,20 @@ export const categoryApi = {
         return apiClient.get<Category>(`/category/${id}`)
     },
 
-    /** `[SUPER_ADMIN] POST /category`. */
-    create(payload: CategoryPayload) {
-        return apiClient.post<Category>('/category', payload)
+    /**
+     * `[SUPER_ADMIN] POST /category`. `options.skipErrorToast` cho màn tự xử lý lỗi 409 khi bật danh
+     * mục mặc định (xem `CategoryListPage`).
+     */
+    create(payload: CategoryPayload, options?: ApiRequestOptions) {
+        return apiClient.post<Category>('/category', payload, options)
     },
 
-    /** `[SUPER_ADMIN] PUT /category/{id}`. */
-    update(id: string, payload: CategoryPayload) {
-        return apiClient.put<Category>(`/category/${id}`, payload)
+    /**
+     * `[SUPER_ADMIN] PUT /category/{id}` — ⚠️ `parentId` theo ngữ nghĩa **full-update** (bỏ field ⇒ danh mục
+     * gốc), các field nội dung thì bỏ field = giữ nguyên, `""` = xoá. Chi tiết ở `CategoryPayload`.
+     */
+    update(id: string, payload: CategoryPayload, options?: ApiRequestOptions) {
+        return apiClient.put<Category>(`/category/${id}`, payload, options)
     },
 
     /** `[SUPER_ADMIN] POST /category/update-status`. */

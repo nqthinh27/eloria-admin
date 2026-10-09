@@ -59,8 +59,9 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
   **Phase 18 (Quản lý Tài khoản ngân hàng, chỉ SUPER_ADMIN) đã xong 2026-09-20** — route
   `/bank-accounts`, đặc tả ở [docs/backend/ngan-hang-qr.md](docs/backend/ngan-hang-qr.md).
   **Phase 19 (Quản lý Thương hiệu, chỉ SUPER_ADMIN) đã xong 2026-09-20** — route `/brands`.
+  **Phase 22 + 23 (chuẩn ảnh CMS · ảnh danh mục & danh mục mặc định) xong phần FE 2026-10-10** — còn upload file chờ **BE31**, chi tiết ở PLAN.
 - Backend: **118 path** (2026-09-13). Việc chờ backend còn mở: **BE2 · BE3 · BE4 · BE6 · BE7 · BE10 ·
-  BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30** — chi tiết ở PLAN mục B.
+  BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30 · BE31 · BE32 · BE33 · BE34** — chi tiết ở PLAN mục B.
 - Dòng thời gian phase & khảo sát backend: [docs/history.md](docs/history.md) ·
   bàn giao từng phiên: [docs/handoff/](docs/handoff/).
 
@@ -86,7 +87,8 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
 src/
 ├─ api/          # service theo domain (auth, staff, order, return, shift, …) — 1 file ≈ 1 domain backend
 ├─ components/   #   dùng chung: data-table/, detail-modal, search-select, async-suggest,
-│  │             #   date-input, money-input, page-header, pill-tabs, confirm-dialog, can (RBAC), shell/
+│  │             #   date-input, money-input, page-header, pill-tabs, confirm-dialog, can (RBAC), shell/,
+│  │             #   image/ (hint · khung xem trước · ô nhập link ảnh · hover-swap · slideshow — chuẩn ảnh `lib/image-spec.ts`)
 │  └─ ui/        #   shadcn (đã vá bg-card + SelectContent — xem CONVENTIONS mục 5)
 ├─ config/       # app.ts (storeConfig từ VITE_STORE_*), menu.ts (menu theo role), roles.ts (rank)
 ├─ contexts/     # auth, branch, cart

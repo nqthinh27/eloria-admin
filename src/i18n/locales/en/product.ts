@@ -144,6 +144,10 @@ export default {
             empty: 'This product has no images yet',
             tooMany: 'You can select at most 10 images',
             fileTooLarge: 'Each image must be 2MB or smaller. Please choose smaller images.',
+            hoverPreviewTitle: 'Product tile preview',
+            slot1: 'Image {{slot}} · shown by default on the home page and product listing',
+            slot2: 'Image {{slot}} · shown when a shopper hovers the product on the home page and listing',
+            slotOther: 'Image {{slot}} · shown only on the product detail page',
         },
 
         toast: {
@@ -175,6 +179,7 @@ export default {
                 code: 'CODE',
                 name: 'CATEGORY NAME',
                 parent: 'PARENT CATEGORY',
+                default: 'DEFAULT',
                 sortOrder: 'ORDER',
                 status: 'STATUS',
                 actions: 'ACTIONS',
@@ -184,11 +189,29 @@ export default {
             actionActivate: 'Activate',
             actionDeactivate: 'Deactivate',
             actionDelete: 'Delete category',
+            actionSetDefault: 'Set as default',
+            defaultBadge: 'Default',
+            allDefaults: 'All categories',
+            onlyDefault: 'Default category only',
+            filterDefaultLabel: 'Filter by default category',
+            noDefaultBanner: {
+                title: 'No default category set',
+                description:
+                    'The wide image banner at the bottom of the home page is hidden, and the Products page has no cover when shoppers are not filtering by category.',
+                action: 'Set a default category',
+            },
         },
 
         detail: {
             createdDate: 'Created',
             lastModifiedDate: 'Last updated',
+            description: 'Description',
+            isDefault: 'Default category',
+            isDefaultYes: 'Yes',
+            isDefaultNo: 'No',
+            webSection: 'Shown on the storefront',
+            tilesTitle: 'Category tile on the home page',
+            coverTitle: 'Products page cover strip',
         },
 
         form: {
@@ -203,6 +226,40 @@ export default {
             parentNone: 'None (root category)',
             sortOrder: 'Display order',
             sortOrderPlaceholder: 'Enter display order',
+            description: 'Category description',
+            descriptionPlaceholder: 'Enter a short description (up to 500 characters)',
+            descriptionCaption: 'Shown under the category name on the storefront category page.',
+            web: {
+                title: 'Shown on the storefront',
+                subtitle:
+                    'Images and text shoppers see on the website — optional; leave blank and the storefront uses its default image.',
+            },
+            tile: {
+                bothEmpty: 'Leave both empty ⇒ the storefront uses the system default image.',
+                previewTitle: 'Category tile preview',
+            },
+            tile1: {
+                label: 'Category image 1',
+                caption: 'Shown by default in the category grid on the home page.',
+            },
+            tile2: {
+                label: 'Category image 2',
+                caption:
+                    'Shown when a shopper hovers the category tile on the home page. Leave empty ⇒ hovering does not change the image.',
+            },
+            cover: {
+                title: 'Cover images (up to 5)',
+                caption:
+                    'Cover at the top of the Products page when a shopper filters by this category. With several images it changes every {{seconds}} seconds, looping forever; the order follows the slot numbers.',
+                label: 'Cover image {{n}}',
+            },
+            isDefault: {
+                label: 'Default category',
+                caption:
+                    "This category's cover is used for the banner at the bottom of the home page and for the Products page when shoppers are not filtering by category. Only one category can be the default — switching it on here turns it off on the current one. With no default category the wide image block at the bottom of the home page is hidden entirely.",
+                willSwitch:
+                    '"{{name}}" is currently the default — switching on here moves the default to this category.',
+            },
             submitCreate: 'Add category',
             submitUpdate: 'Save changes',
             submitting: 'Saving…',
@@ -211,7 +268,25 @@ export default {
                 codeMaxLength: 'Category code must be at most 50 characters',
                 nameRequired: 'Please enter the category name',
                 nameMaxLength: 'Category name must be at most 150 characters',
+                descriptionMaxLength: 'Description must be at most 500 characters',
+                linkMaxLength: 'Image link must be at most 500 characters',
             },
+        },
+
+        setDefault: {
+            title: 'Set the default category',
+            description:
+                'The chosen category\'s cover is used for the wide banner at the bottom of the home page and for the Products page when shoppers are not filtering by category.',
+            placeholder: 'Choose a category…',
+            submit: 'Set as default',
+        },
+
+        defaultWarning: {
+            body: 'The home page will have no wide image block until you set another default category.',
+            title: 'Remove the default category?',
+            description:
+                'The home page will have no wide image block until you set another default category. "{{name}}" is currently the only default category.',
+            confirm: 'Continue anyway',
         },
 
         deleteConfirm: {
@@ -233,6 +308,9 @@ export default {
             updated: 'Category updated successfully',
             deleted: 'Category deleted successfully',
             statusUpdated: 'Category status updated successfully',
+            defaultSwitched: 'Default category moved from "{{from}}" to "{{to}}"',
+            defaultRace:
+                'The default category was just changed by someone else — the list was reloaded, please check and try again.',
         },
     },
 }

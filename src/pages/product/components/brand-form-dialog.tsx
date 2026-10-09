@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { ImageLinkField } from '@/components/image/image-link-field'
 
 /** Ràng buộc lấy từ `CreateBrandReqDTO`/`UpdateBrandReqDTO` (cùng bộ field). */
 const buildSchema = (t: (key: string) => string) =>
@@ -43,7 +44,7 @@ type BrandFormDialogProps = {
 
 /** Dialog thêm/sửa thương hiệu. Sửa được cả `code` (khác Sản phẩm) — backend kiểm tra trùng loại trừ chính nó. */
 export function BrandFormDialog({ open, onOpenChange, brand, onCreate, onUpdate }: BrandFormDialogProps) {
-    const { t } = useTranslation(['brand', 'common'])
+    const { t } = useTranslation(['brand', 'common', 'image'])
     const isEdit = brand !== null
     const schema = useMemo(() => buildSchema(t), [t])
 
@@ -52,8 +53,11 @@ export function BrandFormDialog({ open, onOpenChange, brand, onCreate, onUpdate 
         defaultValues: { code: '', name: '', address: '', logoUrl: '', description: '' },
     })
 
+    const [logoBlocked, setLogoBlocked] = useState(false)
+
     useEffect(() => {
         if (!open) return
+        setLogoBlocked(false)
         form.reset({
             code: brand?.code ?? '',
             name: brand?.name ?? '',
@@ -64,6 +68,8 @@ export function BrandFormDialog({ open, onOpenChange, brand, onCreate, onUpdate 
     }, [open, brand, form])
 
     const onSubmit = async (values: BrandFormValues) => {
+        // Logo dưới kích thước tối thiểu ⇒ chặn lưu (cảnh báo đã hiện ngay dưới ô logo).
+        if (logoBlocked) return
         const payload: BrandPayload = {
             code: values.code,
             name: values.name,
@@ -148,10 +154,20 @@ export function BrandFormDialog({ open, onOpenChange, brand, onCreate, onUpdate 
                             name="logoUrl"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('brand.form.logoUrl')}</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} placeholder={t('brand.form.logoUrlPlaceholder')} />
-                                    </FormControl>
+                                    {/* Ô link + kiểm tra kích thước/tỉ lệ theo LOGO_SQUARE (PLAN Phase 22). */}
+                                    <ImageLinkField
+                                        spec="LOGO_SQUARE"
+                                        label={t('brand.form.logoUrl')}
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        onInspect={(result) => setLogoBlocked(result?.status === 'blocked')}
+                                        maxLength={256}
+                                    />
+                                    {logoBlocked && (
+                                        <p className="text-destructive text-xs">
+                                            {t('image:field.blockedNotice')}
+                                        </p>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}

@@ -146,6 +146,10 @@ export default {
             empty: 'Sản phẩm chưa có ảnh nào',
             tooMany: 'Chỉ được chọn tối đa 10 ảnh',
             fileTooLarge: 'Mỗi ảnh tối đa 2MB. Vui lòng chọn lại ảnh nhỏ hơn.',
+            hoverPreviewTitle: 'Xem trước ô sản phẩm',
+            slot1: 'Ảnh {{slot}} · hiện mặc định ở Trang chủ và trang danh sách sản phẩm',
+            slot2: 'Ảnh {{slot}} · hiện khi khách rê chuột vào sản phẩm ở Trang chủ và trang danh sách',
+            slotOther: 'Ảnh {{slot}} · chỉ hiện ở trang chi tiết sản phẩm',
         },
 
         toast: {
@@ -177,6 +181,7 @@ export default {
                 code: 'MÃ',
                 name: 'TÊN DANH MỤC',
                 parent: 'DANH MỤC CHA',
+                default: 'MẶC ĐỊNH',
                 sortOrder: 'THỨ TỰ',
                 status: 'TRẠNG THÁI',
                 actions: 'THAO TÁC',
@@ -186,11 +191,29 @@ export default {
             actionActivate: 'Bật hoạt động',
             actionDeactivate: 'Ngừng hoạt động',
             actionDelete: 'Xoá danh mục',
+            actionSetDefault: 'Đặt làm mặc định',
+            defaultBadge: 'Mặc định',
+            allDefaults: 'Tất cả danh mục',
+            onlyDefault: 'Chỉ danh mục mặc định',
+            filterDefaultLabel: 'Lọc theo danh mục mặc định',
+            noDefaultBanner: {
+                title: 'Chưa đặt danh mục mặc định',
+                description:
+                    'Banner ảnh ngang cuối Trang chủ đang bị ẩn, và trang Sản phẩm không có ảnh bìa khi khách không lọc danh mục.',
+                action: 'Đặt danh mục mặc định',
+            },
         },
 
         detail: {
             createdDate: 'Ngày tạo',
             lastModifiedDate: 'Cập nhật lần cuối',
+            description: 'Mô tả',
+            isDefault: 'Danh mục mặc định',
+            isDefaultYes: 'Có',
+            isDefaultNo: 'Không',
+            webSection: 'Hiển thị trên web bán hàng',
+            tilesTitle: 'Ô danh mục ở Trang chủ',
+            coverTitle: 'Dải ảnh bìa trang Sản phẩm',
         },
 
         form: {
@@ -205,6 +228,39 @@ export default {
             parentNone: 'Không có (danh mục gốc)',
             sortOrder: 'Thứ tự hiển thị',
             sortOrderPlaceholder: 'Nhập thứ tự',
+            description: 'Mô tả danh mục',
+            descriptionPlaceholder: 'Nhập mô tả ngắn (tối đa 500 ký tự)',
+            descriptionCaption: 'Đoạn mô tả hiển thị dưới tên danh mục trên trang danh mục của web bán hàng.',
+            web: {
+                title: 'Hiển thị trên web bán hàng',
+                subtitle:
+                    'Ảnh và mô tả khách nhìn thấy trên web — không bắt buộc, để trống thì web dùng ảnh mặc định.',
+            },
+            tile: {
+                bothEmpty: 'Bỏ trống cả hai ⇒ web dùng ảnh mặc định của hệ thống.',
+                previewTitle: 'Xem trước ô danh mục',
+            },
+            tile1: {
+                label: 'Ảnh danh mục 1',
+                caption: 'Ảnh hiện mặc định ở lưới Danh mục ngoài Trang chủ.',
+            },
+            tile2: {
+                label: 'Ảnh danh mục 2',
+                caption:
+                    'Ảnh hiện khi khách rê chuột vào ô danh mục ở Trang chủ. Bỏ trống ⇒ rê chuột không đổi ảnh.',
+            },
+            cover: {
+                title: 'Ảnh bìa (tối đa 5 ảnh)',
+                caption:
+                    'Ảnh bìa đầu trang Sản phẩm khi khách lọc theo danh mục này. Có nhiều ảnh thì tự chuyển mỗi {{seconds}} giây, lặp lại vô tận; thứ tự chạy theo số thứ tự ô.',
+                label: 'Ảnh bìa {{n}}',
+            },
+            isDefault: {
+                label: 'Danh mục mặc định',
+                caption:
+                    'Ảnh bìa của danh mục này được dùng cho banner cuối Trang chủ và cho trang Sản phẩm khi khách không lọc danh mục. Chỉ một danh mục được đặt mặc định — bật ở đây sẽ tự tắt ở danh mục đang giữ. Không có danh mục mặc định thì khối ảnh ngang cuối Trang chủ bị ẩn hẳn.',
+                willSwitch: 'Hiện "{{name}}" đang là mặc định — bật ở đây sẽ tự chuyển sang danh mục này.',
+            },
             submitCreate: 'Thêm danh mục',
             submitUpdate: 'Lưu thay đổi',
             submitting: 'Đang lưu…',
@@ -213,7 +269,25 @@ export default {
                 codeMaxLength: 'Mã danh mục tối đa 50 ký tự',
                 nameRequired: 'Vui lòng nhập tên danh mục',
                 nameMaxLength: 'Tên danh mục tối đa 150 ký tự',
+                descriptionMaxLength: 'Mô tả tối đa 500 ký tự',
+                linkMaxLength: 'Đường dẫn ảnh tối đa 500 ký tự',
             },
+        },
+
+        setDefault: {
+            title: 'Đặt danh mục mặc định',
+            description:
+                'Ảnh bìa của danh mục được chọn sẽ dùng cho banner ngang cuối Trang chủ và trang Sản phẩm khi khách không lọc danh mục.',
+            placeholder: 'Chọn danh mục…',
+            submit: 'Đặt mặc định',
+        },
+
+        defaultWarning: {
+            body: 'Trang chủ sẽ không còn khối ảnh ngang cho tới khi bạn đặt một danh mục mặc định khác.',
+            title: 'Bỏ danh mục mặc định?',
+            description:
+                'Trang chủ sẽ không còn khối ảnh ngang cho tới khi bạn đặt một danh mục mặc định khác. Danh mục "{{name}}" hiện là danh mục mặc định duy nhất.',
+            confirm: 'Vẫn tiếp tục',
         },
 
         deleteConfirm: {
@@ -235,6 +309,9 @@ export default {
             updated: 'Cập nhật danh mục thành công',
             deleted: 'Xoá danh mục thành công',
             statusUpdated: 'Cập nhật trạng thái danh mục thành công',
+            defaultSwitched: 'Đã chuyển danh mục mặc định từ "{{from}}" sang "{{to}}"',
+            defaultRace:
+                'Danh mục mặc định vừa được người khác thay đổi — đã tải lại danh sách, vui lòng kiểm tra rồi thử lại.',
         },
     },
 }

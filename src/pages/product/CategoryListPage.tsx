@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Boxes, Eye, MoreHorizontal, Pencil, Plus, Power, Trash2 } from 'lucide-react'
+import { AlertTriangle, Boxes, Eye, MoreHorizontal, Pencil, Plus, Power, Star, Trash2 } from 'lucide-react'
 
 import { categoryApi } from '@/api/product'
-import { toastSuccess } from '@/lib/toast'
+import { ApiError } from '@/lib/api-error'
+import { resolveImageSrc } from '@/lib/image-spec'
+import { toastError, toastSuccess, toastWarning } from '@/lib/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { useTableState } from '@/hooks/use-table-state'
 import { hasRole } from '@/config/roles'
@@ -12,6 +14,7 @@ import { EntityStatus, ERole } from '@/types/common'
 import type { Category, CategoryPayload } from '@/types/product'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -27,8 +30,13 @@ import { DataTableControls } from '@/components/data-table/data-table-view-optio
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { CategoryDetailModal } from './components/category-detail-modal'
 import { CategoryFormDialog } from './components/category-form-dialog'
+import { SetDefaultCategoryDialog } from './components/set-default-category-dialog'
 
 const ALL_LEVELS = 'ALL'
+const ALL_DEFAULTS = 'ALL'
+const ONLY_DEFAULT = 'DEFAULT'
+/** Subkey backend trả (HTTP 409) khi 2 người cùng bật danh mục mặc định một lúc — handoff P13.1. */
+const DEFAULT_RACE_SUBKEY = 'error.dataIntegrity.violation'
 const PAGE_SIZE = 10
 /** Trần số danh mục nạp một lần. Vượt ngưỡng này phải chuyển sang phân trang phía server. */
 const MAX_CATEGORIES = 200
@@ -56,6 +64,8 @@ export default function CategoryListPage() {
     const [error, setError] = useState(false)
     const [keyword, setKeyword] = useState('')
     const [levelFilter, setLevelFilter] = useState<string>(ALL_LEVELS)
+    const [defaultFilter, setDefaultFilter] = useState<string>(ALL_DEFAULTS)
+    const [setDefaultOpen, setSetDefaultOpen] = useState(false)
 
     /*
      * page · cột ẩn/hiện · nonce tải lại — xem `use-table-state`.
@@ -144,10 +154,23 @@ export default function CategoryListPage() {
         return allCategories.filter((c) => {
             if (levelFilter === 'ROOT' && c.level !== 0) return false
             if (levelFilter === 'CHILD' && c.level === 0) return false
+            // Đã nạp trọn cây nên lọc "mặc định" ở client cho khỏi tốn thêm request (cùng lý do lọc cấp).
+            if (defaultFilter === ONLY_DEFAULT && c.isDefault !== true) return false
             if (!kw) return true
             return c.name.toLowerCase().includes(kw) || c.code.toLowerCase().includes(kw)
         })
-    }, [allCategories, keyword, levelFilter])
+    }, [allCategories, keyword, levelFilter, defaultFilter])
+
+    /** Danh mục đang giữ cờ mặc định (kể cả khi đang INACTIVE — backend vẫn tính nó chiếm chỗ). */
+    const currentDefault = useMemo(
+        () => allCategories.find((c) => c.isDefault === true) ?? null,
+        [allCategories],
+    )
+    /*
+     * Web chỉ dùng danh mục mặc định **đang hoạt động** — mặc định mà bị tắt thì khối ảnh ngang cuối
+     * Trang chủ cũng biến mất, nên banner cảnh báo tính theo "mặc định đang hoạt động".
+     */
+    const hasActiveDefault = currentDefault?.status === EntityStatus.ACTIVE
 
     const total = filtered.length
     const visibleData = useMemo(
@@ -170,17 +193,89 @@ export default function CategoryListPage() {
     /** Ghi dữ liệu xong ⇒ nạp lại ngầm, **giữ nguyên** page/filter (CONVENTIONS mục 5.1). */
     const reload = useCallback(() => load(undefined, true), [load])
 
-    const handleCreate = async (payload: CategoryPayload) => {
-        await categoryApi.create(payload)
-        toastSuccess('category.toast.created', { ns: 'product' })
+    /**
+     * Ghi danh mục (thêm/sửa) có xử lý riêng cho cờ **mặc định** (handoff P13.1):
+     *
+     * - Bật mặc định cho B khi A đang giữ ⇒ chỉ **1 request**, server tự gỡ A trong cùng transaction ⇒
+     *   **không popup**, chỉ toast nêu tên A và B (chuyển A→B không làm mất gì trên web khách).
+     * - 2 người cùng bật một lúc ⇒ HTTP 409 `error.dataIntegrity.violation`. Thông điệp chung của subKey
+     *   này ("dữ liệu đang được sử dụng ở nơi khác") sai ngữ cảnh nên **tự xử lý**: tắt toast mặc định,
+     *   báo đúng câu rồi nạp lại để UI đồng bộ. Trả `false` = đã xử lý xung đột, không toast thành công.
+     */
+    const saveCategory = async (
+        run: (options?: { skipErrorToast: boolean }) => Promise<unknown>,
+        payload: CategoryPayload,
+        savedId: string | null,
+        successKey: string,
+    ): Promise<void> => {
+        const turningOn = payload.isDefault === true
+        try {
+            await run(turningOn ? { skipErrorToast: true } : undefined)
+        } catch (error) {
+            if (
+                turningOn &&
+                error instanceof ApiError &&
+                error.status === 409 &&
+                error.subKey === DEFAULT_RACE_SUBKEY
+            ) {
+                toastWarning('category.toast.defaultRace', { ns: 'product' })
+                await reload()
+                return
+            }
+            // Đã tắt toast mặc định ở trên nên báo lỗi tại đây để hành vi giống mọi lần ghi khác.
+            if (turningOn) toastError(error)
+            throw error
+        }
+
+        const switchedFrom =
+            turningOn && currentDefault && currentDefault.id !== savedId ? currentDefault : null
+        if (switchedFrom) {
+            toastSuccess('category.toast.defaultSwitched', {
+                ns: 'product',
+                from: switchedFrom.name,
+                to: payload.name,
+            })
+        } else {
+            toastSuccess(successKey, { ns: 'product' })
+        }
         await reload()
     }
 
-    const handleUpdate = async (id: string, payload: CategoryPayload) => {
-        await categoryApi.update(id, payload)
-        toastSuccess('category.toast.updated', { ns: 'product' })
-        await reload()
+    const handleCreate = (payload: CategoryPayload) =>
+        saveCategory((options) => categoryApi.create(payload, options), payload, null, 'category.toast.created')
+
+    const handleUpdate = (id: string, payload: CategoryPayload) =>
+        saveCategory(
+            (options) => categoryApi.update(id, payload, options),
+            payload,
+            id,
+            'category.toast.updated',
+        )
+
+    /**
+     * Đặt một danh mục làm mặc định từ menu dòng / banner cảnh báo — không qua form nên phải tự dựng
+     * payload **an toàn**: `PUT` là full-update với `parentId` (bỏ ⇒ về gốc) nên gửi lại đủ code · name ·
+     * cha · thứ tự; các field nội dung bỏ hẳn ⇒ backend giữ nguyên.
+     */
+    const handleSetDefault = (category: Category) => {
+        const payload: CategoryPayload = {
+            code: category.code,
+            name: category.name,
+            parentId: category.parentId ?? undefined,
+            sortOrder: category.sortOrder ?? undefined,
+            isDefault: true,
+        }
+        return handleUpdate(category.id, payload)
     }
+
+    /*
+     * `columns` được memo theo `[t, canWrite]` nên menu dòng sẽ giữ bản `handleSetDefault` cũ (với
+     * `currentDefault` cũ ⇒ toast "chuyển từ A sang B" nêu sai A). Qua ref để luôn gọi bản mới nhất.
+     */
+    const setDefaultRef = useRef(handleSetDefault)
+    useEffect(() => {
+        setDefaultRef.current = handleSetDefault
+    })
 
     const handleDelete = async () => {
         if (!deleteCategory) return
@@ -234,14 +329,37 @@ export default function CategoryListPage() {
                 // Cột tên — ẩn đi thì không biết đang xem danh mục nào.
                 enableHiding: false,
                 meta: { columnLabel: t('category.list.column.name') },
-                cell: ({ row }) => (
-                    <div className="flex items-center gap-3">
-                        <span className="bg-accent text-accent-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
-                            <Boxes className="size-4" />
-                        </span>
-                        <span className="font-medium">{row.original.name}</span>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    // Ảnh đại diện = `imageLink1`; `imageUrl` cũ chỉ là dự phòng cho dòng chưa backfill (P13.1).
+                    const thumb = row.original.imageLink1 ?? row.original.imageUrl
+                    return (
+                        <div className="flex items-center gap-3">
+                            {thumb ? (
+                                <img
+                                    src={resolveImageSrc(thumb)}
+                                    alt=""
+                                    className="bg-muted size-8 shrink-0 rounded-lg object-cover"
+                                />
+                            ) : (
+                                <span className="bg-accent text-accent-foreground flex size-8 shrink-0 items-center justify-center rounded-lg">
+                                    <Boxes className="size-4" />
+                                </span>
+                            )}
+                            <span className="font-medium">{row.original.name}</span>
+                        </div>
+                    )
+                },
+            },
+            {
+                id: 'default',
+                header: t('category.list.column.default'),
+                size: 120,
+                // Badge ⇒ căn giữa (CONVENTIONS mục 5.6). Toàn bảng chỉ có tối đa 1 dòng có badge.
+                meta: { columnLabel: t('category.list.column.default'), align: 'center' },
+                cell: ({ row }) =>
+                    row.original.isDefault === true ? (
+                        <StatusBadge tone="info">{t('category.list.defaultBadge')}</StatusBadge>
+                    ) : null,
             },
             {
                 id: 'parent',
@@ -322,6 +440,17 @@ export default function CategoryListPage() {
                                             <Pencil className="size-4" />
                                             {t('category.list.actionEdit')}
                                         </DropdownMenuItem>
+                                        {/* Danh mục mặc định phải đang hoạt động mới có nghĩa trên web ⇒ chỉ mời đặt khi ACTIVE. */}
+                                        {category.isDefault !== true && isActive && (
+                                            <DropdownMenuItem
+                                                onSelect={() => {
+                                                    // Lỗi đã được toast trong `saveCategory`.
+                                                    void setDefaultRef.current(category).catch(() => {})
+                                                }}>
+                                                <Star className="size-4" />
+                                                {t('category.list.actionSetDefault')}
+                                            </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuItem
                                             onSelect={() => setStatusCategory(category)}>
                                             <Power className="size-4" />
@@ -368,23 +497,62 @@ export default function CategoryListPage() {
             />
 
             <div className="space-y-4">
+                {/*
+                  * Chưa có danh mục mặc định đang hoạt động ⇒ web **ẩn hẳn** khối ảnh ngang cuối Trang chủ
+                  * (không có ảnh thay thế — PO chốt 2026-10-06), nên cảnh báo phải nói đúng như vậy.
+                  * Chỉ hiện sau khi nạp xong và cây không rỗng để không nháy lúc đang tải.
+                  */}
+                {!loading && !error && allCategories.length > 0 && !hasActiveDefault && (
+                    <Alert className="border-warning bg-warning-muted flex items-start gap-3">
+                        <AlertTriangle className="text-warning" />
+                        <div className="col-start-2 flex flex-wrap items-center justify-between gap-3">
+                            <div className="min-w-0 space-y-0.5">
+                                <AlertTitle>{t('category.list.noDefaultBanner.title')}</AlertTitle>
+                                <AlertDescription>
+                                    {t('category.list.noDefaultBanner.description')}
+                                </AlertDescription>
+                            </div>
+                            {canWrite && (
+                                <Button size="sm" variant="outline" onClick={() => setSetDefaultOpen(true)}>
+                                    {t('category.list.noDefaultBanner.action')}
+                                </Button>
+                            )}
+                        </div>
+                    </Alert>
+                )}
+
                 <DataTableToolbar
                     searchValue={keyword}
                     onSearchChange={handleSearchChange}
                     searchPlaceholder={t('category.list.searchPlaceholder')}
                     filters={
-                        <Select
-                            value={levelFilter}
-                            onValueChange={(v) => table.resetTo(() => setLevelFilter(v))}>
-                            <SelectTrigger aria-label={t('product.list.allStatuses')} className="w-full sm:w-44">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL_LEVELS}>{t('category.list.allLevels')}</SelectItem>
-                                <SelectItem value="ROOT">{t('category.list.levelRoot')}</SelectItem>
-                                <SelectItem value="CHILD">{t('category.list.levelChild')}</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <>
+                            <Select
+                                value={levelFilter}
+                                onValueChange={(v) => table.resetTo(() => setLevelFilter(v))}>
+                                <SelectTrigger aria-label={t('product.list.allStatuses')} className="w-full sm:w-44">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL_LEVELS}>{t('category.list.allLevels')}</SelectItem>
+                                    <SelectItem value="ROOT">{t('category.list.levelRoot')}</SelectItem>
+                                    <SelectItem value="CHILD">{t('category.list.levelChild')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={defaultFilter}
+                                onValueChange={(v) => table.resetTo(() => setDefaultFilter(v))}>
+                                <SelectTrigger
+                                    aria-label={t('category.list.filterDefaultLabel')}
+                                    className="w-full sm:w-52">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL_DEFAULTS}>{t('category.list.allDefaults')}</SelectItem>
+                                    <SelectItem value={ONLY_DEFAULT}>{t('category.list.onlyDefault')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </>
                     }
                     tableControls={
                         <DataTableControls
@@ -442,19 +610,39 @@ export default function CategoryListPage() {
                         formCategory === 'new' || formCategory === null ? null : formCategory
                     }
                     parentOptions={parentOptions}
+                    currentDefault={currentDefault}
                     onCreate={handleCreate}
                     onUpdate={handleUpdate}
+                />
+
+                <SetDefaultCategoryDialog
+                    open={setDefaultOpen}
+                    onOpenChange={setSetDefaultOpen}
+                    categories={allCategories}
+                    onConfirm={handleSetDefault}
                 />
 
                 <ConfirmDialog
                     open={deleteCategory !== null}
                     onOpenChange={(open) => !open && setDeleteCategory(null)}
                     title={t('category.deleteConfirm.title')}
-                    description={t('category.deleteConfirm.description', {
-                        name: deleteCategory?.name,
-                    })}
+                    description={
+                        <>
+                            {t('category.deleteConfirm.description', { name: deleteCategory?.name })}
+                            {/* Xoá danh mục mặc định ⇒ về 0 mặc định (đường ③ — cùng nội dung cảnh báo với 2 đường kia). */}
+                            {deleteCategory?.isDefault === true && (
+                                <span className="text-foreground mt-2 block font-medium">
+                                    {t('category.defaultWarning.body')}
+                                </span>
+                            )}
+                        </>
+                    }
                     variant="destructive"
-                    confirmLabel={t('category.deleteConfirm.submit')}
+                    confirmLabel={
+                        deleteCategory?.isDefault === true
+                            ? t('category.defaultWarning.confirm')
+                            : t('category.deleteConfirm.submit')
+                    }
                     auditLogged
                     onConfirm={handleDelete}
                 />
@@ -468,13 +656,28 @@ export default function CategoryListPage() {
                             : t('category.statusConfirm.activateTitle')
                     }
                     description={
-                        isDeactivating
-                            ? t('category.statusConfirm.deactivateDescription', {
-                                  name: statusCategory?.name,
-                              })
-                            : t('category.statusConfirm.activateDescription', {
-                                  name: statusCategory?.name,
-                              })
+                        isDeactivating ? (
+                            <>
+                                {t('category.statusConfirm.deactivateDescription', {
+                                    name: statusCategory?.name,
+                                })}
+                                {/* Tắt danh mục mặc định ⇒ web không còn dùng nó ⇒ về 0 mặc định (đường ②). */}
+                                {statusCategory?.isDefault === true && (
+                                    <span className="text-foreground mt-2 block font-medium">
+                                        {t('category.defaultWarning.body')}
+                                    </span>
+                                )}
+                            </>
+                        ) : (
+                            t('category.statusConfirm.activateDescription', {
+                                name: statusCategory?.name,
+                            })
+                        )
+                    }
+                    confirmLabel={
+                        isDeactivating && statusCategory?.isDefault === true
+                            ? t('category.defaultWarning.confirm')
+                            : undefined
                     }
                     variant={isDeactivating ? 'destructive' : 'default'}
                     auditLogged

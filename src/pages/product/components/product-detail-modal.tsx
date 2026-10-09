@@ -5,11 +5,14 @@ import { Barcode, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload } from 'lucid
 import { productApi, skuApi } from '@/api/product'
 import { toastSuccess, toastWarning } from '@/lib/toast'
 import { formatDate, formatVnd } from '@/lib/format'
+import { IMAGE_SPEC, inspectImageFile, issueKey } from '@/lib/image-spec'
 import { apiBaseUrl } from '@/config/app'
 import { EGender, EntityStatus } from '@/types/common'
 import type { Color, Product, Size, Sku } from '@/types/product'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { StatusBadge } from '@/components/status-badge'
+import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
+import { ImageSpecHint } from '@/components/image/image-spec-hint'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -25,14 +28,16 @@ function imageSrc(url: string) {
 }
 
 const MAX_IMAGES = 10
+/** Slot 2 là ảnh hiện khi rê chuột ở Trang chủ + trang danh sách; slot 1 là ảnh mặc định. */
+const HOVER_SLOT = 2
 /** Chỉ nhận đúng định dạng backend cho phép (2026-09-25) — **không còn SVG**. */
 const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp'
-/**
+/*
  * Trần dung lượng của backend (`spring.servlet.multipart`): **2MB/file**, **4MB/request**. Vượt ⇒
  * `413 error.file.tooLarge` — nhưng Tomcat có thể cắt kết nối trước khi kịp trả JSON (trình duyệt
- * chỉ thấy lỗi mạng) ⇒ FE chặn file quá cỡ từ trước và **chia lô** request theo trần tổng.
+ * chỉ thấy lỗi mạng) ⇒ FE chặn file quá cỡ từ trước (`inspectImageFile`, trần file =
+ * `IMAGE_SPEC.PRODUCT.maxBytes`) và **chia lô** request theo trần tổng.
  */
-const MAX_FILE_BYTES = 2 * 1024 * 1024
 /** Chừa ~100KB cho phần bao multipart (boundary, header từng field) dưới trần 4MB. */
 const MAX_REQUEST_BYTES = 4 * 1024 * 1024 - 100 * 1024
 
@@ -87,7 +92,7 @@ export function ProductDetailModal({
     onEdit,
     onChanged,
 }: ProductDetailModalProps) {
-    const { t } = useTranslation(['product', 'common'])
+    const { t } = useTranslation(['product', 'common', 'image'])
 
     const [detail, setDetail] = useState<Product | null>(null)
     const [loadingDetail, setLoadingDetail] = useState(false)
@@ -334,9 +339,28 @@ export function ProductDetailModal({
             if (fileInputRef.current) fileInputRef.current.value = ''
             return
         }
-        /* Có file vượt 2MB ⇒ huỷ cả lượt: bỏ lặng lẽ file đó sẽ làm lệch slot người dùng mong đợi. */
-        if (slots.some(({ file }) => file.size > MAX_FILE_BYTES)) {
-            toastWarning('product.images.fileTooLarge', { ns: 'product' })
+        /*
+         * Kiểm từng file theo `IMAGE_SPEC.PRODUCT` **trước khi gửi** (sai định dạng / quá 2MB / dưới
+         * 1000×1250 ⇒ chặn, không request nào bay đi). Có file bị chặn ⇒ huỷ cả lượt: bỏ lặng lẽ file đó
+         * sẽ làm lệch slot người dùng mong đợi. Lệch tỉ lệ chỉ cảnh báo, vẫn lưu.
+         */
+        const inspections = await Promise.all(
+            slots.map(({ file }) => inspectImageFile(file, IMAGE_SPEC.PRODUCT)),
+        )
+        let blocked = false
+        inspections.forEach((inspection, i) => {
+            const name = slots[i].file.name
+            for (const issue of inspection.issues) {
+                const reason = t(`image:${issueKey(issue)}`, issue.params)
+                if (issue.blocking) blocked = true
+                toastWarning(issue.blocking ? 'file.blocked' : 'file.warned', {
+                    ns: 'image',
+                    name,
+                    reason,
+                })
+            }
+        })
+        if (blocked) {
             if (fileInputRef.current) fileInputRef.current.value = ''
             return
         }
@@ -595,7 +619,10 @@ export function ProductDetailModal({
 
                     <TabsContent value="images" className="space-y-4 pt-4">
                         <div className="flex items-center justify-between gap-3">
-                            <p className="text-muted-foreground text-xs">{t('product.images.hint')}</p>
+                            <div className="space-y-1">
+                                <p className="text-muted-foreground text-xs">{t('product.images.hint')}</p>
+                                <ImageSpecHint spec="PRODUCT" />
+                            </div>
                             {canWrite && (
                                 <Button
                                     size="sm"
@@ -632,13 +659,23 @@ export function ProductDetailModal({
                                 {t('product.images.empty')}
                             </div>
                         ) : (
+                            <div className="space-y-4">
+                            <div className="w-40 space-y-1">
+                                <p className="text-xs font-medium">{t('product.images.hoverPreviewTitle')}</p>
+                                <HoverSwapPreview
+                                    spec="PRODUCT"
+                                    primary={current.images[0] ?? ''}
+                                    secondary={current.images[HOVER_SLOT - 1] ?? ''}
+                                />
+                            </div>
                             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                                 {current.images.map((url, index) => (
-                                    <div key={url} className="relative">
+                                    <div key={url} className="space-y-1">
+                                    <div className="relative">
                                         <img
                                             src={imageSrc(url)}
                                             alt={current.name}
-                                            className="bg-muted aspect-square w-full rounded-md object-cover"
+                                            className="bg-muted aspect-[4/5] w-full rounded-md object-cover"
                                         />
                                         {canWrite && (
                                             <div className="absolute inset-x-1 bottom-1 flex justify-end gap-1">
@@ -671,7 +708,19 @@ export function ProductDetailModal({
                                             </div>
                                         )}
                                     </div>
+                                    <p className="text-muted-foreground text-[11px] leading-snug">
+                                        {t(
+                                            index === 0
+                                                ? 'product.images.slot1'
+                                                : index === HOVER_SLOT - 1
+                                                  ? 'product.images.slot2'
+                                                  : 'product.images.slotOther',
+                                            { slot: index + 1 },
+                                        )}
+                                    </p>
+                                    </div>
                                 ))}
+                            </div>
                             </div>
                         )}
                     </TabsContent>

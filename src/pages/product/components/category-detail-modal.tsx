@@ -5,6 +5,8 @@ import { EntityStatus } from '@/types/common'
 import type { Category } from '@/types/product'
 import { StatusBadge } from '@/components/status-badge'
 import { DetailModal, type DetailField } from '@/components/detail-modal'
+import { CoverSlidesPreview } from '@/components/image/cover-slides-preview'
+import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
 
 /**
  * Modal "Chi tiết danh mục" — nút Chi tiết là bắt buộc ở mọi bảng (CONVENTIONS mục 5.3).
@@ -24,6 +26,14 @@ export function CategoryDetailModal({
     const { t } = useTranslation(['product', 'common'])
 
     if (!category) return null
+
+    const covers = [
+        category.coverLink1,
+        category.coverLink2,
+        category.coverLink3,
+        category.coverLink4,
+        category.coverLink5,
+    ].filter((link): link is string => Boolean(link))
 
     const fields: DetailField<Record<string, never>>[] = [
         {
@@ -56,6 +66,47 @@ export function CategoryDetailModal({
             label: t('category.list.column.sortOrder'),
             readOnly: true,
             formatValue: () => category.sortOrder ?? '—',
+        },
+        {
+            label: t('category.detail.isDefault'),
+            readOnly: true,
+            formatValue: () =>
+                category.isDefault === true ? (
+                    <StatusBadge tone="info">{t('category.list.defaultBadge')}</StatusBadge>
+                ) : (
+                    t('category.detail.isDefaultNo')
+                ),
+        },
+        {
+            label: t('category.detail.description'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => category.description || '—',
+        },
+        {
+            label: t('category.detail.tilesTitle'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => (
+                <div className="w-36">
+                    <HoverSwapPreview
+                        primary={category.imageLink1 ?? category.imageUrl ?? ''}
+                        secondary={category.imageLink2 ?? ''}
+                    />
+                </div>
+            ),
+        },
+        {
+            label: t('category.detail.coverTitle'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => (
+                <CoverSlidesPreview
+                    links={covers}
+                    title={category.name}
+                    description={category.description ?? undefined}
+                />
+            ),
         },
         {
             label: t('category.detail.createdDate'),
