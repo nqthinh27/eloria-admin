@@ -82,6 +82,20 @@ Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08
 >
 > Phase 13/14/15 (đổi trả · khuyến mại · ca làm việc) **vẫn chờ backend**.
 
+> ## 🚀 **REPLAN 2026-10-11 — chia release, R1 = "Trưng bày catalog"**
+>
+> User chốt: **release nhanh** cho khách hàng ⇒ web bán hàng R1 chỉ **hiển thị sản phẩm + danh mục**
+> (đăng nhập/giỏ/thanh toán lùi sang R2, nút vẫn hiện nhưng báo "sắp ra mắt" — xem
+> `35.3.eloria-client/PLAN.md` mục Replan 2026-10-11). Phía admin: **CMS sản phẩm + danh mục phải đủ
+> để vận hành R1**; CMS nội dung/điểm thưởng lùi lại. **Phase 0–19 không đổi.**
+>
+> | Release | Admin | Ghi chú |
+> |---|---|---|
+> | **R1** | Đóng **Phase 22** + **Phase 23** · **Phase 24** (mới) | Chặn release web bán hàng |
+> | **R2** | Phase 21 mục ④ (luồng đơn store) + Phase 20 mục 4 (`customerNote`) | Đi cùng backend P14 |
+> | **R3** | Phase 20 (trừ mục 4) + Phase 21 mục ①②③ (trừ phần `store.branch_id` đã kéo lên Phase 24) | Đi cùng backend P15/P16 |
+> | — | Phase 17 giữ nguyên ⏸️ | Không liên quan release |
+
 > **Replan 2026-08-10:** Phase 11–15 đã được sắp xếp lại theo bối cảnh **bán online tại nhà giai
 > đoạn đầu** — bán hàng & đơn hàng gộp làm **Phase 11**, dashboard/doanh thu kéo lên **Phase 12**,
 > mở ca/chốt ca đẩy xuống **Phase 15**. Chi tiết ở cuối mục D. Phase 0–10 **không đổi**.
@@ -241,10 +255,11 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 | **18** | ✅ **Quản lý Tài khoản ngân hàng** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 11 | *(không mockup — pattern `04`/`07`)* |
 | **19** | ✅ **Quản lý Thương hiệu** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 9 | *(không mockup — pattern `04`/`07`)* |
-| **20** | ⏳ **CMS: Bài viết, Trang tĩnh & Banner** — *chờ backend P15* | 5, 22 | *(không mockup — pattern `04`/`07`)* |
-| **21** | ⏳ **Cấu hình Storefront, Điểm thưởng & Voucher công khai** — *chờ backend P13+P16* | 5, 8, 14 | *(không mockup)* |
+| **20** | ⏳ **CMS: Bài viết, Trang tĩnh & Banner** — *chờ backend P15* · **R3** (mục 4 → R2) | 5, 22 | *(không mockup — pattern `04`/`07`)* |
+| **21** | ⏳ **Cấu hình Storefront, Điểm thưởng & Voucher công khai** — *chờ backend P13+P16* · mục ④ **R2**, còn lại **R3** (`store.branch_id` kéo lên Phase 24) | 5, 8, 14 | *(không mockup)* |
 | **22** | 🟡 **(2026-10-11 — xong FE + upload BE31/P13.3; còn unit test)** **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
 | **23** | 🟡 **(2026-10-11 — xong FE + upload; chưa đo song song storefront, race 409, RBAC)** **Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định** | 5, 9, 22 | *(không mockup — pattern `12`)* |
+| **24** | ⏳ **(R1 — replan 2026-10-11)** **CMS catalog sẵn sàng release: cấu hình chi nhánh online · SEO SP/danh mục · "Xem trên web" · chống bản cũ** | 9, 22, 23 | *(không mockup)* |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
@@ -3011,7 +3026,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 > Không có mockup riêng cho các màn này — dựng theo pattern bảng/form dùng chung (skill
 > `create-table`) và cùng ngôn ngữ giao diện các phase trước.
 >
-> **Thứ tự chạy: 22 → 20 → 21.** Phase 22 (chuẩn ảnh CMS) **không chờ backend**, làm được ngay, và
+> **Thứ tự chạy (replan 2026-10-11): 22 → 23 → 24 (Release R1) → 21④ (R2) → 20 → 21 còn lại (R3).** ~~Thứ tự cũ: 22 → 20 → 21.~~ Phase 22 (chuẩn ảnh CMS) **không chờ backend**, làm được ngay, và
 > Phase 20 dùng lại component của nó ⇒ làm 22 trước thì khỏi dựng ô upload hai lần. Phase 21 phụ
 > thuộc backend P13+P16 nên đi sau cùng.
 
@@ -3113,7 +3128,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 20 — CMS: Bài viết, Trang tĩnh & Banner ⏳ **CHỜ backend P15**
+## Phase 20 — CMS: Bài viết, Trang tĩnh & Banner ⏳ **CHỜ backend P15** — **Release R3** (mục 4 `customerNote` → R2) *(replan 2026-10-11)*
 
 ### Điều kiện tiên quyết
 - Backend **P15 đã đóng + có `fe-handoff-phase15`** (bảng `post`/`banner`, API CRUD +
@@ -3166,7 +3181,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 - `npm run lint` + `npm run build` sạch; dữ liệu test dọn sạch; bàn giao
   `docs/handoff/phien-*.md` + cập nhật PLAN/CLAUDE.md (skill `handoff`).
 
-## Phase 21 — Cấu hình Storefront, Điểm thưởng & Voucher công khai ⏳ **CHỜ backend P13+P16**
+## Phase 21 — Cấu hình Storefront, Điểm thưởng & Voucher công khai ⏳ **CHỜ backend P13+P16** — mục ④ **R2**, còn lại **R3**; ô `store.branch_id` của mục ① đã kéo lên **Phase 24** *(replan 2026-10-11)*
 
 ### Điều kiện tiên quyết
 - Backend **P13 đã đóng** (mục ① cần `GET/PUT /api/system-config`) và **P16 đã đóng** (mục ②③ cần
@@ -3331,3 +3346,65 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 - Sắp xếp cover bằng kéo-thả — 5 ô cố định đủ dùng, kéo-thả cần thêm thư viện (CONVENTIONS §5).
 - Nhiều danh mục mặc định theo mùa/chiến dịch, hẹn giờ đổi cover — nếu PO muốn thì đó là module
   `banner` (backend P15), không nhét vào `category`.
+
+---
+
+## Phase 24 — CMS catalog sẵn sàng Release R1 ⏳ **(replan 2026-10-11)**
+
+> **Vì sao có phase này.** Web bán hàng R1 chỉ trưng bày sản phẩm + danh mục. Mọi thứ khách thấy
+> trên web phải **nhập được và kiểm được từ admin** — nếu không, ngày release sẽ phải sửa DB tay.
+> Phase này gom các lỗ hổng còn lại giữa admin và storefront, **không làm màn CMS nội dung** (Phase 20).
+
+### Điều kiện tiên quyết
+- **Phase 22 + 23 đã đóng.** Hai mục còn mở cần user chốt trước:
+  ① Phase 22 thiếu unit test `IMAGE_SPEC` vì repo **chưa có test runner** ⇒ chọn: thêm Vitest
+  (dependency mới — CONVENTIONS mục 8) **hay** đóng 22 bằng kiểm tra tay + ghi nợ. *Đề xuất: ghi nợ,
+  không chặn R1.*
+  ② Phase 23 còn: đối chiếu với storefront GĐ1.5 · race 409 · đường INACTIVE/XOÁ · RBAC — **bắt
+  buộc làm** (đây chính là CMS danh mục của R1).
+- Backend P13 `system-config` (`GET/PUT /api/system-config`) — đã có. **Đo API thật trước khi code**
+  (skill `update-api-doc`).
+- Storefront có URL chạy được (staging hoặc production) để làm nút "Xem trên web" và đối chiếu.
+
+### Việc cần làm
+1. **Cấu hình chi nhánh bán online** (`/store-settings`, chỉ SUPER_ADMIN) — **chỉ ô `store.branch_id`**
+   (SearchSelect chi nhánh) + dialog xác nhận khi đổi (*"tồn kho hiển thị trên web sẽ tính theo chi
+   nhánh mới"*). PDP storefront báo còn/hết hàng theo chi nhánh này ⇒ R1 không thể thiếu. Phí ship,
+   freeship, `loyalty.*` **để Phase 21 (R3)** — R1 không có checkout.
+2. **SEO trên form Sản phẩm + Danh mục**: `metaTitle` (≤150) · `metaDescription` — backend P13 đã có,
+   admin chưa có ô. Gợi ý độ dài + đếm ký tự; để trống ⇒ storefront tự sinh từ tên/mô tả (ghi chú
+   ngay dưới ô). Hiện **slug** (chỉ đọc) để admin biết URL trên web.
+3. **Nút "Xem trên web"** ở modal chi tiết Sản phẩm / Danh mục — mở `{STORE_URL}/san-pham/{slug}` /
+   `/danh-muc/{slug}` ở tab mới; `STORE_URL` đọc lúc chạy qua `config.js` (cơ chế runtime-env sẵn có),
+   không nướng vào bundle. Kèm chú thích *"thay đổi hiện trên web sau tối đa 5–10 phút"* (R1 chưa có
+   webhook revalidate).
+4. **Rà luồng "admin nhập → web hiện" cho catalog** — biên bản đủ các ca: SP ACTIVE/INACTIVE/xoá ·
+   SP không danh mục · SP không ảnh / 1 ảnh / ≥2 ảnh (hover) · giá kênh ONLINE (P8) khác giá niêm yết
+   · SKU hết hàng ở chi nhánh online · danh mục cha/con · danh mục mặc định 0/1. Lệch nào ⇒ skill
+   `request-backend` hoặc ghi sang storefront, không sửa ngầm.
+5. **Chống bản cũ sau deploy cho admin** (người dùng không biết Ctrl+Shift+R):
+   - Nền đã đúng: `index.html` + `config.js` `no-store`, `/assets/**` hash + `immutable` (nginx.conf).
+   - **Thêm**: bắt sự kiện `vite:preloadError` ⇒ `location.reload()` một lần (chống vòng lặp bằng cờ
+     `sessionStorage`) — chữa lỗi "Failed to fetch dynamically imported module" khi tab mở từ bản cũ
+     bấm sang màn chưa tải.
+   - **Thêm (user chốt 2026-10-11: dùng popup, không chỉ thanh banner)**: build sinh `version.json`
+     (git SHA, `no-store`); app kiểm khi tab được focus lại + mỗi 10 phút ⇒ lệch phiên bản thì mở
+     **popup** (`<dialog>` không `modal` — không che form đang mở, góc màn hình) *"Đã có phiên bản
+     mới — Tải lại"* + nút Tải lại/Đóng. **Không tự reload** — admin có thể đang nhập POS/form dài,
+     tự ý reload sẽ mất dữ liệu; chỉ nhắc, người dùng tự quyết định lúc nào bấm.
+     Không ảnh hưởng SEO vì admin đã `noindex, nofollow` (nginx.conf) — không cần đo lại.
+   - Giữ `/assets` của bản trước thêm một lần deploy (chép vào image mới) để tab cũ không gãy.
+
+### Output mong muốn (DoD)
+- `/store-settings` đổi chi nhánh online thật ⇒ PDP storefront đổi trạng thái còn/hết theo chi nhánh
+  mới (sau chu kỳ revalidate / reload); role khác SUPER_ADMIN không thấy menu + 403 khi gõ URL.
+- Form SP/danh mục lưu và đọc lại đúng `metaTitle`/`metaDescription`; view-source storefront hiện
+  đúng `<title>`/`<meta description>` đã nhập.
+- Biên bản mục 4 đủ mọi ca, mỗi ca có ảnh chụp admin ↔ web đặt cạnh nhau.
+- Kịch bản deploy 2 lần: mở admin bản A → deploy bản B → ① bấm sang màn chưa tải ⇒ tự reload, không
+  trang trắng; ② quay lại tab ⇒ thấy thanh "phiên bản mới"; tab mới vào thẳng bản B.
+- i18n VI/EN cân key; `types/` đồng bộ api-docs; lint + build sạch; bàn giao (skill `handoff`).
+
+### Ngoài phạm vi
+- Phí ship / điểm thưởng / voucher (Phase 21, R3) · bài viết / banner / trang tĩnh (Phase 20, R3).
+- Webhook revalidate tức thời (backend P17 — chỉ kéo vào R1 nếu khách không chấp nhận trễ 5–10 phút).
