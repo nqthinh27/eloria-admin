@@ -77,6 +77,7 @@ export default {
             codeExisted: 'Mã danh mục đã tồn tại.',
             hasChildren: 'Danh mục vẫn còn danh mục con, không thể xoá.',
             parentInvalid: 'Danh mục cha không hợp lệ (không được chọn chính nó hoặc danh mục con của nó).',
+            defaultConflict: 'Danh mục mặc định vừa được người khác thay đổi. Vui lòng tải lại danh sách.',
         },
         brand: {
             notExisted: 'Thương hiệu không tồn tại.',
@@ -181,7 +182,7 @@ export default {
 
         // Ảnh
         image: {
-            notAvailable: 'Không tải được ảnh.',
+            notAvailable: 'Ảnh không tồn tại hoặc đã được gỡ trước đó.',
         },
         file: {
             typeNotAllowed: 'Chỉ chấp nhận ảnh jpg, jpeg, png, gif hoặc webp (không nhận SVG hay file đổi đuôi).',

@@ -165,11 +165,6 @@ export type Category = {
     slug: string
     level: number
     sortOrder: number | null
-    /**
-     * @deprecated P13.1 — luôn trùng `imageLink1`, backend xoá cột ở P17. Chỉ đọc làm dự phòng cho
-     * cột ảnh ở bảng; **không** dựng ô nhập riêng.
-     */
-    imageUrl: string | null
     status: EntityStatus
     parentId: string | null
     parentName: string | null
@@ -197,6 +192,9 @@ export type CategorySearchReq = SearchReq & {
     isDefault?: boolean
 }
 
+/** Tên slot multipart của `POST /category/{id}/images` · `DELETE /category/{id}/images/{slot}` (BE31). */
+export type CategoryImageSlot = 'image1' | 'image2' | 'cover1' | 'cover2' | 'cover3' | 'cover4' | 'cover5'
+
 /**
  * `CreateCategoryReqDTO` / `UpdateCategoryReqDTO` — hai DTO có **cùng bộ field**
  * (khác `product`: `UpdateProductReqDTO` bỏ `code`, còn danh mục vẫn sửa được `code`).
@@ -212,17 +210,11 @@ export type CategoryPayload = {
     parentId?: string
     sortOrder?: number
     /**
-     * Các field nội dung (P13.1): **bỏ hẳn/`null` ⇒ giữ nguyên**, **`""` ⇒ xoá** (cột về null).
-     * Form sửa chỉ gửi `""` cho ô **vừa bị xoá** (trước có giá trị); ô vốn trống thì bỏ field — backend lưu `""` chứ không về `null` ở cover/description.
+     * Mô tả: bỏ hẳn ⇒ giữ nguyên, `""` ⇒ xoá (backend chuẩn hoá về `null` — BE32).
+     * ⚠️ Ảnh (`imageLink1/2`, `coverLink1..5`) **không còn** trong payload (P13.3): gửi ⇒ HTTP 400
+     * `error.input.invalid`. Ảnh chỉ ghi qua `categoryApi.uploadImages` / `deleteImage`.
      */
     description?: string
-    imageLink1?: string
-    imageLink2?: string
-    coverLink1?: string
-    coverLink2?: string
-    coverLink3?: string
-    coverLink4?: string
-    coverLink5?: string
     /** Bật cho B khi A đang giữ ⇒ chỉ cần 1 request, server tự gỡ A. Bỏ field ⇒ giữ nguyên. */
     isDefault?: boolean
 }
@@ -240,12 +232,11 @@ export type Brand = {
     lastModifiedDate: string
 }
 
-/** `CreateBrandReqDTO` = `UpdateBrandReqDTO` (cùng bộ field). `code` tối đa 50, `name` 150, `address` 255, `logoUrl` 256, `description` 500. */
+/** `CreateBrandReqDTO` = `UpdateBrandReqDTO` (cùng bộ field). `code` tối đa 50, `name` 150, `address` 255, `description` 500. ⚠️ Không còn `logoUrl` (P13.3 — gửi ⇒ 400): logo qua `brandApi.uploadLogo`. */
 export type BrandPayload = {
     code: string
     name: string
     address?: string
-    logoUrl?: string
     description?: string
 }
 

@@ -37,8 +37,7 @@ export default {
             namePlaceholder: 'Nhập tên thương hiệu',
             address: 'Địa chỉ',
             addressPlaceholder: 'Trụ sở / xuất xứ (không bắt buộc)',
-            logoUrl: 'Đường dẫn logo',
-            logoUrlPlaceholder: 'https://… (không bắt buộc)',
+            logo: 'Logo',
             description: 'Mô tả',
             descriptionPlaceholder: 'Giới thiệu ngắn về thương hiệu (không bắt buộc)',
             submitCreate: 'Thêm thương hiệu',
@@ -50,7 +49,6 @@ export default {
                 nameRequired: 'Vui lòng nhập tên thương hiệu',
                 nameMaxLength: 'Tên thương hiệu tối đa 150 ký tự',
                 addressMaxLength: 'Địa chỉ tối đa 255 ký tự',
-                logoUrlMaxLength: 'Đường dẫn logo tối đa 256 ký tự',
                 descriptionMaxLength: 'Mô tả tối đa 500 ký tự',
             },
         },
@@ -71,6 +69,7 @@ export default {
         },
 
         toast: {
+            logoFailed: 'Đã tạo thương hiệu nhưng chưa tải được logo — mở lại thương hiệu để tải lại.',
             created: 'Thêm thương hiệu thành công',
             updated: 'Cập nhật thương hiệu thành công',
             statusUpdated: 'Cập nhật trạng thái thương hiệu thành công',

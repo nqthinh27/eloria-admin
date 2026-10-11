@@ -108,9 +108,10 @@ export default function BrandListPage() {
     const reload = useCallback(() => load(undefined, true), [load])
 
     const handleCreate = async (payload: BrandPayload) => {
-        await brandApi.create(payload)
+        const created = await brandApi.create(payload)
         toastSuccess('brand.toast.created', { ns: 'brand' })
         await reload()
+        return created
     }
 
     const handleUpdate = async (id: string, payload: BrandPayload) => {
@@ -207,6 +208,7 @@ export default function BrandListPage() {
                     brand={formBrand === 'new' || formBrand === null ? null : formBrand}
                     onCreate={handleCreate}
                     onUpdate={handleUpdate}
+                    onMediaChanged={() => void reload()}
                 />
 
                 <BrandDetailModal brand={detailBrand} onOpenChange={(open) => !open && setDetailBrand(null)} />

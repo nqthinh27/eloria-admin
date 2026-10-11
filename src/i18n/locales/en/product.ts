@@ -269,7 +269,6 @@ export default {
                 nameRequired: 'Please enter the category name',
                 nameMaxLength: 'Category name must be at most 150 characters',
                 descriptionMaxLength: 'Description must be at most 500 characters',
-                linkMaxLength: 'Image link must be at most 500 characters',
             },
         },
 
@@ -309,6 +308,7 @@ export default {
             deleted: 'Category deleted successfully',
             statusUpdated: 'Category status updated successfully',
             defaultSwitched: 'Default category moved from "{{from}}" to "{{to}}"',
+            imagesPartial: 'Category created, but {{count}} image(s) failed to upload — reopen the category to retry.',
             defaultRace:
                 'The default category was just changed by someone else — the list was reloaded, please check and try again.',
         },

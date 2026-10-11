@@ -56,7 +56,6 @@ export type UpdateStaffReq = {
     branchId?: string
     dob?: string
     gender?: EGender
-    imageUrl?: string
     description?: string
 }
 

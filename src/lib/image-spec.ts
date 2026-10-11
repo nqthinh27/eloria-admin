@@ -39,8 +39,11 @@ export type ImageSpec = {
     mobile?: { ratio: number; ratioLabel: string }
 }
 
-const MB = 1024 * 1024
 const KB = 1024
+const MB = 1024 * KB
+
+/** Trần cứng của backend (`max-file-size`, mọi luồng ảnh) — dùng chung cho mọi spec, không đặt ngân sách riêng. */
+const MAX_BYTES = 2 * MB
 
 export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
     PRODUCT: {
@@ -48,7 +51,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '4:5',
         recommended: { w: 1600, h: 2000 },
         min: { w: 1000, h: 1250 },
-        maxBytes: 2 * MB,
+        maxBytes: MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },
@@ -57,7 +60,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '4:5',
         recommended: { w: 800, h: 1000 },
         min: { w: 480, h: 600 },
-        maxBytes: 500 * KB,
+        maxBytes: MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },
@@ -66,7 +69,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '21:10',
         recommended: { w: 2520, h: 1200 },
         min: { w: 1890, h: 900 },
-        maxBytes: 2 * MB,
+        maxBytes: MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
         safeZone: { w: 960, h: 1200 },
@@ -77,7 +80,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '9:2',
         recommended: { w: 2520, h: 560 },
         min: { w: 1800, h: 400 },
-        maxBytes: 1.5 * MB,
+        maxBytes: MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
         safeZone: { w: 1000, h: 560 },
@@ -88,7 +91,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '16:9',
         recommended: { w: 1920, h: 1080 },
         min: { w: 1280, h: 720 },
-        maxBytes: 1 * MB,
+        maxBytes: MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },
@@ -97,7 +100,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '1,91:1',
         recommended: { w: 1200, h: 630 },
         min: { w: 600, h: 315 },
-        maxBytes: 1 * MB,
+        maxBytes: MAX_BYTES,
         formats: ['jpg', 'png'],
         fit: 'cover',
         safeZone: { w: 630, h: 630 },
@@ -107,7 +110,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '1:1',
         recommended: { w: 512, h: 512 },
         min: { w: 256, h: 256 },
-        maxBytes: 300 * KB,
+        maxBytes: MAX_BYTES,
         formats: ['png'],
         fit: 'contain',
         // Logo nằm trong 448×448, chừa lề 6,25 % mỗi bên (§3).
@@ -207,7 +210,8 @@ export function evaluateImage(spec: ImageSpec, facts: ImageFacts): ImageInspecti
     if (width < spec.min.w || height < spec.min.h) {
         issues.push({
             code: 'belowMin',
-            blocking: true,
+            // Chỉ khuyến nghị của FE (backend không kiểm kích thước) ⇒ cảnh báo, vẫn cho lưu.
+            blocking: false,
             params: { w: width, h: height, minW: spec.min.w, minH: spec.min.h },
         })
     }
@@ -292,6 +296,9 @@ export function measureImageUrl(
  * báo "không tải được" — đúng với thực tế là admin không nhìn thấy file đó.
  */
 export function resolveImageSrc(value: string): string {
-    if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:') || value.startsWith('/')) return value
+    // Ảnh do upload danh mục/thương hiệu (BE31) trả `/category/<file>` · `/brand/<file>` — dạng đường dẫn
+    // gốc nhưng backend lưu, phải đi qua `/image`; chỉ `/media/**` (seed storefront) mới dùng nguyên văn.
+    if (/^\/(category|brand)\//.test(value)) return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
+    if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:') || value.startsWith('/')) return value
     return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
 }

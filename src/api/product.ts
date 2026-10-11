@@ -9,6 +9,7 @@ import type {
     Brand,
     BrandPayload,
     Category,
+    CategoryImageSlot,
     CategoryPayload,
     CategorySearchReq,
     Color,
@@ -143,6 +144,21 @@ export const categoryApi = {
         return apiClient.post<null>('/category/update-status', { id, status })
     },
 
+    /**
+     * `[SUPER_ADMIN] POST /category/{id}/images` (BE31) — multipart theo slot: `image1` · `image2` ·
+     * `cover1..cover5`. Chỉ gửi slot muốn thay (≥ 1); trần 2 MB/file. Trả `Category` đầy đủ.
+     */
+    uploadImages(id: string, slots: Partial<Record<CategoryImageSlot, File>>) {
+        const form = new FormData()
+        Object.entries(slots).forEach(([slot, file]) => file && form.append(slot, file))
+        return apiClient.post<Category>(`/category/${id}/images`, form)
+    },
+
+    /** `[SUPER_ADMIN] DELETE /category/{id}/images/{slot}` — slot trống ⇒ `error.image.notAvailable`. */
+    deleteImage(id: string, slot: CategoryImageSlot) {
+        return apiClient.delete<Category>(`/category/${id}/images/${slot}`)
+    },
+
     /** `[SUPER_ADMIN] DELETE /category/{id}` — xoá mềm, chặn nếu còn danh mục con hoặc sản phẩm gán vào. */
     remove(id: string) {
         return apiClient.delete<null>(`/category/${id}`)
@@ -172,6 +188,18 @@ export const brandApi = {
     /** `[SUPER_ADMIN] POST /brand/update-status` — bật/tắt (0/1); response `data: null`. */
     updateStatus(id: string, status: EntityStatus) {
         return apiClient.post<null>('/brand/update-status', { id, status })
+    },
+
+    /** `[SUPER_ADMIN] POST /brand/{id}/logo` (BE31) — multipart field `logo`; thay logo cũ thì backend xoá file cũ. */
+    uploadLogo(id: string, file: File) {
+        const form = new FormData()
+        form.append('logo', file)
+        return apiClient.post<Brand>(`/brand/${id}/logo`, form)
+    },
+
+    /** `[SUPER_ADMIN] DELETE /brand/{id}/logo` — chưa có logo ⇒ `error.image.notAvailable`. */
+    deleteLogo(id: string) {
+        return apiClient.delete<Brand>(`/brand/${id}/logo`)
     },
 
     /** `[SUPER_ADMIN] DELETE /brand/{id}` — xoá mềm; còn sản phẩm tham chiếu ⇒ `error.brand.hasProducts`. */

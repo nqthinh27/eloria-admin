@@ -90,7 +90,7 @@ export function CategoryDetailModal({
             formatValue: () => (
                 <div className="w-36">
                     <HoverSwapPreview
-                        primary={category.imageLink1 ?? category.imageUrl ?? ''}
+                        primary={category.imageLink1 ?? ''}
                         secondary={category.imageLink2 ?? ''}
                     />
                 </div>

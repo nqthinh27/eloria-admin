@@ -47,15 +47,17 @@ export default {
 
     field: {
         clear: 'Xoá ảnh',
-        placeholder: 'Dán đường dẫn ảnh (tối đa 500 ký tự)',
+        uploaded: 'Đã lưu ảnh.',
+        removed: 'Đã gỡ ảnh.',
+        appliesNow: 'Ảnh được lưu ngay khi tải lên hoặc gỡ — không phụ thuộc nút Lưu / Huỷ.',
+        replace: 'Đổi ảnh',
+        pending: 'Sẽ tải lên khi lưu: {{name}}',
+        upload: 'Tải ảnh lên',
+        uploading: 'Đang tải lên…',
         measuring: 'Đang kiểm tra ảnh…',
-        loadFailed: 'Không tải được ảnh từ đường dẫn này — kiểm tra lại link.',
         size: 'Kích thước ảnh: {{w}} × {{h}} px',
-        linkOnlyNote:
-            'Ảnh nhập bằng đường dẫn nên chỉ kiểm tra được kích thước và tỉ lệ; dung lượng và định dạng chưa kiểm tra được.',
         previewButton: 'Xem đúng khung',
         previewTitle: 'Xem trước đúng khung trên web khách',
-        blockedNotice: 'Ảnh chưa đạt yêu cầu tối thiểu — chọn ảnh khác trước khi lưu.',
     },
 
     frame: {

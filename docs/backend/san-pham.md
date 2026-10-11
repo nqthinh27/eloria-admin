@@ -42,6 +42,16 @@ Response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus` (có `act
 - ⚠️ `images[]` của response là mảng URL **đã lọc slot rỗng** ⇒ FE suy slot = vị trí + 1, chỉ đúng khi không
   có lỗ hổng ⇒ FE **chỉ cho xoá ảnh cuối** cho tới khi backend trả `imagesBySlot` (xem handoff 2026-09-26).
 - **Danh mục — P13.1 (đo thật 2026-10-10, màn `/categories`)**: `CategoryResDTO`/`Create`/`Update` thêm `description` (≤500) · `imageLink1/2` · `coverLink1..5` (≤500, **chuỗi link — không có endpoint upload**, xem BE31) · `isDefault` (`Boolean`, JSON key `isDefault`); `CategorySearchReqDTO.isDefault` (`true` = chỉ mặc định, bỏ/`null` = không lọc). `imageUrl` deprecated (luôn trùng `imageLink1`, xoá ở P17). **Field nội dung: bỏ/`null` = giữ nguyên, `""` = xoá** — nhưng đo thật `imageLink1:""` → `null` còn `coverLink*`/`description:""` → **`""`**. ⚠️ **`parentId` là full-update**: PUT thiếu `parentId` ⇒ danh mục về gốc (`level=0`) — form phải luôn gửi cha hiện tại. Bật `isDefault` cho B khi A đang giữ ⇒ 1 request, server tự gỡ A; 0 danh mục mặc định là hợp lệ (web ẩn hẳn khối ngang cuối Trang chủ); 2 người cùng bật ⇒ HTTP 409 `error.dataIntegrity.violation`. Cờ default của danh mục INACTIVE vẫn còn (chỉ xoá mềm mới nhả).
+- **Ảnh danh mục & thương hiệu — P13.2/P13.3 (đo thật 2026-10-11, BREAKING)**: **chỉ upload, không nhận link**. Body
+  create/update **không còn** `imageUrl` · `ogImage` · `imageLink1/2` · `coverLink1..5` (danh mục), `logoUrl` (thương hiệu),
+  `ogImage` (sản phẩm), `imageUrl` (`UpdateStaffReqDTO`) — gửi ⇒ HTTP 400 `error.input.invalid`. Response vẫn trả
+  `imageLink*`/`coverLink*`/`logoUrl` (đường dẫn `/category/<uuid>.<ext>` · `/brand/<uuid>.<ext>`, xem qua `GET /image?imageUrl=`).
+  Endpoint `[SUPER_ADMIN]`: `POST /category/{id}/images` (multipart `image1`,`image2`,`cover1..5`; chỉ slot có gửi),
+  `DELETE /category/{id}/images/{slot}`, `POST /brand/{id}/logo` (field `logo`), `DELETE /brand/{id}/logo` — cả 4 trả **DTO đầy đủ**.
+  Xoá slot trống ⇒ HTTP 400 `error.image.notAvailable`; slot lạ ⇒ 400 `error.input.invalid`. **Backend không kiểm kích thước/tỉ lệ**
+  (đo: ảnh 100×100 vẫn nhận) — chặn/cảnh báo kích thước là luật FE (`src/lib/image-spec.ts`). Tạo bản ghi trước rồi mới upload;
+  xoá mềm danh mục/thương hiệu/nhân viên ⇒ backend tự dọn file. `""` ở `description` ⇒ `null` (BE32); 409 tranh chấp mặc định ⇒
+  `error.category.defaultConflict` (BE33). Đoạn "chuỗi link — không có endpoint upload" ở dòng Danh mục P13.1 bên trên **đã lỗi thời**.
 - Dung lượng (`spring.servlet.multipart`): **2MB/file · 4MB/request**, vượt ⇒ HTTP 413 `error.file.tooLarge`
   ⇒ FE chặn file > 2MB và chia lô request ≤ ~3.9MB (`product-detail-modal.tsx#chunkBySize`).
 - Upload ảnh kiểm **nội dung thật**: chỉ jpg/jpeg/png/gif/webp (**không SVG**), sai ⇒

@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 import { z } from 'zod'
 
+import { toastSuccess, toastWarning } from '@/lib/toast'
 import { setFormErrorFromApi } from '@/lib/form-error'
 import { COVER_ROTATE_MS } from '@/lib/image-spec'
 import { normalizeCode } from '@/lib/validation'
-import type { Category, CategoryPayload } from '@/types/product'
+import type { Category, CategoryImageSlot, CategoryPayload } from '@/types/product'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -19,17 +20,29 @@ import { SearchSelect } from '@/components/search-select'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { CoverSlidesPreview } from '@/components/image/cover-slides-preview'
 import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
-import { ImageLinkField } from '@/components/image/image-link-field'
+import { ImageUploadField } from '@/components/image/image-upload-field'
+import { categoryApi } from '@/api/product'
 
 /** Giá trị `Select` cho "không có danh mục cha" — Radix Select không nhận `value=""`. */
 const NO_PARENT = '__none__'
 
 /** 5 ô cover theo đúng thứ tự chạy slideshow. */
-const COVER_FIELDS = ['coverLink1', 'coverLink2', 'coverLink3', 'coverLink4', 'coverLink5'] as const
-type ImageFieldName = 'imageLink1' | 'imageLink2' | (typeof COVER_FIELDS)[number]
+const COVER_SLOTS = ['cover1', 'cover2', 'cover3', 'cover4', 'cover5'] as const satisfies CategoryImageSlot[]
+
+/** Slot multipart của `POST /category/{id}/images` (BE31) → field đọc ra trong `Category`. */
+const SLOT_FIELD = {
+    image1: 'imageLink1',
+    image2: 'imageLink2',
+    cover1: 'coverLink1',
+    cover2: 'coverLink2',
+    cover3: 'coverLink3',
+    cover4: 'coverLink4',
+    cover5: 'coverLink5',
+} as const satisfies Record<CategoryImageSlot, keyof Category>
+
+type StagedFiles = Partial<Record<CategoryImageSlot, File>>
 
 const buildSchema = (t: (key: string) => string) => {
-    const link = z.string().trim().max(500, t('category.form.validation.linkMaxLength'))
     return z.object({
         code: z
             .string()
@@ -44,13 +57,6 @@ const buildSchema = (t: (key: string) => string) => {
         parentId: z.string().optional(),
         sortOrder: z.string().optional(),
         description: z.string().trim().max(500, t('category.form.validation.descriptionMaxLength')),
-        imageLink1: link,
-        imageLink2: link,
-        coverLink1: link,
-        coverLink2: link,
-        coverLink3: link,
-        coverLink4: link,
-        coverLink5: link,
         isDefault: z.boolean(),
     })
 }
@@ -66,8 +72,11 @@ type CategoryFormDialogProps = {
     parentOptions: Category[]
     /** Danh mục đang giữ cờ mặc định (nếu có) — để báo trước "bật ở đây sẽ tự tắt ở danh mục kia". */
     currentDefault: Category | null
-    onCreate: (payload: CategoryPayload) => Promise<void>
+    /** Trả danh mục vừa tạo (cần `id` để upload ảnh đã chọn); `undefined` = chưa tạo (vd xung đột mặc định). */
+    onCreate: (payload: CategoryPayload) => Promise<Category | undefined>
     onUpdate: (id: string, payload: CategoryPayload) => Promise<void>
+    /** Gọi **một lần khi dialog đóng** nếu đã upload/xoá ảnh (BE31) — ảnh đã ghi vào DB nên màn ngoài phải nạp lại. */
+    onMediaChanged?: () => void
 }
 
 const EMPTY_VALUES: CategoryFormValues = {
@@ -76,13 +85,6 @@ const EMPTY_VALUES: CategoryFormValues = {
     parentId: NO_PARENT,
     sortOrder: '',
     description: '',
-    imageLink1: '',
-    imageLink2: '',
-    coverLink1: '',
-    coverLink2: '',
-    coverLink3: '',
-    coverLink4: '',
-    coverLink5: '',
     isDefault: false,
 }
 
@@ -106,6 +108,7 @@ export function CategoryFormDialog({
     currentDefault,
     onCreate,
     onUpdate,
+    onMediaChanged,
 }: CategoryFormDialogProps) {
     const { t } = useTranslation(['product', 'common', 'image'])
     const isEdit = category !== null
@@ -117,14 +120,29 @@ export function CategoryFormDialog({
         defaultValues: EMPTY_VALUES,
     })
 
-    /** Các ô ảnh đang dưới mức tối thiểu — chặn lưu cho tới khi đổi ảnh khác hoặc xoá. */
-    const [blockedFields, setBlockedFields] = useState<Partial<Record<ImageFieldName, boolean>>>({})
+    /** Bản ghi mới nhất (cập nhật theo DTO mỗi lần upload/xoá ảnh) — prop `category` chỉ là ảnh chụp lúc mở. */
+    const [saved, setSaved] = useState<Category | null>(null)
+    /** Thêm mới: file đã chọn, chờ có `id` (sau khi `POST /category`) mới upload. */
+    const [staged, setStaged] = useState<StagedFiles>({})
+    const [busySlot, setBusySlot] = useState<CategoryImageSlot | null>(null)
+    /**
+     * Ảnh đã đổi trên backend trong lúc dialog mở ⇒ nạp lại danh sách **một lần khi đóng** thay vì sau
+     * mỗi slot (sửa 7 slot không kéo 7 lần `category/search`).
+     */
+    const mediaDirtyRef = useRef(false)
+    useEffect(() => {
+        if (open || !mediaDirtyRef.current) return
+        mediaDirtyRef.current = false
+        onMediaChanged?.()
+    }, [open, onMediaChanged])
     /** Giá trị đang chờ người dùng xác nhận "về 0 danh mục mặc định" (xem `onSubmit`). */
     const [pendingValues, setPendingValues] = useState<CategoryFormValues | null>(null)
 
     useEffect(() => {
         if (!open) return
-        setBlockedFields({})
+        setSaved(category)
+        setStaged({})
+        setBusySlot(null)
         setPendingValues(null)
         form.reset({
             code: category?.code ?? '',
@@ -132,44 +150,19 @@ export function CategoryFormDialog({
             parentId: category?.parentId ?? NO_PARENT,
             sortOrder: category?.sortOrder != null ? String(category.sortOrder) : '',
             description: category?.description ?? '',
-            // `imageUrl` cũ luôn trùng `imageLink1` sau backfill; vẫn đọc làm dự phòng cho dòng chưa qua backfill.
-            imageLink1: category?.imageLink1 ?? category?.imageUrl ?? '',
-            imageLink2: category?.imageLink2 ?? '',
-            coverLink1: category?.coverLink1 ?? '',
-            coverLink2: category?.coverLink2 ?? '',
-            coverLink3: category?.coverLink3 ?? '',
-            coverLink4: category?.coverLink4 ?? '',
-            coverLink5: category?.coverLink5 ?? '',
             isDefault: category?.isDefault === true,
         })
     }, [open, category, form])
 
-    const hasBlockedImage = Object.values(blockedFields).some(Boolean)
-
     const save = async (values: CategoryFormValues) => {
-        /*
-         * Field nội dung (P13.1): bỏ field = GIỮ NGUYÊN, `""` = XOÁ. Chỉ gửi `""` khi ô **vừa bị xoá**
-         * (trước có giá trị, nay trống). Ô vốn đã trống thì bỏ field: đo thật 2026-10-10 cho thấy backend
-         * lưu `""` (không phải `null`) và trả `""` lại, nên gửi `""` bừa sẽ biến mọi cột null thành
-         * chuỗi rỗng — storefront kiểm `null` có thể coi chuỗi rỗng là "có ảnh".
-         */
-        const content = (value: string, original: string | null | undefined) =>
-            value ? value : original ? '' : undefined
         const payload: CategoryPayload = {
             code: values.code,
             name: values.name,
             // Luôn gửi cha hiện tại; "Không có" mới là chủ ý chuyển về gốc.
             parentId: values.parentId === NO_PARENT ? undefined : values.parentId,
             sortOrder: values.sortOrder ? Number(values.sortOrder) : undefined,
-            description: content(values.description, category?.description),
-            // `imageUrl` cũ trùng `imageLink1` nên cũng tính là "ô vốn có giá trị".
-            imageLink1: content(values.imageLink1, category?.imageLink1 ?? category?.imageUrl),
-            imageLink2: content(values.imageLink2, category?.imageLink2),
-            coverLink1: content(values.coverLink1, category?.coverLink1),
-            coverLink2: content(values.coverLink2, category?.coverLink2),
-            coverLink3: content(values.coverLink3, category?.coverLink3),
-            coverLink4: content(values.coverLink4, category?.coverLink4),
-            coverLink5: content(values.coverLink5, category?.coverLink5),
+            // `""` ⇒ xoá mô tả (backend chuẩn hoá về `null` — BE32). Ảnh không nằm trong payload (P13.3).
+            description: values.description,
             isDefault: values.isDefault,
         }
 
@@ -177,7 +170,20 @@ export function CategoryFormDialog({
             if (isEdit) {
                 await onUpdate(category.id, payload)
             } else {
-                await onCreate(payload)
+                const created = await onCreate(payload)
+                if (!created) return
+                // Tạo trước, upload sau (P13.3). Lỗi từng slot đã được api-client toast; không rollback danh mục.
+                const entries = Object.entries(staged) as [CategoryImageSlot, File][]
+                let failed = 0
+                for (const [slot, file] of entries) {
+                    try {
+                        await categoryApi.uploadImages(created.id, { [slot]: file })
+                    } catch {
+                        failed++
+                    }
+                }
+                if (entries.length > 0) mediaDirtyRef.current = true
+                if (failed > 0) toastWarning('category.toast.imagesPartial', { ns: 'product', count: failed })
             }
             onOpenChange(false)
         } catch (error) {
@@ -186,7 +192,6 @@ export function CategoryFormDialog({
     }
 
     const onSubmit = async (values: CategoryFormValues) => {
-        if (hasBlockedImage) return
         /*
          * Tắt mặc định của danh mục đang giữ cờ mà không chọn ai khác ⇒ bảng về **0** danh mục mặc định
          * ⇒ mất hẳn khối ảnh ngang ở Trang chủ. API vẫn cho phép (không phải lỗi) nhưng đó là thứ đáng
@@ -201,53 +206,78 @@ export function CategoryFormDialog({
 
     const isSubmitting = form.formState.isSubmitting
 
-    const watched = form.watch([
-        'name',
-        'description',
-        'imageLink1',
-        'imageLink2',
-        'coverLink1',
-        'coverLink2',
-        'coverLink3',
-        'coverLink4',
-        'coverLink5',
-        'isDefault',
-    ])
-    const [watchName, watchDescription, tile1, tile2, ...rest] = watched
-    const coverLinks = rest.slice(0, COVER_FIELDS.length) as string[]
-    const watchIsDefault = rest[COVER_FIELDS.length] as boolean
+    const [watchName, watchDescription, watchIsDefault] = form.watch(['name', 'description', 'isDefault'])
 
-    /** Ô ảnh dùng chung `ImageLinkField` — báo `blocked` lên `blockedFields`. */
+    /** File đang chờ → object URL để các khung xem trước (hover/slideshow) hiện được trước khi upload. */
+    const [stagedUrls, setStagedUrls] = useState<Partial<Record<CategoryImageSlot, string>>>({})
+    useEffect(() => {
+        // Tạo + thu hồi trong cùng effect (an toàn với StrictMode chạy effect hai lần ở dev).
+        const urls = Object.fromEntries(
+            Object.entries(staged).map(([slot, file]) => [slot, URL.createObjectURL(file)]),
+        ) as Partial<Record<CategoryImageSlot, string>>
+        setStagedUrls(urls)
+        return () => Object.values(urls).forEach((url) => URL.revokeObjectURL(url))
+    }, [staged])
+    const linkOf = (slot: CategoryImageSlot) => stagedUrls[slot] ?? saved?.[SLOT_FIELD[slot]] ?? ''
+    const coverLinks = COVER_SLOTS.map(linkOf)
+
+    /** Sửa: upload ngay (cần `id`); thêm mới: giữ file chờ tới khi tạo xong. */
+    const handleSelectFile = async (slot: CategoryImageSlot, file: File) => {
+        if (!saved) {
+            setStaged((prev) => ({ ...prev, [slot]: file }))
+            return
+        }
+        setBusySlot(slot)
+        try {
+            setSaved(await categoryApi.uploadImages(saved.id, { [slot]: file }))
+            mediaDirtyRef.current = true
+            toastSuccess('field.uploaded', { ns: 'image' })
+        } catch {
+            // api-client đã toast lỗi (quá 2MB, sai định dạng…).
+        } finally {
+            setBusySlot(null)
+        }
+    }
+
+    const handleRemove = async (slot: CategoryImageSlot) => {
+        if (!saved) {
+            setStaged((prev) => {
+                const next = { ...prev }
+                delete next[slot]
+                return next
+            })
+            return
+        }
+        setBusySlot(slot)
+        try {
+            setSaved(await categoryApi.deleteImage(saved.id, slot))
+            mediaDirtyRef.current = true
+            toastSuccess('field.removed', { ns: 'image' })
+        } catch {
+            // api-client đã toast lỗi (vd slot đã trống: `error.image.notAvailable`).
+        } finally {
+            setBusySlot(null)
+        }
+    }
+
     const renderImageField = (
-        name: ImageFieldName,
+        slot: CategoryImageSlot,
         spec: 'CATEGORY_TILE' | 'BANNER_WIDE',
         label: string,
         caption?: string,
         previewNote?: string,
     ) => (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <ImageLinkField
-                        spec={spec}
-                        label={label}
-                        caption={caption}
-                        previewNote={previewNote}
-                        value={field.value}
-                        onChange={field.onChange}
-                        onInspect={(result) =>
-                            setBlockedFields((prev) =>
-                                prev[name] === (result?.status === 'blocked')
-                                    ? prev
-                                    : { ...prev, [name]: result?.status === 'blocked' },
-                            )
-                        }
-                    />
-                    <FormMessage />
-                </FormItem>
-            )}
+        <ImageUploadField
+            spec={spec}
+            label={label}
+            caption={caption}
+            previewNote={previewNote}
+            savedLink={saved?.[SLOT_FIELD[slot]] ?? null}
+            pendingFile={staged[slot] ?? null}
+            busy={busySlot === slot}
+            disabled={isSubmitting || busySlot !== null}
+            onSelectFile={(file) => handleSelectFile(slot, file)}
+            onRemove={() => handleRemove(slot)}
         />
     )
 
@@ -359,6 +389,10 @@ export function CategoryFormDialog({
                                 <p className="text-muted-foreground text-xs">
                                     {t('category.form.web.subtitle')}
                                 </p>
+                                {/* Sửa: ảnh ghi ngay qua endpoint riêng (P13.3) — nói rõ Huỷ không hoàn tác ảnh. */}
+                                {saved && (
+                                    <p className="mt-1 text-xs font-medium">{t('image:field.appliesNow')}</p>
+                                )}
                             </div>
 
                             <FormField
@@ -387,13 +421,13 @@ export function CategoryFormDialog({
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_9rem]">
                                 <div className="space-y-4">
                                     {renderImageField(
-                                        'imageLink1',
+                                        'image1',
                                         'CATEGORY_TILE',
                                         t('category.form.tile1.label'),
                                         t('category.form.tile1.caption'),
                                     )}
                                     {renderImageField(
-                                        'imageLink2',
+                                        'image2',
                                         'CATEGORY_TILE',
                                         t('category.form.tile2.label'),
                                         t('category.form.tile2.caption'),
@@ -407,8 +441,8 @@ export function CategoryFormDialog({
                                         {t('category.form.tile.previewTitle')}
                                     </p>
                                     <HoverSwapPreview
-                                        primary={tile1 as string}
-                                        secondary={tile2 as string}
+                                        primary={linkOf('image1')}
+                                        secondary={linkOf('image2')}
                                     />
                                 </div>
                             </div>
@@ -430,14 +464,14 @@ export function CategoryFormDialog({
                                     <p className="text-xs font-medium">{t('image:slides.previewTitle')}</p>
                                     <CoverSlidesPreview
                                         links={coverLinks}
-                                        title={watchName as string}
-                                        description={watchDescription as string}
+                                        title={watchName}
+                                        description={watchDescription}
                                     />
                                 </div>
-                                {COVER_FIELDS.map((name, i) => (
-                                    <div key={name}>
+                                {COVER_SLOTS.map((slot, i) => (
+                                    <div key={slot}>
                                         {renderImageField(
-                                            name,
+                                            slot,
                                             'BANNER_WIDE',
                                             t('category.form.cover.label', { n: i + 1 }),
                                             undefined,
@@ -480,10 +514,6 @@ export function CategoryFormDialog({
                             />
                         </section>
 
-                        {hasBlockedImage && (
-                            <p className="text-destructive text-xs">{t('image:field.blockedNotice')}</p>
-                        )}
-
                         <DialogFooter>
                             <Button
                                 type="button"
@@ -492,7 +522,7 @@ export function CategoryFormDialog({
                                 onClick={() => onOpenChange(false)}>
                                 {t('common:action.cancel')}
                             </Button>
-                            <Button type="submit" disabled={isSubmitting || hasBlockedImage}>
+                            <Button type="submit" disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="size-4 animate-spin" />}
                                 {isSubmitting
                                     ? t('category.form.submitting')

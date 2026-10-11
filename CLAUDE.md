@@ -25,6 +25,28 @@ chi tiết nằm ở các file được trỏ tới, đừng chép ngược vào
 | Viết đặc tả SRS cho một màn / toàn hệ thống (`docs/srs/`) | skill **srs** — tự gọi **sequence-diagram** cho luồng phức tạp |
 | Vẽ sequence diagram (Mermaid) một luồng FE, trace code thật | skill **sequence-diagram** |
 
+### Đọc đúng phạm vi — tiết kiệm token
+
+Bảng trên là **mục lục tra cứu, không phải danh sách phải đọc hết**. Mỗi task chỉ nạp phần liên quan:
+
+- **Chỉ đọc doc thuộc phạm vi chức năng được yêu cầu.** Xác định domain/màn hình của task trước,
+  rồi mở đúng file của domain đó (vd: task đơn hàng ⇒ `docs/backend/don-hang.md`, không đọc
+  `khach-hang.md`, `ngan-hang-qr.md`…). Không quét cả thư mục `docs/`, `design/`, `docs/handoff/`.
+- **Doc lớn đọc có chọn lọc:** `CONVENTIONS.md`, `PLAN.md`, `docs/backend/README.md` — dùng
+  Grep/đọc theo mục (offset/limit) lấy đúng mục cần (vd CONVENTIONS mục 5.x cho bảng, README mục
+  Sort khi mở sort), không đọc trọn file trừ khi task thật sự cần toàn bộ.
+- **PLAN.md:** chỉ đọc phase user chỉ định + mục B nếu liên quan BE#. Không đọc các phase khác.
+- **Mockup `design/`:** chỉ mở mockup của đúng màn đang làm (tra CONVENTIONS mục 6.1).
+- **`docs/history.md` · `docs/handoff/`:** chỉ đọc khi cần truy vết quyết định cũ của chính
+  chức năng đó (Grep theo tên màn/domain); không đọc để "nắm bối cảnh chung". Skill `handoff` thì
+  chỉ **ghi tiếp**, không cần đọc lại toàn bộ.
+- **Không đọc lại** file đã đọc trong phiên khi nội dung không đổi; không chép nội dung doc vào
+  câu trả lời/doc khác — chỉ trỏ link.
+- **Chưa rõ doc nào thuộc phạm vi ⇒** Grep từ khoá (tên màn/endpoint/domain) trong `docs/` trước,
+  rồi mở file khớp; hoặc hỏi user, đừng đọc rộng để đoán.
+- Task chỉ chạm một file code nhỏ (sửa chữ, i18n, style) ⇒ chỉ cần luật liên quan trong
+  CONVENTIONS, không cần đọc docs backend/PLAN.
+
 ## Lệnh
 
 ```bash
@@ -59,9 +81,9 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
   **Phase 18 (Quản lý Tài khoản ngân hàng, chỉ SUPER_ADMIN) đã xong 2026-09-20** — route
   `/bank-accounts`, đặc tả ở [docs/backend/ngan-hang-qr.md](docs/backend/ngan-hang-qr.md).
   **Phase 19 (Quản lý Thương hiệu, chỉ SUPER_ADMIN) đã xong 2026-09-20** — route `/brands`.
-  **Phase 22 + 23 (chuẩn ảnh CMS · ảnh danh mục & danh mục mặc định) xong phần FE 2026-10-10** — còn upload file chờ **BE31**, chi tiết ở PLAN.
+  **Phase 22 + 23 (chuẩn ảnh CMS · ảnh danh mục & danh mục mặc định) xong FE + upload 2026-10-11** (backend P13.3: ảnh danh mục/thương hiệu **chỉ upload**, không nhận link) — còn đo storefront/race/RBAC, chi tiết ở PLAN.
 - Backend: **118 path** (2026-09-13). Việc chờ backend còn mở: **BE2 · BE3 · BE4 · BE6 · BE7 · BE10 ·
-  BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30 · BE31 · BE32 · BE33 · BE34** — chi tiết ở PLAN mục B.
+  BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30** — chi tiết ở PLAN mục B.
 - Dòng thời gian phase & khảo sát backend: [docs/history.md](docs/history.md) ·
   bàn giao từng phiên: [docs/handoff/](docs/handoff/).
 

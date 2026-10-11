@@ -37,8 +37,7 @@ export default {
             namePlaceholder: 'Enter the brand name',
             address: 'Address',
             addressPlaceholder: 'Headquarters / origin (optional)',
-            logoUrl: 'Logo URL',
-            logoUrlPlaceholder: 'https://… (optional)',
+            logo: 'Logo',
             description: 'Description',
             descriptionPlaceholder: 'Short introduction of the brand (optional)',
             submitCreate: 'Add brand',
@@ -50,7 +49,6 @@ export default {
                 nameRequired: 'Please enter the brand name',
                 nameMaxLength: 'Brand name is at most 150 characters',
                 addressMaxLength: 'Address is at most 255 characters',
-                logoUrlMaxLength: 'Logo URL is at most 256 characters',
                 descriptionMaxLength: 'Description is at most 500 characters',
             },
         },
@@ -71,6 +69,7 @@ export default {
         },
 
         toast: {
+            logoFailed: 'Brand created, but the logo could not be uploaded — reopen the brand to retry.',
             created: 'Brand added',
             updated: 'Brand updated',
             statusUpdated: 'Brand status updated',

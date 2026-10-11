@@ -60,6 +60,7 @@ export default {
             hasChildren: 'This category still has child categories and cannot be deleted.',
             parentInvalid:
                 'Invalid parent category (it cannot be the category itself or one of its descendants).',
+            defaultConflict: 'The default category was just changed by someone else. Please reload the list.',
         },
         brand: {
             notExisted: 'Brand does not exist.',
@@ -160,7 +161,7 @@ export default {
         },
 
         image: {
-            notAvailable: 'The image could not be loaded.',
+            notAvailable: 'The image does not exist or has already been removed.',
         },
         file: {
             typeNotAllowed: 'Only jpg, jpeg, png, gif or webp images are accepted (no SVG or renamed files).',

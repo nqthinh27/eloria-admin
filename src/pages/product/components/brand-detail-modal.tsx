@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { formatDateTime } from '@/lib/format'
+import { resolveImageSrc } from '@/lib/image-spec'
 import { EntityStatus } from '@/types/common'
 import type { Brand } from '@/types/product'
 import { StatusBadge } from '@/components/status-badge'
@@ -45,14 +46,14 @@ export function BrandDetailModal({
             formatValue: () => brand.address || none,
         },
         {
-            label: t('brand.form.logoUrl'),
+            label: t('brand.form.logo'),
             readOnly: true,
             fullWidth: true,
             formatValue: () =>
                 brand.logoUrl ? (
                     <div className="flex items-center gap-3">
                         <img
-                            src={brand.logoUrl}
+                            src={resolveImageSrc(brand.logoUrl)}
                             alt=""
                             className="size-12 rounded-md border object-contain"
                             onError={(event) => (event.currentTarget.style.display = 'none')}

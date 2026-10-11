@@ -44,15 +44,17 @@ export default {
 
     field: {
         clear: 'Remove image',
-        placeholder: 'Paste the image link (up to 500 characters)',
+        uploaded: 'Image saved.',
+        removed: 'Image removed.',
+        appliesNow: 'Images are saved as soon as you upload or remove them — independent of Save / Cancel.',
+        replace: 'Replace image',
+        pending: 'Will upload on save: {{name}}',
+        upload: 'Upload image',
+        uploading: 'Uploading…',
         measuring: 'Checking the image…',
-        loadFailed: 'Could not load an image from this link — check the link.',
         size: 'Image size: {{w}} × {{h}} px',
-        linkOnlyNote:
-            'Because the image is entered as a link, only its size and ratio can be checked; file size and format cannot.',
         previewButton: 'Preview in frame',
         previewTitle: 'Preview in the real storefront frame',
-        blockedNotice: 'This image does not meet the minimum requirements — pick another one before saving.',
     },
 
     frame: {

@@ -35,8 +35,8 @@ import { SetDefaultCategoryDialog } from './components/set-default-category-dial
 const ALL_LEVELS = 'ALL'
 const ALL_DEFAULTS = 'ALL'
 const ONLY_DEFAULT = 'DEFAULT'
-/** Subkey backend trả (HTTP 409) khi 2 người cùng bật danh mục mặc định một lúc — handoff P13.1. */
-const DEFAULT_RACE_SUBKEY = 'error.dataIntegrity.violation'
+/** Subkey backend trả (HTTP 409) khi 2 người cùng bật danh mục mặc định một lúc — BE33 (handoff P13.2). */
+const DEFAULT_RACE_SUBKEY = 'error.category.defaultConflict'
 const PAGE_SIZE = 10
 /** Trần số danh mục nạp một lần. Vượt ngưỡng này phải chuyển sang phân trang phía server. */
 const MAX_CATEGORIES = 200
@@ -198,19 +198,19 @@ export default function CategoryListPage() {
      *
      * - Bật mặc định cho B khi A đang giữ ⇒ chỉ **1 request**, server tự gỡ A trong cùng transaction ⇒
      *   **không popup**, chỉ toast nêu tên A và B (chuyển A→B không làm mất gì trên web khách).
-     * - 2 người cùng bật một lúc ⇒ HTTP 409 `error.dataIntegrity.violation`. Thông điệp chung của subKey
-     *   này ("dữ liệu đang được sử dụng ở nơi khác") sai ngữ cảnh nên **tự xử lý**: tắt toast mặc định,
-     *   báo đúng câu rồi nạp lại để UI đồng bộ. Trả `false` = đã xử lý xung đột, không toast thành công.
+     * - 2 người cùng bật một lúc ⇒ HTTP 409 `error.category.defaultConflict` (BE33). Màn **tự xử lý**:
+     *   tắt toast mặc định, báo đúng câu rồi nạp lại để UI đồng bộ. Trả `false` = đã xử lý xung đột, không toast thành công.
      */
     const saveCategory = async (
-        run: (options?: { skipErrorToast: boolean }) => Promise<unknown>,
+        run: (options?: { skipErrorToast: boolean }) => Promise<Category>,
         payload: CategoryPayload,
         savedId: string | null,
         successKey: string,
-    ): Promise<void> => {
+    ): Promise<Category | undefined> => {
         const turningOn = payload.isDefault === true
+        let result: Category
         try {
-            await run(turningOn ? { skipErrorToast: true } : undefined)
+            result = await run(turningOn ? { skipErrorToast: true } : undefined)
         } catch (error) {
             if (
                 turningOn &&
@@ -220,7 +220,7 @@ export default function CategoryListPage() {
             ) {
                 toastWarning('category.toast.defaultRace', { ns: 'product' })
                 await reload()
-                return
+                return undefined
             }
             // Đã tắt toast mặc định ở trên nên báo lỗi tại đây để hành vi giống mọi lần ghi khác.
             if (turningOn) toastError(error)
@@ -239,18 +239,20 @@ export default function CategoryListPage() {
             toastSuccess(successKey, { ns: 'product' })
         }
         await reload()
+        return result
     }
 
     const handleCreate = (payload: CategoryPayload) =>
         saveCategory((options) => categoryApi.create(payload, options), payload, null, 'category.toast.created')
 
-    const handleUpdate = (id: string, payload: CategoryPayload) =>
-        saveCategory(
+    const handleUpdate = async (id: string, payload: CategoryPayload) => {
+        await saveCategory(
             (options) => categoryApi.update(id, payload, options),
             payload,
             id,
             'category.toast.updated',
         )
+    }
 
     /**
      * Đặt một danh mục làm mặc định từ menu dòng / banner cảnh báo — không qua form nên phải tự dựng
@@ -330,8 +332,8 @@ export default function CategoryListPage() {
                 enableHiding: false,
                 meta: { columnLabel: t('category.list.column.name') },
                 cell: ({ row }) => {
-                    // Ảnh đại diện = `imageLink1`; `imageUrl` cũ chỉ là dự phòng cho dòng chưa backfill (P13.1).
-                    const thumb = row.original.imageLink1 ?? row.original.imageUrl
+                    // Ảnh đại diện = `imageLink1` (backend đã bỏ `imageUrl` — P13.3).
+                    const thumb = row.original.imageLink1
                     return (
                         <div className="flex items-center gap-3">
                             {thumb ? (
@@ -613,6 +615,7 @@ export default function CategoryListPage() {
                     currentDefault={currentDefault}
                     onCreate={handleCreate}
                     onUpdate={handleUpdate}
+                    onMediaChanged={() => void reload()}
                 />
 
                 <SetDefaultCategoryDialog

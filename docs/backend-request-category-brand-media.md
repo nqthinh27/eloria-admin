@@ -1,5 +1,10 @@
 # Yêu cầu backend — ảnh danh mục/thương hiệu (upload · chuẩn hoá chuỗi rỗng · lỗi 409 mặc định · làm rõ hợp đồng link)
 
+> ✅ **ĐÃ ĐÓNG 2026-10-11** — backend giao ở P13.2 + P13.3 (`fe-handoff-phase13_2-admin.md`, `fe-handoff-phase13_3-admin.md`).
+> FE đo lại thật cùng ngày (`superadmin`): BE31 upload/gỡ slot + logo trả DTO đầy đủ, body có field ảnh ⇒ 400 `error.input.invalid`;
+> BE32 `""` ⇒ `null`; BE33 subKey `error.category.defaultConflict` (chưa dựng lại race trên UI); BE34 đã trả lời (`/media/**` do Nginx).
+> P13.3 đi xa hơn đề xuất: **bỏ hẳn nhập link** ⇒ FE chỉ còn upload. Chi tiết hiện hành: `docs/backend/san-pham.md`.
+
 > **Người gửi:** FE (Eloria Admin) · **Ngày:** 2026-10-10
 > **Liên quan:** `35.1.eloria-backend/docs/api/fe-handoff-phase13_1-admin.md` · `docs/decisions/phase-13_1-category-media.md` · PLAN mục **BE31 · BE32 · BE33 · BE34**
 > **Đã đo API thật** trên server local (`superadmin`, `localhost:8080`, `/v3/api-docs/api` đã có P13.1), đã đối chiếu source `FileService`, `CategoryServiceImpl`.

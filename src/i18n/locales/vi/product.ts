@@ -270,7 +270,6 @@ export default {
                 nameRequired: 'Vui lòng nhập tên danh mục',
                 nameMaxLength: 'Tên danh mục tối đa 150 ký tự',
                 descriptionMaxLength: 'Mô tả tối đa 500 ký tự',
-                linkMaxLength: 'Đường dẫn ảnh tối đa 500 ký tự',
             },
         },
 
@@ -310,6 +309,7 @@ export default {
             deleted: 'Xoá danh mục thành công',
             statusUpdated: 'Cập nhật trạng thái danh mục thành công',
             defaultSwitched: 'Đã chuyển danh mục mặc định từ "{{from}}" sang "{{to}}"',
+            imagesPartial: 'Đã tạo danh mục nhưng {{count}} ảnh chưa tải lên được — mở lại danh mục để tải lại.',
             defaultRace:
                 'Danh mục mặc định vừa được người khác thay đổi — đã tải lại danh sách, vui lòng kiểm tra rồi thử lại.',
         },
