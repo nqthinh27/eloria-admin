@@ -58,6 +58,10 @@ services:
       VITE_STORE_EMAIL: "eloria.co.support@gmail.com"
       VITE_STORE_RETURN_DAYS: "7"
 
+      # ── Nút "Xem trên web" (Sản phẩm / Danh mục) ────────────────────────────
+      # URL gốc storefront, KHÔNG có "/" cuối. Bỏ khai ⇒ lùi về https://<VITE_STORE_WEBSITE>.
+      VITE_STORE_URL: "https://eloria.com.vn"
+
     # Conf nginx — chạy TLS thì BẮT BUỘC mount, vì cert nằm ngoài image và domain phải khai
     # trong conf. Đổi conf xong chỉ cần restart, không build lại image.
     # ⚠️ Bind-mount trỏ vào file/thư mục KHÔNG tồn tại thì Docker tạo một THƯ MỤC cùng tên và

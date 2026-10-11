@@ -34,6 +34,7 @@ export type RuntimeEnvKey =
     | 'VITE_STORE_WEBSITE'
     | 'VITE_STORE_EMAIL'
     | 'VITE_STORE_RETURN_DAYS'
+    | 'VITE_STORE_URL'
 
 declare global {
     interface Window {

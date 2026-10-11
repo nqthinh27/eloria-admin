@@ -9,6 +9,7 @@ import {
     LayoutDashboard,
     Package,
     Percent,
+    Settings,
     ShoppingCart,
     Store,
     Tags,
@@ -85,6 +86,13 @@ export const mainMenu: MenuGroupType[] = [
                 titleKey: 'menu.bankAccounts',
                 url: '/bank-accounts',
                 icon: Landmark,
+                minRole: ERole.SUPER_ADMIN,
+            },
+            // `GET/PUT /system-config` đều `[SUPER_ADMIN]` (đo thật 2026-10-11).
+            {
+                titleKey: 'menu.storeSettings',
+                url: '/store-settings',
+                icon: Settings,
                 minRole: ERole.SUPER_ADMIN,
             },
         ],

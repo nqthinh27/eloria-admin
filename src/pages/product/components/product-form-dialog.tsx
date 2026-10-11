@@ -19,6 +19,7 @@ import { MoneyInput } from '@/components/money-input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SearchSelect } from '@/components/search-select'
+import { META_DESCRIPTION_MAX, META_TITLE_MAX, SeoFields } from '@/components/seo-fields'
 
 /** Radix Select không nhận `value=""` ⇒ dùng sentinel cho lựa chọn "để trống". */
 const NONE = '__none__'
@@ -55,6 +56,12 @@ const buildSchema = (t: (key: string) => string, isEdit: boolean) =>
         categoryIds: z.array(z.string()),
         shortDescription: z.string().optional(),
         description: z.string().optional(),
+        // Giới hạn theo `@Size` của backend (150 / 300); trim vì backend không tự trim ở sản phẩm.
+        metaTitle: z.string().trim().max(META_TITLE_MAX, t('product.form.validation.metaTitleMax')),
+        metaDescription: z
+            .string()
+            .trim()
+            .max(META_DESCRIPTION_MAX, t('product.form.validation.metaDescriptionMax')),
     })
 
 type ProductFormValues = z.infer<ReturnType<typeof buildSchema>>
@@ -109,6 +116,8 @@ export function ProductFormDialog({
             categoryIds: [],
             shortDescription: '',
             description: '',
+            metaTitle: '',
+            metaDescription: '',
         },
     })
 
@@ -126,6 +135,8 @@ export function ProductFormDialog({
             categoryIds: product?.categories.map((c) => c.id) ?? [],
             shortDescription: product?.shortDescription ?? '',
             description: product?.description ?? '',
+            metaTitle: product?.metaTitle ?? '',
+            metaDescription: product?.metaDescription ?? '',
         })
     }, [open, product, form])
 
@@ -143,6 +154,9 @@ export function ProductFormDialog({
             categoryIds: values.categoryIds,
             shortDescription: values.shortDescription || undefined,
             description: values.description || undefined,
+            // Sửa: gửi `""` để xoá giá trị cũ; thêm mới: không có gì để xoá ⇒ bỏ field cho gọn.
+            metaTitle: isEdit ? values.metaTitle : values.metaTitle || undefined,
+            metaDescription: isEdit ? values.metaDescription : values.metaDescription || undefined,
         }
 
         try {
@@ -158,6 +172,7 @@ export function ProductFormDialog({
     }
 
     const isSubmitting = form.formState.isSubmitting
+    const [watchMetaTitle, watchMetaDescription] = form.watch(['metaTitle', 'metaDescription'])
 
     return (
         <Dialog open={open} onOpenChange={(next) => !isSubmitting && onOpenChange(next)}>
@@ -473,6 +488,14 @@ export function ProductFormDialog({
                                     <FormMessage />
                                 </FormItem>
                             )}
+                        />
+
+                        <SeoFields
+                            control={form.control}
+                            slug={product?.slug ?? null}
+                            titleValue={watchMetaTitle}
+                            descriptionValue={watchMetaDescription}
+                            disabled={isSubmitting}
                         />
 
                         <DialogFooter>

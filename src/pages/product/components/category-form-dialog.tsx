@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { SearchSelect } from '@/components/search-select'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { META_DESCRIPTION_MAX, META_TITLE_MAX, SeoFields } from '@/components/seo-fields'
 import { CoverSlidesPreview } from '@/components/image/cover-slides-preview'
 import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
 import { ImageUploadField } from '@/components/image/image-upload-field'
@@ -58,6 +59,11 @@ const buildSchema = (t: (key: string) => string) => {
         sortOrder: z.string().optional(),
         description: z.string().trim().max(500, t('category.form.validation.descriptionMaxLength')),
         isDefault: z.boolean(),
+        metaTitle: z.string().trim().max(META_TITLE_MAX, t('category.form.validation.metaTitleMax')),
+        metaDescription: z
+            .string()
+            .trim()
+            .max(META_DESCRIPTION_MAX, t('category.form.validation.metaDescriptionMax')),
     })
 }
 
@@ -86,6 +92,8 @@ const EMPTY_VALUES: CategoryFormValues = {
     sortOrder: '',
     description: '',
     isDefault: false,
+    metaTitle: '',
+    metaDescription: '',
 }
 
 /**
@@ -151,6 +159,8 @@ export function CategoryFormDialog({
             sortOrder: category?.sortOrder != null ? String(category.sortOrder) : '',
             description: category?.description ?? '',
             isDefault: category?.isDefault === true,
+            metaTitle: category?.metaTitle ?? '',
+            metaDescription: category?.metaDescription ?? '',
         })
     }, [open, category, form])
 
@@ -164,6 +174,9 @@ export function CategoryFormDialog({
             // `""` ⇒ xoá mô tả (backend chuẩn hoá về `null` — BE32). Ảnh không nằm trong payload (P13.3).
             description: values.description,
             isDefault: values.isDefault,
+            // `""` ⇒ xoá (backend trim rồi về `null`).
+            metaTitle: values.metaTitle,
+            metaDescription: values.metaDescription,
         }
 
         try {
@@ -207,6 +220,7 @@ export function CategoryFormDialog({
     const isSubmitting = form.formState.isSubmitting
 
     const [watchName, watchDescription, watchIsDefault] = form.watch(['name', 'description', 'isDefault'])
+    const [watchMetaTitle, watchMetaDescription] = form.watch(['metaTitle', 'metaDescription'])
 
     /** File đang chờ → object URL để các khung xem trước (hover/slideshow) hiện được trước khi upload. */
     const [stagedUrls, setStagedUrls] = useState<Partial<Record<CategoryImageSlot, string>>>({})
@@ -513,6 +527,14 @@ export function CategoryFormDialog({
                                 )}
                             />
                         </section>
+
+                        <SeoFields
+                            control={form.control}
+                            slug={saved?.slug ?? null}
+                            titleValue={watchMetaTitle}
+                            descriptionValue={watchMetaDescription}
+                            disabled={isSubmitting}
+                        />
 
                         <DialogFooter>
                             <Button

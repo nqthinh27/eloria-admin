@@ -15,6 +15,7 @@ export default {
         branch: 'Branches',
         auditLog: 'System Audit Log',
         bankAccounts: 'Bank accounts',
+        storeSettings: 'Online store settings',
         customers: 'Customers',
         products: 'Products',
         categories: 'Categories',

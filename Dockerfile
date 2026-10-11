@@ -7,6 +7,13 @@
 #   docker build -t <registry>/eloria-admin:<tag> .
 #   docker push  <registry>/eloria-admin:<tag>
 
+# Image BẢN TRƯỚC — chỉ để chép `/assets` của nó sang image mới (xem stage serve).
+# Tab đang mở ở bản cũ còn tham chiếu file hash cũ; xoá ngay lúc deploy là tab đó gãy khi bấm sang
+# màn chưa tải. Mặc định trỏ nginx trơn (không có manifest) ⇒ lần build đầu không chép gì.
+#   docker build --build-arg PREV_IMAGE=<registry>/eloria-admin:<tag-truoc> ...
+ARG PREV_IMAGE=nginx:1.27-alpine
+FROM ${PREV_IMAGE} AS prev
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 1 — build
 # ─────────────────────────────────────────────────────────────────────────────
@@ -52,5 +59,18 @@ COPY docker/30-eloria-runtime-config.sh /docker-entrypoint.d/30-eloria-runtime-c
 RUN chmod +x /docker-entrypoint.d/30-eloria-runtime-config.sh
 
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Giữ asset của MỘT bản deploy trước. `assets-manifest` ghi các file do CHÍNH build này sinh ra, nên
+# lần sau chỉ chép đúng bản liền trước — không tích luỹ vô hạn qua các lần deploy.
+RUN --mount=type=bind,from=prev,source=/,target=/prev \
+    set -eu; \
+    mkdir -p /etc/eloria; \
+    ls /usr/share/nginx/html/assets > /etc/eloria/assets-manifest; \
+    if [ -f /prev/etc/eloria/assets-manifest ]; then \
+        while read -r f; do \
+            [ -f "/prev/usr/share/nginx/html/assets/$f" ] && \
+                cp -n "/prev/usr/share/nginx/html/assets/$f" /usr/share/nginx/html/assets/ || true; \
+        done < /prev/etc/eloria/assets-manifest; \
+    fi
 
 EXPOSE 80

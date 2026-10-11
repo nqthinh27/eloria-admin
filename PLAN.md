@@ -202,6 +202,9 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | **BE31** | **Chưa có endpoint upload ảnh cho danh mục (`imageLink1/2`, `coverLink1..5`) và thương hiệu (`logoUrl`)** — `FileService` chỉ có `uploadAvatar` + `uploadProductImage`; các trường này chỉ nhận **chuỗi link ≤500** (≤256 với logo). Admin phải tự có link ảnh sẵn, FE không kiểm được dung lượng/định dạng. | ✅ **Backend giao 2026-10-11** (P13.2): `POST/DELETE /category/{id}/images[/{slot}]`, `POST/DELETE /brand/{id}/logo`. **P13.3 (2026-10-11, BREAKING):** bỏ hẳn nhập link — `ImageUploadField` chỉ upload; payload không còn `imageLink*`/`coverLink*`/`logoUrl`/`ogImage`/`imageUrl`; tạo trước, upload sau; xoá slot qua `DELETE`. Chưa đo thật trên UI. |
 | **BE32** | **`""` ⇒ `null` không nhất quán ở category**: đo 2026-10-10 `imageLink1/2` về `null` nhưng `coverLink1..5` và `description` lưu **`""`** (handoff P13.1 nói về null). | ✅ **Backend giao 2026-10-11**: `""` ⇒ `null` đồng nhất; FE bỏ chiêu "chỉ gửi `""` cho ô vừa xoá". |
 | **BE33** | **409 khi 2 người cùng bật danh mục mặc định dùng subKey chung** `error.dataIntegrity.violation` (thông điệp "đang được sử dụng ở nơi khác" sai ngữ cảnh). Đề xuất `error.category.defaultConflict`. | ✅ **Backend giao 2026-10-11**: subKey `error.category.defaultConflict`; FE đã đổi điều kiện bắt + i18n VI/EN. |
+| **BE35** | **`PUT/POST /product` không chuẩn hoá `metaTitle`/`metaDescription`**: đo 2026-10-11 `""` và `"  "` lưu nguyên (danh mục thì trim ⇒ `null` — BE32). Storefront có thể coi `""` là "có giá trị". Đề xuất `trimToNull` như `CategoryServiceImpl`. | ⏳ **Ghi nhận, chưa gửi backend.** FE đã `trim` trước khi gửi nên chưa chặn R1. |
+| **BE36** | **`system-config` không validate** — `store.branch_id` nhận chuỗi bất kỳ/UUID không tồn tại (200) và **không cho gửi rỗng** (400 không subKey) ⇒ lỡ đặt sai thì chỉ đổi sang giá trị khác được. Đề xuất: kiểm `branch` tồn tại + ACTIVE (subKey riêng), cho phép xoá về "chưa đặt". | ⏳ **Ghi nhận, chưa gửi.** FE chỉ cho chọn từ danh sách chi nhánh + cảnh báo id lạ. |
+| **BE37** | **Sản phẩm không có `update-status`/`DELETE`** (405) ⇒ không ẩn/xoá SP khỏi web qua admin; và `GET /store/public/catalog/products/{slug}` trả **200** cho SP không có trong list store (chưa có SKU). Cần làm rõ ý đồ: ẩn SP bằng cách nào? PDP của SP chưa listable có nên 404? | ⏳ **Ghi nhận, chưa gửi.** Có thể chặn vận hành R1 nếu cần gỡ SP đã đăng. |
 | **BE34** | **Làm rõ** ① dạng giá trị `imageLink*` (seed `/media/cat/*.webp` ⇒ `/image?imageUrl=` trả 400, admin không xem trước được) ② default đang INACTIVE có tính là 0 default trên storefront không. | ✅ **Backend trả lời 2026-10-11**: `/media/**` do Nginx phục vụ (admin không xem trước được là đúng); default INACTIVE = storefront coi như 0 default. |
 | **BE20** | **Quản lý giá (backend P8) đã xong nhưng FE không có màn** — 5 endpoint `/price/**` + `/price-change-log/search`. | ❌ **ĐÓNG (user chốt 2026-09-08): KHÔNG LÀM màn Quản lý giá.** Nhóm API này **cố ý bỏ trống**. Giá bán tiếp tục dùng `product.price`, backend tự fallback khi `sku_price` rỗng ⇒ không phải đổi gì ở FE. Xem hộp cuối Phase 17. |
 | **BE21** | **Promotion không có số đếm theo trạng thái** — `BaseListResponse<PromotionResDTO>` chỉ có `{total, data}`, **không** có `activeTotal`/`inactiveTotal` như staff/branch, và không có endpoint thống kê. ⇒ 3 thẻ "Đang chạy / Sắp chạy / Đã kết thúc" của mockup `16` **chỉ đếm được trên trang hiện tại**. | ⏳ Nên xin backend trả số đếm theo `EPromotionStatus` (hoặc thêm `BaseListResStatus`). **Không chặn** — 3 thẻ đã được gỡ bỏ (user chốt 2026-09-07). Có số đúng thì bàn lại ở **Phase 17 mục 17.2**. |
@@ -257,9 +260,9 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **19** | ✅ **Quản lý Thương hiệu** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 9 | *(không mockup — pattern `04`/`07`)* |
 | **20** | ⏳ **CMS: Bài viết, Trang tĩnh & Banner** — *chờ backend P15* · **R3** (mục 4 → R2) | 5, 22 | *(không mockup — pattern `04`/`07`)* |
 | **21** | ⏳ **Cấu hình Storefront, Điểm thưởng & Voucher công khai** — *chờ backend P13+P16* · mục ④ **R2**, còn lại **R3** (`store.branch_id` kéo lên Phase 24) | 5, 8, 14 | *(không mockup)* |
-| **22** | 🟡 **(2026-10-11 — xong FE + upload BE31/P13.3; còn unit test)** **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
-| **23** | 🟡 **(2026-10-11 — xong FE + upload; chưa đo song song storefront, race 409, RBAC)** **Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định** | 5, 9, 22 | *(không mockup — pattern `12`)* |
-| **24** | ⏳ **(R1 — replan 2026-10-11)** **CMS catalog sẵn sàng release: cấu hình chi nhánh online · SEO SP/danh mục · "Xem trên web" · chống bản cũ** | 9, 22, 23 | *(không mockup)* |
+| **22** | ✅ **(2026-10-11 — xong FE + upload BE31/P13.3; unit test ghi nợ)** **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
+| **23** | ✅ **(2026-10-11 — xong FE + upload; đã đo storefront/INACTIVE/XOÁ/RBAC ADMIN)** **Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định** | 5, 9, 22 | *(không mockup — pattern `12`)* |
+| **24** | 🟡 **(R1 — 2026-10-11 xong FE; còn kiểm deploy 2 lần + ảnh thật)** **CMS catalog sẵn sàng release: cấu hình chi nhánh online · SEO SP/danh mục · "Xem trên web" · chống bản cũ** | 9, 22, 23 | *(không mockup)* |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
@@ -3030,7 +3033,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 > Phase 20 dùng lại component của nó ⇒ làm 22 trước thì khỏi dựng ô upload hai lần. Phase 21 phụ
 > thuộc backend P13+P16 nên đi sau cùng.
 
-## Phase 22 — Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client 🟡 **XONG FE + UPLOAD 2026-10-11 — còn unit test**
+## Phase 22 — Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client ✅ **XONG FE + UPLOAD 2026-10-11 — unit test ghi nợ (không chặn R1)**
 
 > **Cập nhật 2026-10-11 ([handoff](docs/handoff/phien-2026-10-11-phase-22-23-upload-anh.md)):** backend P13.2/P13.3 giao upload và **bỏ hẳn nhập link** ⇒ `ImageLinkField` đã xoá, thay bằng `ImageUploadField` (chỉ upload). Trần dung lượng **mọi spec = 2 MB** (theo backend, user chốt 2026-10-11); dưới kích thước tối thiểu / lệch tỉ lệ / khác định dạng khuyến nghị **chỉ cảnh báo** — chỉ sai định dạng và > 2 MB bị chặn (user chốt 2026-10-11). Báo cáo 2026-10-10 bên dưới đã lỗi thời phần "ô nhập link".
 
@@ -3225,9 +3228,9 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 23 — Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định 🟡 **XONG FE + UPLOAD 2026-10-11**
+## Phase 23 — Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định ✅ **XONG FE + UPLOAD + ĐO STOREFRONT 2026-10-11**
 
-> **Cập nhật 2026-10-11 ([handoff](docs/handoff/phien-2026-10-11-phase-22-23-upload-anh.md)):** 7 ô ảnh chỉ upload — thêm mới: chọn file chờ, tạo xong mới upload từng slot; sửa: upload/gỡ **ngay** (`DELETE …/images/{slot}`), nạp lại danh sách một lần khi đóng dialog, có dòng báo "không phụ thuộc Lưu/Huỷ". 409 tranh chấp mặc định dùng `error.category.defaultConflict` (BE33). Cột ảnh đọc `imageLink1` (backend đã bỏ `imageUrl`). Đã kiểm UI thật luồng thêm/sửa/gỡ/chặn > 2 MB. **Còn:** so với storefront, race 409, đường INACTIVE/XOÁ, RBAC ADMIN/STAFF.
+> **Cập nhật 2026-10-11 ([handoff](docs/handoff/phien-2026-10-11-phase-22-23-upload-anh.md)):** 7 ô ảnh chỉ upload — thêm mới: chọn file chờ, tạo xong mới upload từng slot; sửa: upload/gỡ **ngay** (`DELETE …/images/{slot}`), nạp lại danh sách một lần khi đóng dialog, có dòng báo "không phụ thuộc Lưu/Huỷ". 409 tranh chấp mặc định dùng `error.category.defaultConflict` (BE33). Cột ảnh đọc `imageLink1` (backend đã bỏ `imageUrl`). Đã kiểm UI thật luồng thêm/sửa/gỡ/chặn > 2 MB. **Đóng 2026-10-11 ([handoff Phase 24](docs/handoff/phien-2026-10-11-phase-24-release-r1.md)):** đã đo song song storefront (cây danh mục, default, INACTIVE, XOÁ), race 409 do backend đã đo, RBAC ADMIN ⇒ 403 mọi API ghi. STAFF chưa đo (tài khoản dev bị vô hiệu hoá).
 
 > **Báo cáo 2026-10-10:** [handoff](docs/handoff/phien-2026-10-10-phase-22-23-anh-danh-muc.md). Form 8 ô + mô tả + công tắc, badge/lọc/banner, popup 3 đường về 0 mặc định, toast A→B, xử lý 409, xem trước hover/slideshow, detail modal — đo thật bất biến 0/1 và các luồng ①② trên UI. **Còn:** chụp so với storefront, kiểm đường INACTIVE/XOÁ/race, upload thật (BE31).
 
@@ -3349,7 +3352,10 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 24 — CMS catalog sẵn sàng Release R1 ⏳ **(replan 2026-10-11)**
+## Phase 24 — CMS catalog sẵn sàng Release R1 🟡 **XONG FE 2026-10-11 — còn kiểm deploy 2 lần + ảnh thật**
+
+> **Báo cáo 2026-10-11:** [handoff](docs/handoff/phien-2026-10-11-phase-24-release-r1.md). Làm đủ 5 mục: `/store-settings` (SUPER_ADMIN, chỉ `store.branch_id`), khối SEO + slug ở form SP/danh mục, nút "Xem trên web" (`VITE_STORE_URL` runtime), biên bản catalog đo bằng API, popup phiên bản mới + `vite:preloadError` + `version.json` + giữ asset bản trước ở Dockerfile. **Còn:** DoD kịch bản deploy 2 lần (cần nginx thật), ảnh thật SP/danh mục, chụp admin↔web, và BE35–BE37 (mục B).
+
 
 > **Vì sao có phase này.** Web bán hàng R1 chỉ trưng bày sản phẩm + danh mục. Mọi thứ khách thấy
 > trên web phải **nhập được và kiểm được từ admin** — nếu không, ngày release sẽ phải sửa DB tay.

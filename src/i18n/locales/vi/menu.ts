@@ -15,6 +15,7 @@ export default {
         branch: 'Chi nhánh',
         auditLog: 'Nhật ký hệ thống',
         bankAccounts: 'Tài khoản ngân hàng',
+        storeSettings: 'Cài đặt cửa hàng online',
         customers: 'Khách hàng',
         products: 'Sản phẩm',
         categories: 'Danh mục SP',

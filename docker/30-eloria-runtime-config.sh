@@ -20,7 +20,8 @@ VITE_STORE_BRAND_MARK
 VITE_STORE_HOTLINE
 VITE_STORE_WEBSITE
 VITE_STORE_EMAIL
-VITE_STORE_RETURN_DAYS"
+VITE_STORE_RETURN_DAYS
+VITE_STORE_URL"
 
 # Thoat dau backslash TRUOC roi toi dau nhay kep (dao thu tu la nhan doi sai).
 # Bo ky tu xuong dong de mot gia tri nhieu dong khong lam vo file JS.

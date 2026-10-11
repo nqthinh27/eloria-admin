@@ -82,8 +82,11 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
   `/bank-accounts`, đặc tả ở [docs/backend/ngan-hang-qr.md](docs/backend/ngan-hang-qr.md).
   **Phase 19 (Quản lý Thương hiệu, chỉ SUPER_ADMIN) đã xong 2026-09-20** — route `/brands`.
   **Phase 22 + 23 (chuẩn ảnh CMS · ảnh danh mục & danh mục mặc định) xong FE + upload 2026-10-11** (backend P13.3: ảnh danh mục/thương hiệu **chỉ upload**, không nhận link) — còn đo storefront/race/RBAC, chi tiết ở PLAN.
+  **Phase 24 (CMS catalog sẵn sàng Release R1) xong FE 2026-10-11** — route `/store-settings` (SUPER_ADMIN),
+  khối SEO + "Xem trên web", popup phiên bản mới; Phase 22/23 đã đóng. Còn kiểm deploy 2 lần + ảnh thật
+  (chi tiết ở PLAN Phase 24 + handoff).
 - Backend: **118 path** (2026-09-13). Việc chờ backend còn mở: **BE2 · BE3 · BE4 · BE6 · BE7 · BE10 ·
-  BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30** — chi tiết ở PLAN mục B.
+  BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30 · BE35 · BE36 · BE37** — chi tiết ở PLAN mục B.
 - Dòng thời gian phase & khảo sát backend: [docs/history.md](docs/history.md) ·
   bàn giao từng phiên: [docs/handoff/](docs/handoff/).
 

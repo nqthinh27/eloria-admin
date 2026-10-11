@@ -51,3 +51,14 @@ export const storeConfig = {
     /** Chính sách đổi trả in ở chân hoá đơn. */
     returnPolicyDays: Number(runtimeEnv('VITE_STORE_RETURN_DAYS') ?? 7),
 } as const
+
+/**
+ * URL gốc của storefront (`35.3.eloria-client`) — dùng cho nút **"Xem trên web"** ở Sản phẩm/Danh mục.
+ *
+ * Đọc lúc chạy (config.js) nên đổi ở docker-compose.yml, không nướng vào bundle. Không khai ⇒ lùi về
+ * `https://<VITE_STORE_WEBSITE>` (mặc định `eloria.com.vn`): nếu storefront chạy ở domain khác thì
+ * **phải** khai `VITE_STORE_URL`, nếu không nút sẽ mở sai trang.
+ */
+export const storefrontUrl = (
+    runtimeEnv('VITE_STORE_URL')?.trim() || `https://${storeConfig.website}`
+).replace(/\/+$/, '')

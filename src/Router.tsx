@@ -21,6 +21,7 @@ import PromotionListPage from './pages/promotion/PromotionListPage'
 import ReturnListPage from './pages/returns/ReturnListPage'
 import BrandListPage from './pages/product/BrandListPage'
 import BankAccountPage from './pages/bank-account/BankAccountPage'
+import StoreSettingsPage from './pages/system/StoreSettingsPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
@@ -82,6 +83,8 @@ export default function Router() {
                     <Route element={<RoleRoute minRole={ERole.SUPER_ADMIN} />}>
                         <Route path="bank-accounts" element={<BankAccountPage />} />
                         <Route path="brands" element={<BrandListPage />} />
+                        {/* `GET/PUT /system-config` đều `[SUPER_ADMIN]` — Phase 24. */}
+                        <Route path="store-settings" element={<StoreSettingsPage />} />
                     </Route>
 
                     <Route path="403" element={<Forbidden />} />

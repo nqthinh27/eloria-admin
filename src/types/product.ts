@@ -63,6 +63,10 @@ export type Product = {
     sizeGroup: string | null
     images: string[]
     categories: CategoryRef[]
+    /** SEO tuỳ chọn (backend P13) — `null`/rỗng ⇒ storefront tự sinh từ tên/mô tả. Tối đa 150. */
+    metaTitle: string | null
+    /** Tối đa 300. */
+    metaDescription: string | null
     createdDate: string
     lastModifiedDate: string
 }
@@ -97,6 +101,14 @@ export type CreateProductReq = {
     sizeGroup?: string
     /** Thay thế **toàn bộ** danh sách danh mục cũ. */
     categoryIds?: string[]
+    /**
+     * SEO (tối đa 150). Khi sửa: **bỏ field ⇒ giữ nguyên; `""` ⇒ xoá** (đo thật 2026-10-11).
+     * ⚠️ Backend **không trim/chuẩn hoá** ở sản phẩm: `""`/`"  "` được lưu nguyên chuỗi, không về `null`
+     * như danh mục (BE32) ⇒ form phải tự `trim`. `ogImage` đã bị gỡ (P13.3) — gửi ⇒ HTTP 400.
+     */
+    metaTitle?: string
+    /** SEO (tối đa 300) — cùng ngữ nghĩa với `metaTitle`. */
+    metaDescription?: string
 }
 
 /** `UpdateProductReqDTO` — giống create nhưng **không có `code`**. */
@@ -170,6 +182,10 @@ export type Category = {
     parentName: string | null
     /** Mô tả hiển thị dưới tên danh mục trên web khách (≤500). Khác `metaDescription` (SEO). */
     description: string | null
+    /** SEO tuỳ chọn (tối đa 150) — `null` ⇒ storefront tự sinh từ tên/mô tả. */
+    metaTitle: string | null
+    /** SEO tuỳ chọn (tối đa 300). */
+    metaDescription: string | null
     /** Ảnh ô danh mục ở lưới "Shop by category" Trang chủ — tỉ lệ 4:5. */
     imageLink1: string | null
     /** Ảnh hiện khi khách rê chuột lên ô danh mục; trống ⇒ giữ nguyên `imageLink1`. */
@@ -215,6 +231,12 @@ export type CategoryPayload = {
      * `error.input.invalid`. Ảnh chỉ ghi qua `categoryApi.uploadImages` / `deleteImage`.
      */
     description?: string
+    /**
+     * SEO: bỏ field ⇒ giữ nguyên, `""`/khoảng trắng ⇒ xoá (backend `trim` rồi về `null` — đo thật
+     * 2026-10-11). Tối đa 150 / 300 ký tự.
+     */
+    metaTitle?: string
+    metaDescription?: string
     /** Bật cho B khi A đang giữ ⇒ chỉ cần 1 request, server tự gỡ A. Bỏ field ⇒ giữ nguyên. */
     isDefault?: boolean
 }

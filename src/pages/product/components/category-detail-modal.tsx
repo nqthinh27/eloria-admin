@@ -4,6 +4,8 @@ import { formatDateTime } from '@/lib/format'
 import { EntityStatus } from '@/types/common'
 import type { Category } from '@/types/product'
 import { StatusBadge } from '@/components/status-badge'
+import { ViewOnWeb } from '@/components/view-on-web'
+import { categoryStorefrontUrl } from '@/lib/storefront-url'
 import { DetailModal, type DetailField } from '@/components/detail-modal'
 import { CoverSlidesPreview } from '@/components/image/cover-slides-preview'
 import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
@@ -58,6 +60,12 @@ export function CategoryDetailModal({
             formatValue: () => category.name,
         },
         {
+            label: t('category.detail.slug'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => <span className="font-mono text-xs break-all">/{category.slug}</span>,
+        },
+        {
             label: t('category.list.column.parent'),
             readOnly: true,
             formatValue: () => category.parentName ?? t('category.list.noParent'),
@@ -82,6 +90,29 @@ export function CategoryDetailModal({
             readOnly: true,
             fullWidth: true,
             formatValue: () => category.description || '—',
+        },
+        {
+            label: t('category.detail.metaTitle'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => category.metaTitle || t('category.detail.seoFallback'),
+        },
+        {
+            label: t('category.detail.metaDescription'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => category.metaDescription || t('category.detail.seoFallback'),
+        },
+        {
+            label: t('category.detail.viewOnWeb'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => (
+                <ViewOnWeb
+                    href={categoryStorefrontUrl(category.slug)}
+                    inactive={category.status !== EntityStatus.ACTIVE}
+                />
+            ),
         },
         {
             label: t('category.detail.tilesTitle'),

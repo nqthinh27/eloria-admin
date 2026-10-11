@@ -3,6 +3,7 @@ import { BrowserRouter, HashRouter } from 'react-router-dom'
 // Khởi tạo i18n trước khi bất kỳ component nào render — api-client dịch message lỗi qua đây.
 import '@/i18n'
 
+import { NewVersionPopup } from '@/components/new-version-popup'
 import { Toaster } from '@/components/ui/sonner'
 import { runtimeEnv } from '@/config/runtime-env'
 import { AuthProvider } from '@/contexts/AuthProvider'
@@ -17,6 +18,7 @@ export default function App() {
                 <Router />
             </AuthProvider>
             <Toaster position="top-right" richColors closeButton />
+            <NewVersionPopup />
         </AppRouter>
     )
 }

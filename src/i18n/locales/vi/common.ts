@@ -17,6 +17,30 @@ export default {
         timeout: 'Yêu cầu quá thời gian chờ. Vui lòng thử lại.',
         unknown: 'Đã có lỗi xảy ra. Vui lòng thử lại.',
     },
+    /** Khối SEO dùng chung của form Sản phẩm / Danh mục — `components/seo-fields.tsx`. */
+    seo: {
+        title: 'SEO (tuỳ chọn)',
+        subtitle: 'Tiêu đề và mô tả hiện trên Google và khi chia sẻ link trang này.',
+        slug: 'Slug (đường dẫn trên web)',
+        slugAfterCreate: 'Hệ thống tự tạo sau khi lưu.',
+        metaTitle: 'Tiêu đề SEO',
+        metaTitlePlaceholder: 'Mặc định lấy theo tên',
+        metaDescription: 'Mô tả SEO',
+        metaDescriptionPlaceholder: 'Mặc định lấy theo mô tả',
+        emptyFallback: 'Để trống ⇒ web tự sinh từ tên/mô tả.',
+        counter: '{{length}}/{{max}} · khuyến nghị ≤ {{recommended}}',
+    },
+    viewOnWeb: {
+        button: 'Xem trên web',
+        delay: 'Thay đổi hiện trên web sau tối đa 5–10 phút.',
+        inactive: 'Đang ngừng hoạt động — web sẽ báo không tìm thấy trang này.',
+    },
+    /** Popup nhắc bản mới — `components/new-version-popup.tsx`. */
+    newVersion: {
+        title: 'Đã có phiên bản mới',
+        message: 'Bản cập nhật vừa được triển khai. Hãy tải lại khi bạn đã lưu xong việc đang làm — hệ thống sẽ không tự tải lại.',
+        reload: 'Tải lại',
+    },
     action: {
         retry: 'Thử lại',
         close: 'Đóng',

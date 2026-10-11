@@ -194,10 +194,19 @@ SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
 | Chi nhánh — tạo/xoá/bật-tắt | `SUPER_ADMIN` | `POST /branch` · `/branch/update-status` · `DELETE /branch/{id}` |
 | Nhân viên (toàn bộ) | `ADMIN` | `POST /staff` · `/staff/search` · `/staff/assign-role` · `/staff/update-status` · `/staff/{id}/reset-password` · `GET\|PUT\|DELETE /staff/{id}` |
 | Audit log | `ADMIN` | `POST /audit-log/search` · `GET /audit-log/{id}` |
+| Cấu hình hệ thống | `SUPER_ADMIN` | `GET /system-config` · `PUT /system-config` |
 
 - `BranchResDTO.code` — mã CN (vd `HK`), nhận ở `POST/PUT /branch`; dùng làm **prefix mã đơn/mã ca**
   (`HK-20260811-...`). Không có `code` ⇒ backend fallback **viết tắt tên** (`Chi nhánh Trung tâm` → `CNTT-…`).
 - `BranchResDTO.staffCount` — số nhân viên chi nhánh, dùng cho màn Chi nhánh thay vì tự đếm.
+- **`system-config` (đo thật 2026-10-11)**: `GET` ⇒ mảng phẳng `{key, value, description}` (3 khoá seed:
+  `store.branch_id` · `store.shipping_fee` · `store.freeship_threshold`); `PUT` body = **mảng** `{key, value}`,
+  chỉ nhận khoá đã seed (lạ ⇒ 400 `error.systemConfig.notExisted`), trả `data: null`, mảng rỗng ⇒ 200 no-op.
+  ⚠️ `value` rỗng/null ⇒ 400 `error.http.400` (không subKey) ⇒ **đã đặt thì không xoá về "chưa đặt" được**;
+  ⚠️ không validate nội dung (UUID rác vẫn 200) — FE tự bảo đảm chỉ gửi id chi nhánh có thật.
+  Đổi `store.branch_id` có hiệu lực **ngay** ở `/store/public/catalog/**` (đo: Cầu Giấy 0/7 còn hàng → Hoàn Kiếm 2/7).
+- **Product SEO (`metaTitle` ≤150 · `metaDescription` ≤300)**: sửa ⇒ bỏ field = giữ nguyên, `""` = xoá nhưng **lưu `""`**
+  (không `null`, không trim — khác danh mục). `ogImage` bị gỡ (P13.3 ⇒ 400). Sản phẩm **không có** `update-status`/`DELETE`.
 - **Xoá nhân viên bị chặn** khi còn đơn chưa đóng (`error.staff.referenced`) hoặc còn phiếu đổi/trả mở
   (`error.staff.hasOpenReturns`).
 

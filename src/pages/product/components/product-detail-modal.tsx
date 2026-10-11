@@ -11,6 +11,8 @@ import { EGender, EntityStatus } from '@/types/common'
 import type { Color, Product, Size, Sku } from '@/types/product'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { StatusBadge } from '@/components/status-badge'
+import { ViewOnWeb } from '@/components/view-on-web'
+import { productStorefrontUrl } from '@/lib/storefront-url'
 import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
 import { ImageSpecHint } from '@/components/image/image-spec-hint'
 import { Badge } from '@/components/ui/badge'
@@ -400,6 +402,10 @@ export function ProductDetailModal({
 
     const info: { label: string; value: React.ReactNode }[] = [
         { label: t('product.detail.code'), value: current.code },
+        {
+            label: t('product.detail.slug'),
+            value: <span className="font-mono text-xs break-all">/{current.slug}</span>,
+        },
         { label: t('product.detail.price'), value: formatVnd(current.price) },
         // Giá vốn là **số liệu nội bộ** (Phase 7 đợt 1) ⇒ chỉ SUPER_ADMIN (`canWrite`) thấy.
         // STAFF/ADMIN mở được modal này nên phải gate, khác với form thêm/sửa vốn đã chặn ở ngoài.
@@ -431,6 +437,14 @@ export function ProductDetailModal({
         {
             label: t('product.detail.shortDescription'),
             value: current.shortDescription ?? t('product.detail.notUpdated'),
+        },
+        {
+            label: t('product.detail.metaTitle'),
+            value: current.metaTitle || t('product.detail.seoFallback'),
+        },
+        {
+            label: t('product.detail.metaDescription'),
+            value: current.metaDescription || t('product.detail.seoFallback'),
         },
     ]
 
@@ -487,6 +501,13 @@ export function ProductDetailModal({
                                         )}
                                     </div>
                                 </div>
+
+                                {current.slug && (
+                                    <ViewOnWeb
+                                        href={productStorefrontUrl(current.slug)}
+                                        inactive={current.status !== EntityStatus.ACTIVE}
+                                    />
+                                )}
 
                                 {canWrite && (
                                     <div className="flex justify-end">

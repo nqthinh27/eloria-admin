@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { installStaleBundleGuard } from './lib/stale-bundle'
+
+installStaleBundleGuard()
 
 /*
  * `<StrictMode>` được BẬT (user chốt 2026-08-09).

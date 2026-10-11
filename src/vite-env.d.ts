@@ -14,8 +14,13 @@ interface ImportMetaEnv {
     readonly VITE_STORE_WEBSITE?: string
     readonly VITE_STORE_EMAIL?: string
     readonly VITE_STORE_RETURN_DAYS?: string
+    /* URL gốc storefront cho nút "Xem trên web" — xem `storefrontUrl` ở src/config/app.ts. */
+    readonly VITE_STORE_URL?: string
 }
 
 interface ImportMeta {
     readonly env: ImportMetaEnv
 }
+
+/** Mã phiên bản của bundle đang chạy — do `vite.config.ts` (`define`) gắn lúc build. */
+declare const __APP_VERSION__: string
