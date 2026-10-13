@@ -96,6 +96,23 @@ Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08
 > | **R3** | Phase 20 (trừ mục 4) + Phase 21 mục ①②③ (trừ phần `store.branch_id` đã kéo lên Phase 24) | Đi cùng backend P15/P16 |
 > | — | Phase 17 giữ nguyên ⏸️ | Không liên quan release |
 
+> ## 🚀 **REPLAN 2026-10-13 — Content/CMS lên trước (thay bảng ngay trên)**
+>
+> User chốt: hoàn thành **web tĩnh** (catalog + toàn bộ nội dung) cho khách duyệt **trước**; luồng
+> khách hàng (đăng nhập · giỏ · checkout) tính sau. Chỉ đổi thứ tự release; nội dung từng phase giữ
+> nguyên trừ các bổ sung ghi ở Phase 20 và việc **tách Phase 21** thành 21a/21b.
+>
+> | Release | Admin | Backend | Ghi chú |
+> |---|---|---|---|
+> | **R1** | Phase 22 · 23 · 24 (xong FE) | P12–P13.4 ✅ | Còn kiểm deploy 2 lần + ảnh thật |
+> | **R2 — Web hoàn chỉnh** 🆕 | **Phase 20** (trừ mục 4) | **P15** | Chặn bởi quyết định D1–D11 ở `35.3.eloria-client/PLAN.md` mục Replan 2026-10-13 |
+> | **R3 — Mua hàng** | **Phase 21a** (phí ship + freeship + mục ④ luồng đơn store) + Phase 20 mục 4 `customerNote` | P14 | Bảng cũ để ô phí ship ở sau checkout ⇒ admin chưa có chỗ đặt phí khi khách đã mua được hàng |
+> | **R4 — Điểm** | **Phase 21b** (`loyalty.*` + CRM điểm) | P16 | Mục ② `isPublic` **đã gỡ** (user chốt 2026-10-13: bỏ ví voucher — admin gửi mã riêng thủ công) |
+> | **R6 — Tối ưu UI·UX·SEO** *(phase cuối)* | — (phát sinh ⇒ phase phụ, vd gợi ý SEO tốt hơn ở form) | — | Client GĐ7 |
+> | — | Phase 17 giữ nguyên ⏸️ | — | |
+>
+> **Không có staging** (user chốt 2026-10-13): test/demo ở local, deploy production khi user sẵn sàng ⇒ DoD "deploy 2 lần" của Phase 24 chạy trên production.
+
 > **Replan 2026-08-10:** Phase 11–15 đã được sắp xếp lại theo bối cảnh **bán online tại nhà giai
 > đoạn đầu** — bán hàng & đơn hàng gộp làm **Phase 11**, dashboard/doanh thu kéo lên **Phase 12**,
 > mở ca/chốt ca đẩy xuống **Phase 15**. Chi tiết ở cuối mục D. Phase 0–10 **không đổi**.
@@ -3024,12 +3041,12 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 > Bối cảnh: dự án bước vào giai đoạn **web front store**. Backend mở nhóm phase storefront
 > (`35.1.eloria-backend/PLAN-storefront.md` Phase 12–17); phía admin cần thêm các màn CMS/cấu hình
-> dưới đây. Phạm vi v1 đã chốt với PO: **CÓ** bài viết + banner + trang tĩnh + ví voucher/điểm
-> thưởng đơn giản; **KHÔNG** có đánh giá sản phẩm, wishlist, bộ sưu tập, cổng thanh toán ngoài.
+> dưới đây. Phạm vi v1 đã chốt với PO: **CÓ** bài viết + banner + trang tĩnh + điểm
+> thưởng đơn giản (ví voucher đã bỏ 2026-10-13); **KHÔNG** có đánh giá sản phẩm, wishlist, bộ sưu tập, cổng thanh toán ngoài.
 > Không có mockup riêng cho các màn này — dựng theo pattern bảng/form dùng chung (skill
 > `create-table`) và cùng ngôn ngữ giao diện các phase trước.
 >
-> **Thứ tự chạy (replan 2026-10-11): 22 → 23 → 24 (Release R1) → 21④ (R2) → 20 → 21 còn lại (R3).** ~~Thứ tự cũ: 22 → 20 → 21.~~ Phase 22 (chuẩn ảnh CMS) **không chờ backend**, làm được ngay, và
+> **Thứ tự chạy (replan 2026-10-13): 22 → 23 → 24 (Release R1) → 20 (R2, Content/CMS) → 21a + Phase 20 mục 4 (R3, mua hàng) → 21b (R4, điểm).** ~~Thứ tự 2026-10-11: … → 21④ (R2) → 20 → 21 còn lại (R3).~~ ~~Thứ tự cũ: 22 → 20 → 21.~~ Phase 22 (chuẩn ảnh CMS) **không chờ backend**, làm được ngay, và
 > Phase 20 dùng lại component của nó ⇒ làm 22 trước thì khỏi dựng ô upload hai lần. Phase 21 phụ
 > thuộc backend P13+P16 nên đi sau cùng.
 
@@ -3131,7 +3148,33 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 20 — CMS: Bài viết, Trang tĩnh & Banner ⏳ **CHỜ backend P15** — **Release R3** (mục 4 `customerNote` → R2) *(replan 2026-10-11)*
+## Phase 20 — CMS: Bài viết, Trang tĩnh & Banner ⏳ **CHỜ backend P15** — **Release R2 — LÀM TRƯỚC LUỒNG KHÁCH HÀNG** (mục 4 `customerNote` → R3) *(replan 2026-10-13; trước là R3)*
+
+> **Bổ sung theo Replan 2026-10-13 — các điểm phải sửa so với bản viết 2026-09-30:**
+>
+> 1. ✅ *(agent chốt 2026-10-13)* **Preview bản nháp (D5)**: storefront chỉ trả PUBLISHED ⇒ nút "Preview mở tab storefront" **404
+>    với DRAFT/SCHEDULED**. Làm **preview ngay trong admin**: render HTML đã sanitize bằng đúng CSS
+>    `prose` của storefront (cùng bộ thẻ — D2). Nút "Xem trên web" (tái dùng `<ViewOnWeb>` +
+>    `VITE_STORE_URL` của Phase 24) chỉ bật khi PUBLISHED. ⇒ **điều kiện tiên quyết ③ bên dưới đã
+>    được giải quyết** (env `VITE_STORE_URL` có từ Phase 24).
+> 2. **Banner v1 chỉ có `HOME_HERO` (D6)**: bỏ dropdown `position` và nhánh "các vị trí full-bleed
+>    còn lại → `BANNER_WIDE`" ở mục 2 — hai khung full-bleed đó đã chuyển sang `category.cover*`
+>    (Phase 23). Spec cố định `HOME_HERO` 21:10 · 2520×1200. Giữ cảnh báo "không còn banner ACTIVE".
+> 3. **Ảnh theo luật backend P13.3**: cover bài / ảnh banner / **ảnh chèn trong thân bài** đều **chỉ
+>    upload** (không ô nhập link) qua `<ImageUploadField>`; backend phải có endpoint tương ứng (D7 —
+>    chưa có trong DoD P15). Trần **2 MB**, chỉ chặn sai định dạng + quá nặng (cùng luật Phase 22).
+> 4. **Trang tĩnh được bảo vệ (D4 — thu hẹp 2026-10-13, footer tượng trưng)**: ở form Bài viết, khi
+>    `type = PAGE` và slug nằm trong **danh sách bảo vệ do backend định nghĩa** (R2 chỉ có
+>    `gioi-thieu` — mục "Về chúng tôi" trên nav) ⇒ **slug + loại chỉ đọc, ẩn nút Xoá/Gỡ xuất bản**,
+>    kèm ghi chú *"Menu web đang trỏ tới trang này"*. Slug footer thêm vào danh sách khi user hoàn
+>    thiện footer. Các trang khác soạn/xoá bình thường.
+> 5. **Hero = slideshow CSS thuần, không nút/chấm** — khung xem trước ở admin dùng `<CoverSlidesPreview>`
+>    có sẵn từ Phase 23 (`components/image/cover-slides-preview.tsx`, cùng nhịp 4s) để khách thấy đúng web.
+> 6. **Editor (D2)**: ✅ **TipTap — user duyệt 2026-10-13** (dependency mới, thêm vào `package.json` khi làm phase này). Ảnh trong bài **mức gọn**: nút "Chèn ảnh" qua upload, chặn dán/kéo-thả base64, `alt` bắt buộc, ghi `width`/`height`. Bộ thẻ editor cho
+>    phép = bộ thẻ whitelist của backend = CSS `prose` storefront (h2–h4 · p · ul/ol · a · strong/em ·
+>    blockquote · img · hr). Thẻ ngoài bộ **không được hiện trên thanh công cụ**.
+> 7. **Nhập nội dung thật là một phần DoD của phase** (R2 gate #4): khách/PO tự đăng 1 bài + đổi 1
+>    hero + sửa 1 trang tĩnh **bằng admin**, có biên bản.
 
 ### Điều kiện tiên quyết
 - Backend **P15 đã đóng + có `fe-handoff-phase15`** (bảng `post`/`banner`, API CRUD +
@@ -3184,11 +3227,20 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 - `npm run lint` + `npm run build` sạch; dữ liệu test dọn sạch; bàn giao
   `docs/handoff/phien-*.md` + cập nhật PLAN/CLAUDE.md (skill `handoff`).
 
-## Phase 21 — Cấu hình Storefront, Điểm thưởng & Voucher công khai ⏳ **CHỜ backend P13+P16** — mục ④ **R2**, còn lại **R3**; ô `store.branch_id` của mục ① đã kéo lên **Phase 24** *(replan 2026-10-11)*
+## Phase 21 — Cấu hình Storefront & Điểm thưởng *(Voucher công khai đã bỏ 2026-10-13)* ⏳ **CHỜ backend P13+P16** — **TÁCH ĐÔI (replan 2026-10-13): 21a → R3 (mua hàng) = mục ① phần phí ship + freeship + mục ④; 21b → R4 (điểm) = mục ① phần `loyalty.*` + mục ③; mục ② `isPublic` ĐÃ GỠ**; ô `store.branch_id` của mục ① đã kéo lên **Phase 24**
+
+> ✅ **User chốt 2026-10-13: BỎ ví voucher** — mã giảm giá do admin **gửi riêng thủ công** cho khách,
+> khách gõ tay ở checkout; không quản lý phía người dùng. ⇒ **mục ② (`isPublic`) và DoD
+> `GET /store/public/vouchers` ĐÃ GỠ**; Promotion giữ nguyên như Phase 14.
+> **21a cần cho checkout**: `store.shipping_fee` + `store.freeship_threshold` là tiên quyết của GĐ2
+> client — không thể để sau khi khách đã mua được hàng.
+> ⚠️ **PHÍ SHIP — agent PHẢI PHỎNG VẤN LẠI USER trước khi làm 21a** (user hoãn quyết định
+> 2026-10-13): phí phẳng hay theo vùng/trọng lượng · ngưỡng freeship · COD có phụ phí không · hiển thị
+> ở giỏ hay từ bước địa chỉ. Câu trả lời có thể đổi cả schema `system_config`, không chỉ giá trị.
 
 ### Điều kiện tiên quyết
-- Backend **P13 đã đóng** (mục ① cần `GET/PUT /api/system-config`) và **P16 đã đóng** (mục ②③ cần
-  `isPublic` + `point_transaction`); có handoff tương ứng.
+- Backend **P13 đã đóng** (mục ① cần `GET/PUT /api/system-config`) và **P16 đã đóng** (mục ③ cần
+  `point_transaction`); có handoff tương ứng.
 - **Đo API thật trước khi code** (skill `update-api-doc`) — đặc biệt: shape của `system-config`
   (key-value hay DTO phẳng), response `point_transaction` sort được field nào.
 - **Chốt với user**: giá trị mặc định 3 config `loyalty.*` hiển thị gợi ý trong form; có cho ADMIN
@@ -3202,8 +3254,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
    (`store.shipping_fee`), ngưỡng freeship, tỷ lệ tích điểm / quy đổi / trần % dùng điểm
    (`loyalty.*`). Dùng `MoneyInput` cho ô tiền, cảnh báo trước khi đổi chi nhánh online (ảnh
    hưởng tồn hiển thị trên web).
-2. **Khuyến mại**: thêm toggle **"Công khai trên web bán hàng"** (`isPublic`) vào form + cột/badge
-   ở bảng + bộ lọc.
+2. ~~**Khuyến mại**: toggle `isPublic`~~ — **ĐÃ GỠ** (2026-10-13, bỏ ví voucher).
 3. **CRM**: tab/khối **Điểm thưởng** trong modal chi tiết khách — số dư + lịch sử `point_transaction`
    (EARN/REDEEM/REVERT, liên kết mã đơn).
 4. Màn Đơn hàng: bộ lọc kênh đã có sẵn tab ONLINE — kiểm tra lại luồng xử lý đơn từ store (xác
@@ -3213,8 +3264,6 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 ### Output mong muốn (DoD)
 - Màn `/store-settings` đọc/ghi thật: đổi phí ship → `cart/preview` phía store trả phí mới (kiểm
   bằng curl); đổi chi nhánh online có dialog xác nhận; role khác SUPER_ADMIN không thấy menu + 403.
-- Toggle `isPublic` ghi thật; kiểm chứng chéo: mã bật công khai xuất hiện ở
-  `GET /store/public/vouchers`, tắt thì biến mất (curl).
 - Khối điểm trong CRM khớp backend: complete 1 đơn test có `customerId` → số dư + dòng EARN hiện
   đúng; duyệt trả hàng → dòng REVERT.
 - Mục ④ có **biên bản kiểm tra luồng** đơn store end-to-end trên admin (xác nhận → pack → ship →
