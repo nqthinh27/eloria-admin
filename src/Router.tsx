@@ -21,6 +21,8 @@ import PromotionListPage from './pages/promotion/PromotionListPage'
 import ReturnListPage from './pages/returns/ReturnListPage'
 import BrandListPage from './pages/product/BrandListPage'
 import BankAccountPage from './pages/bank-account/BankAccountPage'
+import PostListPage from './pages/content/PostListPage'
+import BannerListPage from './pages/content/BannerListPage'
 import StoreSettingsPage from './pages/system/StoreSettingsPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -83,6 +85,9 @@ export default function Router() {
                     <Route element={<RoleRoute minRole={ERole.SUPER_ADMIN} />}>
                         <Route path="bank-accounts" element={<BankAccountPage />} />
                         <Route path="brands" element={<BrandListPage />} />
+                        {/* CMS Phase 20 — `/post/*` · `/banner/*` đều `[SUPER_ADMIN]` kể cả đọc. */}
+                        <Route path="posts" element={<PostListPage />} />
+                        <Route path="banners" element={<BannerListPage />} />
                         {/* `GET/PUT /system-config` đều `[SUPER_ADMIN]` — Phase 24. */}
                         <Route path="store-settings" element={<StoreSettingsPage />} />
                     </Route>

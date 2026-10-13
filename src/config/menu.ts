@@ -4,9 +4,11 @@ import {
     Building2,
     ClipboardList,
     Clock,
+    GalleryHorizontal,
     Landmark,
     LayoutGrid,
     LayoutDashboard,
+    Newspaper,
     Package,
     Percent,
     Settings,
@@ -36,7 +38,7 @@ export type MenuGroupType = {
 }
 
 /**
- * Menu chính — 4 nhóm đúng theo mockup (`design/01`, `04`, `11`…).
+ * Menu chính — 4 nhóm đúng theo mockup, thêm nhóm Nội dung (CMS) ở cuối (`design/01`, `04`, `11`…).
  * Thứ tự nhóm và thứ tự mục trong nhóm phải giữ nguyên như thiết kế.
  *
  * `minRole` đặt theo tiền tố `[ROLE]` của API mà màn đó gọi (bảng tra ở CLAUDE.md).
@@ -121,6 +123,14 @@ export const mainMenu: MenuGroupType[] = [
                 icon: Percent,
                 minRole: ERole.ADMIN,
             },
+        ],
+    },
+    {
+        titleKey: 'menu.group.content',
+        items: [
+            // CMS (Phase 20): mọi endpoint `/post/*` · `/banner/*` đều `[SUPER_ADMIN]` kể cả đọc.
+            { titleKey: 'menu.posts', url: '/posts', icon: Newspaper, minRole: ERole.SUPER_ADMIN },
+            { titleKey: 'menu.banners', url: '/banners', icon: GalleryHorizontal, minRole: ERole.SUPER_ADMIN },
         ],
     },
 ]

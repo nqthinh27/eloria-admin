@@ -16,6 +16,7 @@
 | Khách hàng (toàn cục — Phase 3b) | [khach-hang.md](khach-hang.md) | Khách hàng | `phase-3b-khach-toan-cuc-review.md` |
 | Đơn hàng · thanh toán · giảm giá 2 tầng · luồng POS · hoá đơn · tồn-theo-đơn | [don-hang.md](don-hang.md) | POS · Đơn hàng | `ban-hang-p6.md` |
 | Tài khoản ngân hàng & VietQR | [ngan-hang-qr.md](ngan-hang-qr.md) | dialog QR ở POS / chi tiết đơn | `fe-handoff-discount-qr.md` |
+| Nội dung CMS (bài viết · banner) | [noi-dung-cms.md](noi-dung-cms.md) | `/posts` · `/banners` (SUPER_ADMIN) | `fe-handoff-phase15-admin.md` |
 | Kho: tồn kho · phiếu · kiểm kê · xuất huỷ | [kho.md](kho.md) | Kho hàng | — |
 | Dashboard & Báo cáo · doanh thu sau hoàn | [bao-cao.md](bao-cao.md) | Dashboard | `fe-handoff-phase7.md` · `fe-handoff-phase7-cost.md` |
 | Khuyến mại & Coupon | [khuyen-mai.md](khuyen-mai.md) | Khuyến mại · POS | `khuyen-mai-p9.md` |

@@ -1,0 +1,100 @@
+export default {
+    banner: {
+        pageTitle: 'Home banners',
+        pageDescription: 'Manage the sliding hero banners at the top of the storefront home page',
+
+        position: {
+            HOME_HERO: 'Home hero',
+        },
+
+        list: {
+            addButton: 'Add banner',
+            searchPlaceholder: 'Search banner title…',
+            allStatuses: 'All statuses',
+            statusActive: 'Active',
+            statusInactive: 'Inactive',
+            resultLabel: 'banners',
+            empty: 'No banners yet',
+            noValue: '—',
+            noImage: 'No image — the banner is not shown on the web',
+            noActiveWarning:
+                'No banner is currently displayed (active + has image + within its effective period) — the web home page falls back to its default look.',
+            periodState: {
+                always: 'Always effective',
+                upcoming: 'Not yet effective',
+                running: 'In effect',
+                expired: 'Expired',
+            },
+            column: {
+                image: 'Image',
+                title: 'Title',
+                cta: 'Call to action',
+                sortOrder: 'Order',
+                period: 'Effective',
+                status: 'Status',
+                actions: 'Actions',
+            },
+            actionEdit: 'Edit',
+            actionActivate: 'Activate',
+            actionDeactivate: 'Deactivate',
+            actionDelete: 'Delete',
+        },
+
+        form: {
+            addTitle: 'Add banner',
+            editTitle: 'Edit banner',
+            image: 'Banner image',
+            imageCaption:
+                'The home hero slides in order. Subject and text must stay inside the bright frame — anything outside is cropped on phones.',
+            title: 'Title',
+            titlePlaceholder: 'Large text on the banner',
+            subtitle: 'Subtitle',
+            subtitlePlaceholder: 'Smaller line below (optional)',
+            ctaLabel: 'Button label',
+            ctaLabelPlaceholder: 'e.g. Shop now',
+            ctaUrl: 'Button link',
+            ctaUrlPlaceholder: '/danh-muc/ao-so-mi or https://…',
+            ctaUrlHelp: 'An internal path starting with "/" or an http(s):// address.',
+            sortOrder: 'Display order',
+            sortOrderHelp: 'Smaller numbers come first.',
+            effectiveFrom: 'Effective from',
+            effectiveTo: 'Until end of',
+            periodHelp: 'Leave empty for no limit.',
+            submitCreate: 'Add banner',
+            submitUpdate: 'Save changes',
+            submitting: 'Processing…',
+            validation: {
+                titleRequired: 'Please enter a title',
+                titleMaxLength: 'Title must be at most 150 characters',
+                subtitleMaxLength: 'Subtitle must be at most 255 characters',
+                ctaLabelMaxLength: 'Button label must be at most 100 characters',
+                ctaUrlMaxLength: 'Link must be at most 500 characters',
+                ctaUrlInvalid: 'Only http(s)://… or an internal path starting with "/" (not "//") is accepted',
+                sortOrderInvalid: 'Order must be a non-negative integer',
+                periodInvalid: 'The start date must be before the end date',
+            },
+        },
+
+        statusConfirm: {
+            activateTitle: 'Activate banner?',
+            activateDescription: 'Banner "{{name}}" will show on the web again (if it has an image and is within its period).',
+            activateSubmit: 'Activate',
+            deactivateTitle: 'Deactivate banner?',
+            deactivateDescription: 'Banner "{{name}}" will no longer show on the web.',
+            deactivateSubmit: 'Deactivate',
+        },
+        deleteConfirm: {
+            title: 'Delete banner?',
+            description: 'Banner "{{name}}" and its image file will be deleted.',
+            submit: 'Delete banner',
+        },
+
+        toast: {
+            imageFailed: 'The banner was created but the image could not be uploaded — reopen the banner to upload it again.',
+            created: 'Banner added',
+            updated: 'Banner updated',
+            statusUpdated: 'Banner status updated',
+            deleted: 'Banner deleted',
+        },
+    },
+}

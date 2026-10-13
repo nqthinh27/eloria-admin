@@ -87,6 +87,18 @@ export default {
             codeExisted: 'Mã thương hiệu đã tồn tại.',
             hasProducts: 'Thương hiệu vẫn còn sản phẩm tham chiếu, không thể xoá.',
         },
+        // Content/CMS (Phase 15) — subKey trích từ `fe-handoff-phase15-admin.md`.
+        post: {
+            notExisted: 'Bài viết không tồn tại.',
+            slugExisted: 'Slug đã được bài viết khác sử dụng.',
+            scheduleInvalid: 'Thời điểm hẹn giờ phải ở tương lai.',
+            productInvalid: 'Có sản phẩm liên quan không hợp lệ (không tồn tại hoặc đã ngừng hoạt động).',
+            statusTransitionInvalid: 'Không thể chuyển trạng thái này — bài cần có nội dung trước khi đăng.',
+        },
+        banner: {
+            notExisted: 'Banner không tồn tại.',
+            periodInvalid: 'Ngày bắt đầu hiệu lực phải trước ngày kết thúc.',
+        },
         color: {
             notExisted: 'Màu không tồn tại.',
             codeExisted: 'Mã màu đã tồn tại.',

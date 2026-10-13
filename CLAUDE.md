@@ -85,6 +85,8 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
   **Phase 24 (CMS catalog sẵn sàng Release R1) xong FE 2026-10-11** — route `/store-settings` (SUPER_ADMIN),
   khối SEO + "Xem trên web", popup phiên bản mới; Phase 22/23 đã đóng. Còn kiểm deploy 2 lần + ảnh thật
   (chi tiết ở PLAN Phase 24 + handoff).
+  **Phase 20 (CMS Bài viết + Banner, R2) xong FE 2026-10-13** (P15.1: bỏ trang tĩnh, nhóm menu Nội dung, slug tự sinh) — route `/posts`, `/banners` (SUPER_ADMIN),
+  đặc tả ở [docs/backend/noi-dung-cms.md](docs/backend/noi-dung-cms.md); mục 4 `customerNote` còn chờ BE P14.
 - **Thứ tự release (replan 2026-10-13)**: R1 catalog (Phase 22·23·24) → **R2 = Phase 20 Content/CMS**
   (làm **trước** luồng khách hàng; chờ backend P15 + quyết định D1–D11 ở `35.3.eloria-client/PLAN.md`)
   → R3 mua hàng (Phase 21a + Phase 20 mục 4) → R4 điểm (Phase 21b). Chi tiết: PLAN mục Replan 2026-10-13.

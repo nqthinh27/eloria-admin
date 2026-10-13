@@ -1,0 +1,100 @@
+export default {
+    banner: {
+        pageTitle: 'Banner trang chủ',
+        pageDescription: 'Quản lý các banner trượt (hero) ở đầu trang chủ web bán hàng',
+
+        position: {
+            HOME_HERO: 'Hero trang chủ',
+        },
+
+        list: {
+            addButton: 'Thêm banner',
+            searchPlaceholder: 'Tìm tiêu đề banner…',
+            allStatuses: 'Tất cả trạng thái',
+            statusActive: 'Hoạt động',
+            statusInactive: 'Ngừng hoạt động',
+            resultLabel: 'banner',
+            empty: 'Chưa có banner nào',
+            noValue: '—',
+            noImage: 'Chưa có ảnh — banner không hiện trên web',
+            noActiveWarning:
+                'Hiện không có banner nào đang hiển thị (hoạt động + có ảnh + trong thời gian hiệu lực) — trang chủ web sẽ rơi về giao diện mặc định.',
+            periodState: {
+                always: 'Luôn hiệu lực',
+                upcoming: 'Chưa hiệu lực',
+                running: 'Đang hiệu lực',
+                expired: 'Hết hạn',
+            },
+            column: {
+                image: 'Ảnh',
+                title: 'Tiêu đề',
+                cta: 'Nút kêu gọi',
+                sortOrder: 'Thứ tự',
+                period: 'Hiệu lực',
+                status: 'Trạng thái',
+                actions: 'Thao tác',
+            },
+            actionEdit: 'Sửa',
+            actionActivate: 'Bật hoạt động',
+            actionDeactivate: 'Ngừng hoạt động',
+            actionDelete: 'Xoá',
+        },
+
+        form: {
+            addTitle: 'Thêm banner',
+            editTitle: 'Sửa banner',
+            image: 'Ảnh banner',
+            imageCaption:
+                'Hero trang chủ chạy trượt theo thứ tự. Chủ thể và chữ phải nằm trong khung sáng — ngoài vùng này sẽ bị cắt trên điện thoại.',
+            title: 'Tiêu đề',
+            titlePlaceholder: 'Dòng chữ lớn trên banner',
+            subtitle: 'Phụ đề',
+            subtitlePlaceholder: 'Dòng chữ nhỏ bên dưới (không bắt buộc)',
+            ctaLabel: 'Chữ trên nút',
+            ctaLabelPlaceholder: 'vd: Mua ngay',
+            ctaUrl: 'Liên kết của nút',
+            ctaUrlPlaceholder: '/danh-muc/ao-so-mi hoặc https://…',
+            ctaUrlHelp: 'Đường dẫn nội bộ bắt đầu bằng "/" hoặc địa chỉ http(s)://.',
+            sortOrder: 'Thứ tự hiển thị',
+            sortOrderHelp: 'Số nhỏ hiện trước.',
+            effectiveFrom: 'Có hiệu lực từ ngày',
+            effectiveTo: 'Đến hết ngày',
+            periodHelp: 'Bỏ trống = không giới hạn.',
+            submitCreate: 'Thêm banner',
+            submitUpdate: 'Lưu thay đổi',
+            submitting: 'Đang xử lý…',
+            validation: {
+                titleRequired: 'Vui lòng nhập tiêu đề',
+                titleMaxLength: 'Tiêu đề tối đa 150 ký tự',
+                subtitleMaxLength: 'Phụ đề tối đa 255 ký tự',
+                ctaLabelMaxLength: 'Chữ trên nút tối đa 100 ký tự',
+                ctaUrlMaxLength: 'Liên kết tối đa 500 ký tự',
+                ctaUrlInvalid: 'Chỉ nhận http(s)://… hoặc đường dẫn nội bộ bắt đầu bằng "/" (không phải "//")',
+                sortOrderInvalid: 'Thứ tự phải là số nguyên không âm',
+                periodInvalid: 'Ngày bắt đầu phải trước ngày kết thúc',
+            },
+        },
+
+        statusConfirm: {
+            activateTitle: 'Bật hoạt động banner?',
+            activateDescription: 'Banner "{{name}}" sẽ hiện lại trên web (nếu có ảnh và trong thời gian hiệu lực).',
+            activateSubmit: 'Bật hoạt động',
+            deactivateTitle: 'Ngừng hoạt động banner?',
+            deactivateDescription: 'Banner "{{name}}" sẽ không hiện trên web nữa.',
+            deactivateSubmit: 'Ngừng hoạt động',
+        },
+        deleteConfirm: {
+            title: 'Xoá banner?',
+            description: 'Banner "{{name}}" và file ảnh của nó sẽ bị xoá.',
+            submit: 'Xoá banner',
+        },
+
+        toast: {
+            imageFailed: 'Đã tạo banner nhưng chưa tải được ảnh — mở lại banner để tải lại.',
+            created: 'Thêm banner thành công',
+            updated: 'Cập nhật banner thành công',
+            statusUpdated: 'Cập nhật trạng thái banner thành công',
+            deleted: 'Xoá banner thành công',
+        },
+    },
+}

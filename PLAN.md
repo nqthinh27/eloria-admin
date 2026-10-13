@@ -275,7 +275,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 | **18** | ✅ **Quản lý Tài khoản ngân hàng** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 11 | *(không mockup — pattern `04`/`07`)* |
 | **19** | ✅ **Quản lý Thương hiệu** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 9 | *(không mockup — pattern `04`/`07`)* |
-| **20** | ⏳ **CMS: Bài viết, Trang tĩnh & Banner** — *chờ backend P15* · **R3** (mục 4 → R2) | 5, 22 | *(không mockup — pattern `04`/`07`)* |
+| **20** | ⏳ **CMS: Bài viết & Banner** — *chờ backend P15* · **R3** (mục 4 → R2) | 5, 22 | *(không mockup — pattern `04`/`07`)* |
 | **21** | ⏳ **Cấu hình Storefront, Điểm thưởng & Voucher công khai** — *chờ backend P13+P16* · mục ④ **R2**, còn lại **R3** (`store.branch_id` kéo lên Phase 24) | 5, 8, 14 | *(không mockup)* |
 | **22** | ✅ **(2026-10-11 — xong FE + upload BE31/P13.3; unit test ghi nợ)** **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
 | **23** | ✅ **(2026-10-11 — xong FE + upload; đã đo storefront/INACTIVE/XOÁ/RBAC ADMIN)** **Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định** | 5, 9, 22 | *(không mockup — pattern `12`)* |
@@ -3148,7 +3148,14 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 20 — CMS: Bài viết, Trang tĩnh & Banner ⏳ **CHỜ backend P15** — **Release R2 — LÀM TRƯỚC LUỒNG KHÁCH HÀNG** (mục 4 `customerNote` → R3) *(replan 2026-10-13; trước là R3)*
+## Phase 20 — CMS: Bài viết & Banner ✅ **XONG FE 2026-10-13** (backend P15 đã giao; còn kiểm tay upload ảnh/RBAC + biên bản nhập nội dung — [handoff](docs/handoff/phien-2026-10-13-phase-20-cms-bai-viet-banner.md); mục 4 `customerNote` vẫn chờ P14) ~~⏳ CHỜ backend P15~~ — **Release R2 — LÀM TRƯỚC LUỒNG KHÁCH HÀNG** (mục 4 `customerNote` → R3) *(replan 2026-10-13; trước là R3)*
+
+> **⚠️ Cập nhật 2026-10-13 (backend P15.1 — PO chốt): bỏ loại `PAGE` (trang tĩnh) khỏi CMS.** Trang tĩnh
+> (Về chúng tôi, FAQ, đổi trả, vận chuyển, liên hệ, tuyển dụng) là trang cố định viết cứng ở storefront,
+> đổi bằng sửa code. Hệ quả ở admin: ✅ menu gom nhóm **Nội dung** (Bài viết · Banner trang chủ); ✅ bỏ `PAGE`
+> khỏi `POST_TYPES`/bộ lọc/i18n; ✅ bỏ `protectedPage`, nhánh khoá slug/loại, ghi chú bảo vệ, `error.post.pageProtected`;
+> ✅ **slug tự sinh ở backend** ⇒ ô Slug **ẩn khi tạo mới** (không gửi `slug`), hiện khi sửa (để trống = giữ slug cũ).
+> Mục 4 bên dưới **bị thay thế**. Xem `35.1.eloria-backend/docs/decisions/phase-15_1-remove-page-type.md`.
 
 > **Bổ sung theo Replan 2026-10-13 — các điểm phải sửa so với bản viết 2026-09-30:**
 >
@@ -3163,7 +3170,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 > 3. **Ảnh theo luật backend P13.3**: cover bài / ảnh banner / **ảnh chèn trong thân bài** đều **chỉ
 >    upload** (không ô nhập link) qua `<ImageUploadField>`; backend phải có endpoint tương ứng (D7 —
 >    chưa có trong DoD P15). Trần **2 MB**, chỉ chặn sai định dạng + quá nặng (cùng luật Phase 22).
-> 4. **Trang tĩnh được bảo vệ (D4 — thu hẹp 2026-10-13, footer tượng trưng)**: ở form Bài viết, khi
+> 4. ~~**Trang tĩnh được bảo vệ (D4)**~~ **BỊ THAY THẾ bởi P15.1 (xem khung trên)** — nội dung gốc: ở form Bài viết, khi
 >    `type = PAGE` và slug nằm trong **danh sách bảo vệ do backend định nghĩa** (R2 chỉ có
 >    `gioi-thieu` — mục "Về chúng tôi" trên nav) ⇒ **slug + loại chỉ đọc, ẩn nút Xoá/Gỡ xuất bản**,
 >    kèm ghi chú *"Menu web đang trỏ tới trang này"*. Slug footer thêm vào danh sách khi user hoàn
@@ -3191,8 +3198,8 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ### Việc cần làm
 1. **Màn Bài viết** (`/posts`): bảng (ẢNH · TIÊU ĐỀ · LOẠI · TRẠNG THÁI · NGÀY ĐĂNG · THAO TÁC),
-   lọc theo loại (News/Product Story/Brand Story/Campaign/**Page** = trang tĩnh) + trạng thái.
-   Form tạo/sửa: tiêu đề, slug (tự sinh, sửa được), loại, ảnh cover, tóm tắt, rich text editor,
+   lọc theo loại (News/Product Story/Brand Story/Campaign) + trạng thái.
+   Form tạo/sửa: tiêu đề, slug (chỉ hiện khi sửa; tạo mới backend tự sinh), loại, ảnh cover, tóm tắt, rich text editor,
    gắn sản phẩm liên quan (SearchSelect), SEO meta (title/description/OG image),
    hẹn giờ xuất bản. Nút Preview mở tab storefront.
    **Ảnh**: cover dùng spec `POST_COVER` (16:9 · 1920×1080) và OG image dùng `OG_IMAGE`
@@ -3221,7 +3228,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
   endpoint store bằng curl nếu client chưa deploy); bài SCHEDULED chưa đến giờ KHÔNG xuất hiện.
 - **Ảnh lên web đúng khung**: upload 1 banner `HOME_HERO` đúng gợi ý (2520×1200) → mở trang chủ
   client ở **390/768/1440**, chủ thể + chữ không bị cắt; đổi `position` trong form → gợi ý và khung
-  xem trước đổi theo; upload ảnh dưới min → bị chặn tại chỗ, không có request nào bay đi.
+  xem trước đổi theo; upload ảnh dưới min → **cảnh báo** vỡ ảnh/lệch tỉ lệ (kích thước chỉ cảnh báo từ P22/23; chỉ sai định dạng / quá 2 MB mới bị chặn tại chỗ, không request nào bay đi).
 - i18n VI/EN cân key (có quét rò rỉ khoá), subKey `error.post.*`/`error.banner.*` map đủ 2 ngôn ngữ;
   `types/` đồng bộ api-docs, không bịa field; sort chỉ mở ở field đã đo 200.
 - `npm run lint` + `npm run build` sạch; dữ liệu test dọn sạch; bàn giao

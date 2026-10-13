@@ -70,6 +70,18 @@ export default {
             codeExisted: 'Brand code already exists.',
             hasProducts: 'This brand still has products referencing it and cannot be deleted.',
         },
+        // Content/CMS (Phase 15) — subKeys from `fe-handoff-phase15-admin.md`.
+        post: {
+            notExisted: 'Post does not exist.',
+            slugExisted: 'This slug is already used by another post.',
+            scheduleInvalid: 'The scheduled time must be in the future.',
+            productInvalid: 'A related product is invalid (does not exist or is inactive).',
+            statusTransitionInvalid: 'This status change is not allowed — a post needs content before publishing.',
+        },
+        banner: {
+            notExisted: 'Banner does not exist.',
+            periodInvalid: 'The effective start date must be before the end date.',
+        },
         color: {
             notExisted: 'Color does not exist.',
             codeExisted: 'Color code already exists.',

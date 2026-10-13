@@ -296,9 +296,10 @@ export function measureImageUrl(
  * báo "không tải được" — đúng với thực tế là admin không nhìn thấy file đó.
  */
 export function resolveImageSrc(value: string): string {
-    // Ảnh do upload danh mục/thương hiệu (BE31) trả `/category/<file>` · `/brand/<file>` — dạng đường dẫn
-    // gốc nhưng backend lưu, phải đi qua `/image`; chỉ `/media/**` (seed storefront) mới dùng nguyên văn.
-    if (/^\/(category|brand)\//.test(value)) return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
+    // Ảnh upload danh mục/thương hiệu (BE31) · bài viết/banner (P15) trả `/category/<file>` · `/brand/<file>`
+    // · `/post/<file>` · `/banner/<file>` — dạng đường dẫn gốc nhưng backend lưu, phải đi qua `/image`;
+    // chỉ `/media/**` (seed storefront) mới dùng nguyên văn.
+    if (/^\/(category|brand|post|banner)\//.test(value)) return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
     if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:') || value.startsWith('/')) return value
     return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
 }

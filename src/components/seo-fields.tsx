@@ -58,7 +58,7 @@ export function SeoFields<T extends FieldValues & SeoFormValues>({
     return (
         <section className="space-y-4 border-t pt-4">
             <div>
-                <h3 className="text-sm font-semibold">{t('seo.title')}</h3>
+                <h3 className="text-base font-semibold">{t('seo.title')}</h3>
                 <p className="text-muted-foreground text-xs">{t('seo.subtitle')}</p>
             </div>
 

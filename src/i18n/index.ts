@@ -18,6 +18,8 @@ import viBankAccount from './locales/vi/bankAccount'
 import viBrand from './locales/vi/brand'
 import viImage from './locales/vi/image'
 import viStoreSettings from './locales/vi/storeSettings'
+import viPost from './locales/vi/post'
+import viBanner from './locales/vi/banner'
 import enCommon from './locales/en/common'
 import enErrors from './locales/en/errors'
 import enAuth from './locales/en/auth'
@@ -34,6 +36,8 @@ import enBankAccount from './locales/en/bankAccount'
 import enBrand from './locales/en/brand'
 import enImage from './locales/en/image'
 import enStoreSettings from './locales/en/storeSettings'
+import enPost from './locales/en/post'
+import enBanner from './locales/en/banner'
 
 export const SUPPORTED_LANGUAGES = ['vi', 'en'] as const
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
@@ -61,6 +65,8 @@ const resources = {
         brand: viBrand,
         image: viImage,
         storeSettings: viStoreSettings,
+        post: viPost,
+        banner: viBanner,
     },
     en: {
         common: enCommon,
@@ -79,6 +85,8 @@ const resources = {
         brand: enBrand,
         image: enImage,
         storeSettings: enStoreSettings,
+        post: enPost,
+        banner: enBanner,
     },
 }
 
@@ -114,6 +122,8 @@ i18n
             'brand',
             'image',
             'storeSettings',
+            'post',
+            'banner',
         ],
         defaultNS: 'common',
         /*
