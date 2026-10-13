@@ -3239,10 +3239,8 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 > ✅ **User chốt 2026-10-13: BỎ ví voucher** — mã giảm giá do admin **gửi riêng thủ công** cho khách,
 > khách gõ tay ở checkout; không quản lý phía người dùng. ⇒ **mục ② (`isPublic`) và DoD
 > `GET /store/public/vouchers` ĐÃ GỠ**; Promotion giữ nguyên như Phase 14.
-> ✅ **PHÍ SHIP — PO chốt 2026-10-14: cửa hàng thu thủ công, KHÔNG đưa vào hệ thống.** Không có ô
-> `store.shipping_fee` / `store.freeship_threshold` ở `/store-settings` (backend P13 vẫn giữ 2 key,
-> P14 không dùng). Đơn ONLINE có `shippingFee = 0`; nhân viên liên hệ khách và thu phí ngoài hệ thống.
-> Hệ quả với 21a: chỉ còn mục ④ (kiểm luồng đơn store) — khối này không còn chặn checkout của client.
+> Phí ship **tạm bỏ qua** (PO 2026-10-14) — không có ô cấu hình ở `/store-settings`; xử lý ở phase cuối.
+> 21a chỉ còn mục ④ (kiểm luồng đơn store).
 
 ### Điều kiện tiên quyết
 - Backend **P13 đã đóng** (mục ① cần `GET/PUT /api/system-config`) và **P16 đã đóng** (mục ③ cần
@@ -3266,8 +3264,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 4. Màn Đơn hàng: bộ lọc kênh đã có sẵn tab ONLINE — kiểm tra lại luồng xử lý đơn từ store (xác
    nhận → đóng gói → giao → thu COD/đối soát QR) chạy trơn với đơn do khách tự đặt; đơn store có
    `customer_note` + địa chỉ giao (**snapshot** từ hồ sơ khách lúc đặt — khách đổi hồ sơ sau không
-   làm đổi đơn cũ). `shippingFee` luôn 0: **kiểm** màn đơn có cho nhân viên ghi phí ship thực thu không
-   (P6 có field `shippingFee`); nếu thiếu → `backend-request`, không sửa ngầm.
+   làm đổi đơn cũ).
 5. **CRM khách hàng**: modal chi tiết khách hiển thị thêm **địa chỉ giao hàng** (`address` +
    tỉnh/phường) — khách tự cập nhật ở storefront; khách có thể tự đổi **email/SĐT** nên đừng
    coi 2 field này là bất biến. Shape field chờ handoff P14, **đo API thật** trước khi code.
