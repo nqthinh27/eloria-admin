@@ -106,7 +106,7 @@ Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08
 > |---|---|---|---|
 > | **R1** | Phase 22 · 23 · 24 (xong FE) | P12–P13.4 ✅ | Còn kiểm deploy 2 lần + ảnh thật |
 > | **R2 — Web hoàn chỉnh** 🆕 | **Phase 20** (trừ mục 4) | **P15** | Chặn bởi quyết định D1–D11 ở `35.3.eloria-client/PLAN.md` mục Replan 2026-10-13 |
-> | **R3 — Mua hàng** | **Phase 21a** (phí ship + freeship + mục ④ luồng đơn store) + Phase 20 mục 4 `customerNote` | P14 | Bảng cũ để ô phí ship ở sau checkout ⇒ admin chưa có chỗ đặt phí khi khách đã mua được hàng |
+> | **R3 — Mua hàng** | **Phase 21a** (chỉ còn mục ④ luồng đơn store; **không có cấu hình phí ship** — thu thủ công, PO chốt 2026-10-14) + Phase 20 mục 4 `customerNote` | P14 | Địa chỉ giao của khách nằm ở hồ sơ `sys_user` (1 địa chỉ/khách), snapshot vào đơn lúc đặt |
 > | **R4 — Điểm** | **Phase 21b** (`loyalty.*` + CRM điểm) | P16 | Mục ② `isPublic` **đã gỡ** (user chốt 2026-10-13: bỏ ví voucher — admin gửi mã riêng thủ công) |
 > | **R6 — Tối ưu UI·UX·SEO** *(phase cuối)* | — (phát sinh ⇒ phase phụ, vd gợi ý SEO tốt hơn ở form) | — | Client GĐ7 |
 > | — | Phase 17 giữ nguyên ⏸️ | — | |
@@ -3234,16 +3234,15 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 - `npm run lint` + `npm run build` sạch; dữ liệu test dọn sạch; bàn giao
   `docs/handoff/phien-*.md` + cập nhật PLAN/CLAUDE.md (skill `handoff`).
 
-## Phase 21 — Cấu hình Storefront & Điểm thưởng *(Voucher công khai đã bỏ 2026-10-13)* ⏳ **CHỜ backend P13+P16** — **TÁCH ĐÔI (replan 2026-10-13): 21a → R3 (mua hàng) = mục ① phần phí ship + freeship + mục ④; 21b → R4 (điểm) = mục ① phần `loyalty.*` + mục ③; mục ② `isPublic` ĐÃ GỠ**; ô `store.branch_id` của mục ① đã kéo lên **Phase 24**
+## Phase 21 — Cấu hình Storefront & Điểm thưởng *(Voucher công khai đã bỏ 2026-10-13)* ⏳ **CHỜ backend P13+P16** — **TÁCH ĐÔI (replan 2026-10-13): 21a → R3 (mua hàng) = chỉ mục ④ (phí ship thu thủ công — bỏ khỏi mục ① từ 2026-10-14); 21b → R4 (điểm) = mục ① phần `loyalty.*` + mục ③; mục ② `isPublic` ĐÃ GỠ**; ô `store.branch_id` của mục ① đã kéo lên **Phase 24**
 
 > ✅ **User chốt 2026-10-13: BỎ ví voucher** — mã giảm giá do admin **gửi riêng thủ công** cho khách,
 > khách gõ tay ở checkout; không quản lý phía người dùng. ⇒ **mục ② (`isPublic`) và DoD
 > `GET /store/public/vouchers` ĐÃ GỠ**; Promotion giữ nguyên như Phase 14.
-> **21a cần cho checkout**: `store.shipping_fee` + `store.freeship_threshold` là tiên quyết của GĐ2
-> client — không thể để sau khi khách đã mua được hàng.
-> ⚠️ **PHÍ SHIP — agent PHẢI PHỎNG VẤN LẠI USER trước khi làm 21a** (user hoãn quyết định
-> 2026-10-13): phí phẳng hay theo vùng/trọng lượng · ngưỡng freeship · COD có phụ phí không · hiển thị
-> ở giỏ hay từ bước địa chỉ. Câu trả lời có thể đổi cả schema `system_config`, không chỉ giá trị.
+> ✅ **PHÍ SHIP — PO chốt 2026-10-14: cửa hàng thu thủ công, KHÔNG đưa vào hệ thống.** Không có ô
+> `store.shipping_fee` / `store.freeship_threshold` ở `/store-settings` (backend P13 vẫn giữ 2 key,
+> P14 không dùng). Đơn ONLINE có `shippingFee = 0`; nhân viên liên hệ khách và thu phí ngoài hệ thống.
+> Hệ quả với 21a: chỉ còn mục ④ (kiểm luồng đơn store) — khối này không còn chặn checkout của client.
 
 ### Điều kiện tiên quyết
 - Backend **P13 đã đóng** (mục ① cần `GET/PUT /api/system-config`) và **P16 đã đóng** (mục ③ cần
@@ -3257,20 +3256,25 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ### Việc cần làm
 1. **Màn Cấu hình storefront** (`/store-settings`, SUPER_ADMIN — backend `system_config` P13):
-   chi nhánh bán online (`store.branch_id` — SearchSelect chi nhánh), phí ship
-   (`store.shipping_fee`), ngưỡng freeship, tỷ lệ tích điểm / quy đổi / trần % dùng điểm
-   (`loyalty.*`). Dùng `MoneyInput` cho ô tiền, cảnh báo trước khi đổi chi nhánh online (ảnh
+   chi nhánh bán online (`store.branch_id` — SearchSelect chi nhánh; đã làm ở Phase 24), tỷ lệ
+   tích điểm / quy đổi / trần % dùng điểm (`loyalty.*`) — **thuộc 21b**; ~~phí ship, ngưỡng freeship~~
+   **không làm** (thu thủ công, chốt 2026-10-14). Dùng `MoneyInput` cho ô tiền, cảnh báo trước khi đổi chi nhánh online (ảnh
    hưởng tồn hiển thị trên web).
 2. ~~**Khuyến mại**: toggle `isPublic`~~ — **ĐÃ GỠ** (2026-10-13, bỏ ví voucher).
 3. **CRM**: tab/khối **Điểm thưởng** trong modal chi tiết khách — số dư + lịch sử `point_transaction`
    (EARN/REDEEM/REVERT, liên kết mã đơn).
 4. Màn Đơn hàng: bộ lọc kênh đã có sẵn tab ONLINE — kiểm tra lại luồng xử lý đơn từ store (xác
    nhận → đóng gói → giao → thu COD/đối soát QR) chạy trơn với đơn do khách tự đặt; đơn store có
-   `customer_note` + địa chỉ từ sổ địa chỉ.
+   `customer_note` + địa chỉ giao (**snapshot** từ hồ sơ khách lúc đặt — khách đổi hồ sơ sau không
+   làm đổi đơn cũ). `shippingFee` luôn 0: **kiểm** màn đơn có cho nhân viên ghi phí ship thực thu không
+   (P6 có field `shippingFee`); nếu thiếu → `backend-request`, không sửa ngầm.
+5. **CRM khách hàng**: modal chi tiết khách hiển thị thêm **địa chỉ giao hàng** (`address` +
+   tỉnh/phường) — khách tự cập nhật ở storefront; khách có thể tự đổi **email/SĐT** nên đừng
+   coi 2 field này là bất biến. Shape field chờ handoff P14, **đo API thật** trước khi code.
 
 ### Output mong muốn (DoD)
-- Màn `/store-settings` đọc/ghi thật: đổi phí ship → `cart/preview` phía store trả phí mới (kiểm
-  bằng curl); đổi chi nhánh online có dialog xác nhận; role khác SUPER_ADMIN không thấy menu + 403.
+- Màn `/store-settings` đọc/ghi thật: đổi chi nhánh online có dialog xác nhận; role khác
+  SUPER_ADMIN không thấy menu + 403. **Không có** ô phí ship/freeship.
 - Khối điểm trong CRM khớp backend: complete 1 đơn test có `customerId` → số dư + dòng EARN hiện
   đúng; duyệt trả hàng → dòng REVERT.
 - Mục ④ có **biên bản kiểm tra luồng** đơn store end-to-end trên admin (xác nhận → pack → ship →
