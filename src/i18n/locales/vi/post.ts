@@ -69,6 +69,8 @@ export default {
             loading: 'Đang tải bài viết…',
             loadFailed: 'Không tải được bài viết. Vui lòng thử lại.',
             validation: {
+                noAngleBrackets: 'Không được chứa ký tự < hoặc >',
+                contentRequiredWhenLive: 'Bài đang đăng/hẹn giờ không được để trống nội dung — hãy gỡ bài trước nếu muốn xoá hết nội dung',
                 titleRequired: 'Vui lòng nhập tiêu đề',
                 titleMaxLength: 'Tiêu đề tối đa 255 ký tự',
                 slugMaxLength: 'Slug tối đa 150 ký tự',

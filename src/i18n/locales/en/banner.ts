@@ -64,6 +64,7 @@ export default {
             submitUpdate: 'Save changes',
             submitting: 'Processing…',
             validation: {
+                noAngleBrackets: 'Must not contain the characters < or >',
                 titleRequired: 'Please enter a title',
                 titleMaxLength: 'Title must be at most 150 characters',
                 subtitleMaxLength: 'Subtitle must be at most 255 characters',

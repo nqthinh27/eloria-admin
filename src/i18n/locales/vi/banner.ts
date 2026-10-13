@@ -64,6 +64,7 @@ export default {
             submitUpdate: 'Lưu thay đổi',
             submitting: 'Đang xử lý…',
             validation: {
+                noAngleBrackets: 'Không được chứa ký tự < hoặc >',
                 titleRequired: 'Vui lòng nhập tiêu đề',
                 titleMaxLength: 'Tiêu đề tối đa 150 ký tự',
                 subtitleMaxLength: 'Phụ đề tối đa 255 ký tự',

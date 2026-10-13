@@ -69,6 +69,8 @@ export default {
             loading: 'Loading post…',
             loadFailed: 'Could not load the post. Please try again.',
             validation: {
+                noAngleBrackets: 'Must not contain the characters < or >',
+                contentRequiredWhenLive: 'A published/scheduled post cannot have empty content — unpublish it first to clear the content',
                 titleRequired: 'Please enter a title',
                 titleMaxLength: 'Title must be at most 255 characters',
                 slugMaxLength: 'Slug must be at most 150 characters',

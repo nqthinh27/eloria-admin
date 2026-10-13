@@ -8,6 +8,8 @@
 > **P15.1 (2026-10-13):** bỏ loại `PAGE` + cơ chế trang bảo vệ; `slug` tuỳ chọn (trống ⇒ tạo: sinh từ tiêu đề · sửa: giữ cũ). Trang tĩnh viết cứng ở storefront.
 - `POST /post/search` body `{keyword?, type?, postStatus?}` (keyword lọc title/slug); dòng **không** có `content`.
   Sort 200 ở `title · slug · type · postStatus · publishedAt · createdDate · excerpt` (FE chỉ mở 5 cột đầu có cột).
+- Sort `/post/search` chỉ nhận `title · slug · type · postStatus · publishedAt · createdDate · lastModifiedDate`; giá trị khác **bị bỏ qua** (mặc định `createdDate desc`, không còn 500). Keyword: `%` `_` hiểu theo nghĩa đen.
+- `PUT /post/{id}`: thiếu `content` = giữ nguyên; xoá phải gửi `""` (không áp dụng khi PUBLISHED/SCHEDULED). `title/excerpt/metaTitle/metaDescription` không chứa `<` `>` (400) — FE validate trước.
 - `GET /post/{id}` đủ `content` (đã sanitize), `productIds[]`, `createdBy`.
 - `POST /post`, `PUT /post/{id}`: `{slug?, title*, excerpt?, content?, type* (NEWS/PRODUCT_STORY/BRAND_STORY/CAMPAIGN), metaTitle?, metaDescription?, productIds?[≤12]}`.
   **Không có** `coverUrl/status/postStatus/ogImage` (gửi ⇒ 400). Luôn tạo **DRAFT**. `productIds` bỏ trống = giữ, `[]` = gỡ hết.
@@ -20,7 +22,7 @@
 - Lỗi: `error.post.{slugExisted,notExisted,scheduleInvalid,productInvalid,statusTransitionInvalid}` · `error.file.typeNotAllowed`.
 
 ## Banner — `/banner`
-- `POST /banner/search` `{keyword?, status?, position?}` + `activeTotal/inactiveTotal`. Sort 200 ở `title · sortOrder · effectiveFrom · effectiveTo · status · createdDate · position`.
+- `POST /banner/search` `{keyword?, status?, position?}` + `activeTotal/inactiveTotal`. Sort chỉ nhận `title · position · sortOrder · status · effectiveFrom · effectiveTo · createdDate · lastModifiedDate` (giá trị khác bị bỏ qua). `title/subtitle/ctaLabel` không chứa `<` `>` (400) — FE validate trước.
 - `POST /banner`, `PUT /banner/{id}`: `{position?, title*, subtitle?, ctaLabel?, ctaUrl?, sortOrder?, effectiveFrom?, effectiveTo?}`.
   ⚠️ **`PUT` thay toàn bộ** — field bỏ trống ⇒ null (`sortOrder` ⇒ 0). ⚠️ `ctaUrl:""` ⇒ **400** (phải bỏ field). `ctaUrl` chỉ `http(s)://…` hoặc `/path`.
   `position` v1 chỉ `HOME_HERO`. `effectiveFrom` phải trước `effectiveTo` (`error.banner.periodInvalid`).

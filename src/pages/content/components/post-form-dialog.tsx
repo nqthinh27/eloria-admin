@@ -27,14 +27,19 @@ import { RichTextEditor } from './rich-text-editor'
 const MAX_PRODUCTS = 12
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
+/** Backend (P15.1) trả 400 nếu title/excerpt/metaTitle/metaDescription chứa `<` hoặc `>`. */
+const NO_ANGLE = /^[^<>]*$/
+
 /** Ràng buộc lấy từ `CreatePostReqDTO`/`UpdatePostReqDTO` (cùng bộ field). */
-const buildSchema = (t: (key: string) => string) =>
-    z.object({
+const buildSchema = (t: (key: string) => string) => {
+    const noAngle = t('post.form.validation.noAngleBrackets')
+    return z.object({
         title: z
             .string()
             .trim()
             .min(1, t('post.form.validation.titleRequired'))
-            .max(255, t('post.form.validation.titleMaxLength')),
+            .max(255, t('post.form.validation.titleMaxLength'))
+            .regex(NO_ANGLE, noAngle),
         // Tuỳ chọn: tạo mới không có ô này (backend sinh từ tiêu đề); sửa để trống = giữ slug hiện tại.
         slug: z
             .string()
@@ -42,14 +47,20 @@ const buildSchema = (t: (key: string) => string) =>
             .max(150, t('post.form.validation.slugMaxLength'))
             .refine((value) => value === '' || SLUG_PATTERN.test(value), t('post.form.validation.slugPattern')),
         type: z.enum(POST_TYPES),
-        excerpt: z.string().trim().max(500, t('post.form.validation.excerptMaxLength')),
+        excerpt: z.string().trim().max(500, t('post.form.validation.excerptMaxLength')).regex(NO_ANGLE, noAngle),
         content: z.string().max(200000, t('post.form.validation.contentMaxLength')),
-        metaTitle: z.string().trim().max(META_TITLE_MAX, t('post.form.validation.metaTitleMaxLength')),
+        metaTitle: z
+            .string()
+            .trim()
+            .max(META_TITLE_MAX, t('post.form.validation.metaTitleMaxLength'))
+            .regex(NO_ANGLE, noAngle),
         metaDescription: z
             .string()
             .trim()
-            .max(META_DESCRIPTION_MAX, t('post.form.validation.metaDescriptionMaxLength')),
+            .max(META_DESCRIPTION_MAX, t('post.form.validation.metaDescriptionMaxLength'))
+            .regex(NO_ANGLE, noAngle),
     })
+}
 
 type PostFormValues = z.infer<ReturnType<typeof buildSchema>>
 
@@ -182,6 +193,15 @@ export function PostFormDialog({ open, onOpenChange, post, onCreate, onUpdate, o
     }
 
     const onSubmit = async (values: PostFormValues) => {
+        // `PUT` với content rỗng trên bài đang PUBLISHED/SCHEDULED bị backend từ chối ⇒ chặn tại ô.
+        if (
+            isEdit &&
+            (post?.postStatus === 'PUBLISHED' || post?.postStatus === 'SCHEDULED') &&
+            !values.content.trim()
+        ) {
+            form.setError('content', { message: t('post.form.validation.contentRequiredWhenLive') })
+            return
+        }
         const payload: PostPayload = {
             // Tạo mới: ô slug ẩn ⇒ luôn rỗng ⇒ không gửi. Sửa: rỗng ⇒ backend giữ slug cũ.
             slug: values.slug || undefined,

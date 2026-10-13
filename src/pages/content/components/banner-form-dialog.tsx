@@ -24,16 +24,29 @@ const startOfDayIso = (date: string) => new Date(`${date}T00:00:00`).toISOString
 const endOfDayIso = (date: string) => new Date(`${date}T23:59:59`).toISOString()
 const toDateValue = (iso: string | null) => (iso ? format(new Date(iso), 'yyyy-MM-dd') : '')
 
-const buildSchema = (t: (key: string) => string) =>
-    z
+/** Backend (P15.1) trả 400 nếu title/subtitle/ctaLabel chứa `<` hoặc `>`. */
+const NO_ANGLE = /^[^<>]*$/
+
+const buildSchema = (t: (key: string) => string) => {
+    const noAngle = t('banner.form.validation.noAngleBrackets')
+    return z
         .object({
             title: z
                 .string()
                 .trim()
                 .min(1, t('banner.form.validation.titleRequired'))
-                .max(150, t('banner.form.validation.titleMaxLength')),
-            subtitle: z.string().trim().max(255, t('banner.form.validation.subtitleMaxLength')),
-            ctaLabel: z.string().trim().max(100, t('banner.form.validation.ctaLabelMaxLength')),
+                .max(150, t('banner.form.validation.titleMaxLength'))
+                .regex(NO_ANGLE, noAngle),
+            subtitle: z
+                .string()
+                .trim()
+                .max(255, t('banner.form.validation.subtitleMaxLength'))
+                .regex(NO_ANGLE, noAngle),
+            ctaLabel: z
+                .string()
+                .trim()
+                .max(100, t('banner.form.validation.ctaLabelMaxLength'))
+                .regex(NO_ANGLE, noAngle),
             ctaUrl: z
                 .string()
                 .trim()
@@ -50,6 +63,7 @@ const buildSchema = (t: (key: string) => string) =>
             path: ['effectiveTo'],
             message: t('banner.form.validation.periodInvalid'),
         })
+}
 
 type BannerFormValues = z.infer<ReturnType<typeof buildSchema>>
 
