@@ -62,6 +62,8 @@ export default {
             genderFemale: 'Female',
             genderOther: 'Other',
             notUpdated: 'Not provided',
+            address: 'Delivery address',
+            addressEmpty: 'Customer has not set an address',
         },
 
         /**

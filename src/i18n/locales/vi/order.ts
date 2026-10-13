@@ -223,6 +223,8 @@ export default {
             paymentEmpty: 'Chưa thu tiền',
             paidBy: 'Thu bởi {{name}}',
 
+            customerNote: 'Ghi chú của khách',
+            customerNoteHint: 'Khách nhập khi đặt hàng trên web — khác với ghi chú nội bộ bên dưới.',
             note: 'Ghi chú nội bộ',
             noteEmpty: 'Không có ghi chú',
             noteEdit: 'Sửa ghi chú',

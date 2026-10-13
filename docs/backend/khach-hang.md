@@ -18,7 +18,15 @@
 ## DTO
 
 - `CustomerResDTO` = `{id, fullName, phoneNumber, email, dob, gender, branchId, membershipPoint,
-  status, activated, createdDate, branchName}`.
+  status, activated, createdDate, branchName, address, provinceCode, wardCode}`.
+  **Địa chỉ giao hàng (P14, 2026-10-14):** mỗi khách **đúng 1 địa chỉ** do khách tự nhập ở storefront
+  (không bắt buộc ⇒ cả 3 field `null`). Backend chỉ trả **mã** tỉnh/phường (`id` của
+  `/administrative-address/provinces` + `/wards?provinceCode=`) — FE tra tên qua `useAddressNames`.
+  **Admin chưa sửa được** địa chỉ khách (BE chưa có endpoint) ⇒ chỉ hiển thị. Khách cũng tự đổi được
+  email/SĐT ở storefront ⇒ đừng coi 2 field này là bất biến. Đơn đã đặt giữ **snapshot** địa chỉ lúc
+  đặt (`OrderResDTO.shippingAddress`). Đo thật 2026-10-14: `POST /customer/search` có đủ 3 key; khách
+  đặt từ storefront (vd `FE Test P14 A/B`) mang `provinceCode=92`, `wardCode=31150` (Phường An Bình,
+  TP Cần Thơ), khách tạo tại quầy/cũ thì cả 3 là `null`.
   ⚠️ **KHÔNG có `code`, `tier`, `orderCount`, `totalSpent`, `lastPurchaseDate`** — dù mockup
   `10-khach-hang.png` vẽ 4 cột cuối (đã chốt hiển thị `—`/bỏ). Muốn có phải xin backend.
 - ⚠️ **`activated` KHÁC `status`**: `status` = khoá/mở bản ghi (admin đặt) · `activated` = khách đã tự

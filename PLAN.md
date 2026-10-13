@@ -3148,7 +3148,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 20 — CMS: Bài viết & Banner ✅ **XONG FE 2026-10-13** (backend P15 đã giao; còn kiểm tay upload ảnh/RBAC + biên bản nhập nội dung — [handoff](docs/handoff/phien-2026-10-13-phase-20-cms-bai-viet-banner.md); mục 4 `customerNote` vẫn chờ P14) ~~⏳ CHỜ backend P15~~ — **Release R2 — LÀM TRƯỚC LUỒNG KHÁCH HÀNG** (mục 4 `customerNote` → R3) *(replan 2026-10-13; trước là R3)*
+## Phase 20 — CMS: Bài viết & Banner ✅ **XONG FE 2026-10-13** (backend P15 đã giao; còn kiểm tay upload ảnh/RBAC + biên bản nhập nội dung — [handoff](docs/handoff/phien-2026-10-13-phase-20-cms-bai-viet-banner.md); mục 4 `customerNote` ✅ xong 2026-10-14 sau khi backend P14 giao) ~~⏳ CHỜ backend P15~~ — **Release R2 — LÀM TRƯỚC LUỒNG KHÁCH HÀNG** (mục 4 `customerNote` → R3) *(replan 2026-10-13; trước là R3)*
 
 > **⚠️ Cập nhật 2026-10-13 (backend P15.1 — PO chốt): bỏ loại `PAGE` (trang tĩnh) khỏi CMS.** Trang tĩnh
 > (Về chúng tôi, FAQ, đổi trả, vận chuyển, liên hệ, tuyển dụng) là trang cố định viết cứng ở storefront,
@@ -3215,7 +3215,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
    *"chủ thể và chữ phải nằm trong khung sáng — ngoài vùng này sẽ bị cắt trên điện thoại"*, vì trên
    mobile client đổi khung sang 4:5 (hero) / 16:9 (banner ngang) và chỉ còn ~38–40 % bề ngang ảnh.
 3. **Quyền**: route/menu gate theo quyết định ② ở trên; gõ thẳng URL sai role → 403.
-4. Bổ sung nhỏ ở màn Đơn hàng: hiển thị **`customerNote`** (ghi chú của khách, backend P14) trong
+4. ✅ **(2026-10-14)** Bổ sung nhỏ ở màn Đơn hàng: hiển thị **`customerNote`** (ghi chú của khách, backend P14) trong
    dialog chi tiết — tách rõ khỏi ghi chú nội bộ.
 
 ### Output mong muốn (DoD)
@@ -3265,7 +3265,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
    nhận → đóng gói → giao → thu COD/đối soát QR) chạy trơn với đơn do khách tự đặt; đơn store có
    `customer_note` + địa chỉ giao (**snapshot** từ hồ sơ khách lúc đặt — khách đổi hồ sơ sau không
    làm đổi đơn cũ).
-5. **CRM khách hàng**: modal chi tiết khách hiển thị thêm **địa chỉ giao hàng** (`address` +
+5. ✅ **(2026-10-14 — xong FE, [handoff](docs/handoff/phien-2026-10-14-phase-14-customer-note-dia-chi.md))** **CRM khách hàng**: modal chi tiết khách hiển thị thêm **địa chỉ giao hàng** (`address` +
    tỉnh/phường) — khách tự cập nhật ở storefront; khách có thể tự đổi **email/SĐT** nên đừng
    coi 2 field này là bất biến. Shape field chờ handoff P14, **đo API thật** trước khi code.
 

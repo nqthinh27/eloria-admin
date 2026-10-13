@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
+import { useAddressNames } from '@/hooks/use-address-names'
 import { useAuth } from '@/hooks/use-auth'
 import { hasRole } from '@/config/roles'
 import { EGender, ERole, EntityStatus } from '@/types/common'
@@ -39,7 +40,17 @@ export function CustomerDetailModal({ customer, onOpenChange, onSave }: Customer
     /** `PUT /customer/{id}` là `[ADMIN]` ⇒ STAFF chỉ xem, không mở được chế độ sửa. */
     const canEdit = hasRole(user?.role, ERole.ADMIN)
 
+    const { provinceName, wardName } = useAddressNames(
+        customer?.provinceCode ?? null,
+        customer?.wardCode ?? null,
+    )
+
     if (!customer) return null
+
+    /* "Số nhà, phường/xã, tỉnh/thành" — cùng thứ tự backend snapshot vào `shippingAddress` của đơn. */
+    const addressText = [customer.address?.trim(), wardName, provinceName]
+        .filter(Boolean)
+        .join(', ')
 
     const genderLabels: Record<EGender, string> = {
         [EGender.MALE]: t('customer.detail.genderMale'),
@@ -98,6 +109,12 @@ export function CustomerDetailModal({ customer, onOpenChange, onSave }: Customer
             editable: canEdit,
             type: 'date',
             formatValue: (value) => (value ? formatDate(String(value)) : t('customer.detail.notUpdated')),
+        },
+        {
+            label: t('customer.detail.address'),
+            readOnly: true,
+            fullWidth: true,
+            formatValue: () => addressText || t('customer.detail.addressEmpty'),
         },
         {
             label: t('customer.form.branch'),

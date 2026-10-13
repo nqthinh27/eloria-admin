@@ -223,6 +223,8 @@ export default {
             paymentEmpty: 'Not collected yet',
             paidBy: 'Collected by {{name}}',
 
+            customerNote: 'Customer note',
+            customerNoteHint: 'Entered by the customer at checkout on the web — separate from the internal note below.',
             note: 'Internal note',
             noteEmpty: 'No note',
             noteEdit: 'Edit note',

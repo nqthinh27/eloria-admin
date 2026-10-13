@@ -483,6 +483,23 @@ export function OrderDetailDialog({
                                 )}
                             </div>
 
+                            {/*
+                              Ghi chú CỦA KHÁCH (đơn storefront, backend P14) — chỉ đọc, khác hẳn
+                              ghi chú nội bộ bên dưới: nền trung tính để không lẫn với khối vàng.
+                              Đơn POS/admin luôn `null` ⇒ không dựng khối.
+                            */}
+                            {order.customerNote && (
+                                <div className="bg-muted/50 rounded-lg p-3">
+                                    <p className="text-sm font-medium">{t('order.detail.customerNote')}</p>
+                                    <p className="text-muted-foreground text-xs">
+                                        {t('order.detail.customerNoteHint')}
+                                    </p>
+                                    <p className="mt-1.5 text-sm break-words whitespace-pre-line">
+                                        {order.customerNote}
+                                    </p>
+                                </div>
+                            )}
+
                             {/* ---- Ghi chú nội bộ (nền vàng theo mockup) ---- */}
                             <div className="border-warning bg-warning-muted rounded-lg border p-3">
                                 <div className="flex items-start justify-between gap-2">

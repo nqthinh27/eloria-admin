@@ -62,6 +62,8 @@ export default {
             genderFemale: 'Nữ',
             genderOther: 'Khác',
             notUpdated: 'Chưa cập nhật',
+            address: 'Địa chỉ giao hàng',
+            addressEmpty: 'Khách chưa cập nhật địa chỉ',
         },
 
         /**

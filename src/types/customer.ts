@@ -33,6 +33,17 @@ export type Customer = {
     createdDate: string
     /** Backend enrich thêm ở service, không thuộc mapping cơ bản. */
     branchName: string | null
+    /*
+     * ---- Địa chỉ giao hàng (backend P14, 2026-10-14) ----
+     * Mỗi khách **đúng 1 địa chỉ**, luôn là địa chỉ giao — khách tự nhập ở storefront, không bắt
+     * buộc. Backend chỉ trả **mã** (`provinceCode`/`wardCode` = `id` của
+     * `/administrative-address/*`): tên tra qua `useAddressNames`. Nhân viên **chưa sửa được** địa
+     * chỉ khách ở admin (BE chưa có), nên chỉ hiển thị. Đơn đã đặt giữ **bản chụp** địa chỉ lúc đặt
+     * (`Order.shippingAddress`) — đổi hồ sơ không làm đổi đơn cũ.
+     */
+    address: string | null
+    provinceCode: string | null
+    wardCode: string | null
 }
 
 /**

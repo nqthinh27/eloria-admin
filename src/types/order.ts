@@ -182,6 +182,12 @@ export type Order = {
     shippingAddress: string | null
     /** Ghi chú nội bộ. Backend cũng lưu **lý do huỷ** vào chính field này. */
     description: string | null
+    /**
+     * Ghi chú **của khách** khi đặt đơn storefront (backend P14, 2026-10-14) — **tách khỏi**
+     * `description` (nội bộ, khách không thấy). Đơn POS/admin luôn `null`. Chỉ đọc: không có
+     * endpoint nào cho nhân viên sửa field này.
+     */
+    customerNote: string | null
     customerId: string | null
     /** Nhân viên tạo đơn (thay cho `createdBy` đã bị xoá). */
     staffId: string | null

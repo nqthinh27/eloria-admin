@@ -31,6 +31,15 @@
   toDate, shiftId, promotionId}` — **`orderStatus`** (vòng đời) tách khỏi **`status`** (0/1 bản ghi).
 - `OrderResDTO` **không có `createdBy`** (bỏ 2026-08-14) — dùng **`staffId`**. Riêng
   `OrderPaymentResDTO` **vẫn giữ `createdBy`** (username người thu) — hai DTO khác nhau.
+- `OrderResDTO.customerNote` (P14, 2026-10-14): ghi chú **của khách** khi đặt đơn storefront, **tách
+  khỏi `description`** (nội bộ). Đơn POS/admin luôn `null`; không có endpoint nào cho nhân viên sửa.
+  Có ở mọi response `OrderResDTO` (đo thật 2026-10-14: `POST /order/search` + `GET /order/{id}`; đơn
+  storefront có ghi chú trả đúng chuỗi, đơn không ghi chú trả `null`).
+- **Đơn do khách đặt ở storefront** (P14): `channel=ONLINE`, `staffId=null`, `shiftId=null`,
+  `status=PENDING`, `paymentStatus=UNPAID`, `paymentMethod=COD|QR`, `shippingFee=0`; `shippingAddress`
+  = snapshot "số nhà, phường/xã, tỉnh/thành"; tồn **trừ ngay lúc khách đặt** (không phải lúc xác nhận)
+  và hoàn lại nếu khách tự hủy khi còn `PENDING` + chưa thu tiền (`description = "Hủy: Khách tự hủy"`).
+  Sau đó đi tiếp luồng P6 **không đổi**: confirm → pack → ship → payment → complete.
 - `OrderResDTO.shiftId`: backend **tự gắn** cho đơn POS của STAFF (xem [ca-lam-viec.md](ca-lam-viec.md)).
 - `GET /order/{id}` có **`lines[].returnedQuantity`** (BE26, 2026-09-13) — còn trả được =
   `quantity − returnedQuantity`; phiếu `PENDING_APPROVAL` tính vào, `REJECTED` không tính.
