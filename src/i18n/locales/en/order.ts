@@ -153,6 +153,8 @@ export default {
             allStatuses: 'All statuses',
             allPaymentStatuses: 'All payment statuses',
             allBranches: 'All branches',
+            unassignedFilter: 'No branch assigned',
+            unassigned: 'No branch assigned',
             resultLabel: 'orders',
 
             /*
@@ -288,6 +290,18 @@ export default {
 
             confirmTitle: 'Confirm order {{code}}?',
             confirmDescription: 'The order moves to "Confirmed". Stock is unchanged.',
+            confirmBranch: {
+                description:
+                    'Choose the fulfilment branch. Confirming assigns the order to it and deducts stock there.',
+                label: 'Fulfilment branch',
+                empty: 'No active branches.',
+                noneEnough: 'None of the branches you can choose has enough stock for this order.',
+                enough: 'In stock',
+                notEnough: 'Short',
+                notSelectable: 'Not your branch',
+                shortLine: '{{sku}}: {{available}} left / {{required}} needed',
+                submit: 'Confirm from this branch',
+            },
 
             packTitle: 'Pack order {{code}}?',
             packDescription: 'The order moves to "Packed". Stock is unchanged.',
@@ -309,6 +323,7 @@ export default {
             payDescription:
                 'Collected once, for the full order value. No further payment can be added afterwards.',
             payAmount: 'Amount',
+            payMethodLocked: 'Online orders are collected with the method chosen at checkout.',
         },
 
         /* ================= Enum labels ================= */

@@ -1,8 +1,10 @@
 import { apiClient, search } from '@/lib/api-client'
 import type { BaseListRes, SearchPagination } from '@/types/common'
 import type {
+    BranchAvailability,
     CancelOrderReq,
     CartPreview,
+    ConfirmOrderReq,
     CartPreviewReq,
     CreateOrderReq,
     Invoice,
@@ -67,9 +69,24 @@ export const orderApi = {
         return apiClient.put<Order>(`/order/${id}`, payload)
     },
 
-    /** `[STAFF] POST /order/{id}/confirm` — `PENDING → CONFIRMED`. Không đụng kho. */
-    confirm(id: string) {
-        return apiClient.post<Order>(`/order/${id}/confirm`)
+    /**
+     * `[STAFF] POST /order/{id}/confirm` — `PENDING → CONFIRMED`.
+     *
+     * ⚠️ **Đơn online chưa gán chi nhánh (S36)**: bắt buộc `branchId` (thiếu ⇒
+     * `error.order.branchRequired`); backend gán chi nhánh + **trừ kho tại đó** trong cùng
+     * transaction. Thiếu hàng ⇒ `error.stock.insufficient`; ADMIN chọn chi nhánh khác ⇒ 403.
+     * Đơn đã có chi nhánh: gửi không body như cũ (chi nhánh khác ⇒ `error.order.branchAlreadyAssigned`).
+     */
+    confirm(id: string, payload?: ConfirmOrderReq) {
+        return apiClient.post<Order>(`/order/${id}/confirm`, payload ?? {})
+    },
+
+    /**
+     * `[STAFF] GET /order/{id}/branch-availability` (S36) — tồn từng chi nhánh ACTIVE cho đơn,
+     * để dropdown "chi nhánh xuất hàng" khi duyệt đơn online chưa gán.
+     */
+    branchAvailability(id: string, signal?: AbortSignal) {
+        return apiClient.get<BranchAvailability[]>(`/order/${id}/branch-availability`, { signal })
     },
 
     /**

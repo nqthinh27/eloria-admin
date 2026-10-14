@@ -152,6 +152,12 @@ export default {
              * the server always charges exactly `totalAmount`). Kept for old data/logs.
              */
             paymentExceedsTotal: 'The amount collected exceeds the outstanding balance.',
+            branchRequired: 'Choose a fulfilment branch before confirming.',
+            branchAlreadyAssigned:
+                'This order already has a fulfilment branch — it cannot be changed when confirming.',
+        },
+        payment: {
+            methodRequired: 'A payment method is required.',
         },
         /**
          * Two concurrent actions on the same order (e.g. pack vs cancel, or two payments).

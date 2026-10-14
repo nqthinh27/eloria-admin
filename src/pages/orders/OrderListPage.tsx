@@ -39,6 +39,8 @@ import { OrderDetailDialog } from './components/order-detail-dialog'
 import { printInvoice } from './components/print-invoice'
 
 const ALL = 'ALL'
+/** Giá trị bộ lọc chi nhánh = hàng chờ đơn online chưa gán (S36) ⇒ gửi `unassigned: true`. */
+const UNASSIGNED = '__UNASSIGNED__'
 const PAGE_SIZE = 10
 /** Mặc định của backend khi không truyền `sort`. Giữ nguyên để thứ tự không đổi bất ngờ. */
 const DEFAULT_SORT = ['createdDate,DESC']
@@ -84,6 +86,8 @@ export default function OrderListPage() {
     const { t } = useTranslation(['order', 'common'])
     const { user } = useAuth()
     const canFilterBranch = hasRole(user?.role, ERole.SUPER_ADMIN)
+    /** S36 (user chốt 2026-10-15): SUPER_ADMIN + ADMIN thấy đơn online chưa gán chi nhánh; STAFF không. */
+    const canSeeUnassigned = hasRole(user?.role, ERole.ADMIN)
     const { branches, refresh: refreshBranches } = useBranch()
 
     const [data, setData] = useState<Order[]>([])
@@ -203,7 +207,13 @@ export default function OrderListPage() {
                 // ⚠️ `branchName` KHÔNG phải cột của `OrderSale` (chỉ có ở DTO) ⇒ sort vào đây backend 500.
                 enableSorting: false,
                 meta: { columnLabel: t('order.list.column.branch') },
-                cell: ({ row }) => row.original.branchName ?? '—',
+                cell: ({ row }) =>
+                    row.original.branchName ??
+                    (row.original.channel === EOrderChannel.ONLINE ? (
+                        <StatusBadge tone="warning">{t('order.list.unassigned')}</StatusBadge>
+                    ) : (
+                        '—'
+                    )),
             },
             {
                 accessorKey: 'totalAmount',
@@ -359,7 +369,12 @@ export default function OrderListPage() {
                     orderStatus: statusFilter === ALL ? undefined : (statusFilter as EOrderStatus),
                     paymentStatus:
                         paymentFilter === ALL ? undefined : (paymentFilter as EPaymentStatus),
-                    branchId: canFilterBranch && branchFilter !== ALL ? branchFilter : undefined,
+                    branchId:
+                        canFilterBranch && branchFilter !== ALL && branchFilter !== UNASSIGNED
+                            ? branchFilter
+                            : undefined,
+                    unassigned:
+                        canSeeUnassigned && branchFilter === UNASSIGNED ? true : undefined,
                 }
                 const result = await orderApi.search(
                     body,
@@ -390,6 +405,7 @@ export default function OrderListPage() {
             paymentFilter,
             branchFilter,
             canFilterBranch,
+            canSeeUnassigned,
             sorting,
             columns,
         ],
@@ -504,7 +520,7 @@ export default function OrderListPage() {
                                     </SelectContent>
                                 </Select>
 
-                                {canFilterBranch && (
+                                {canSeeUnassigned && (
                                     <Select
                                         value={branchFilter}
                                         onValueChange={(value) =>
@@ -517,7 +533,10 @@ export default function OrderListPage() {
                                             <SelectItem value={ALL}>
                                                 {t('order.list.allBranches')}
                                             </SelectItem>
-                                            {branches.map((branch) => (
+                                            <SelectItem value={UNASSIGNED}>
+                                                {t('order.list.unassignedFilter')}
+                                            </SelectItem>
+                                            {canFilterBranch && branches.map((branch) => (
                                                 <SelectItem key={branch.id} value={branch.id}>
                                                     {branch.name}
                                                 </SelectItem>

@@ -193,6 +193,10 @@ export type Order = {
     staffId: string | null
     /** Đã có field nhưng **chưa có API ca làm việc** (Phase 15) ⇒ luôn `null`. */
     shiftId: string | null
+    /**
+     * ⚠️ **`null` với đơn storefront chưa duyệt** (backend S36, 2026-10-15): đơn online không gán
+     * chi nhánh lúc đặt, chưa trừ kho — admin chọn chi nhánh khi `confirm`. Đơn cũ đã gán giữ nguyên.
+     */
     branchId: string | null
     branchName: string | null
     completedDate: string | null
@@ -471,4 +475,36 @@ export type OrderSearchReq = SearchReq & {
      * đơn của ADMIN/SUPER_ADMIN và đơn `ONLINE` đều `null` ⇒ lọc theo ca không ra chúng.
      */
     shiftId?: string
+    /**
+     * `true` ⇒ chỉ hàng chờ **đơn online chưa gán chi nhánh** (backend S36). Ưu tiên hơn `branchId`.
+     * SUPER_ADMIN + ADMIN thấy; STAFF luôn nhận rỗng (user chốt 2026-10-15).
+     */
+    unassigned?: boolean
+}
+
+/** `POST /order/{id}/confirm` — `branchId` **bắt buộc** khi đơn chưa gán chi nhánh (S36). */
+export type ConfirmOrderReq = {
+    branchId?: string
+}
+
+/** Một dòng hàng trong `BranchAvailability.lines` — số đã gộp theo SKU. */
+export type BranchAvailabilityLine = {
+    skuId: string
+    skuCode: string
+    productName: string
+    required: number
+    available: number
+}
+
+/**
+ * `GET /order/{id}/branch-availability` (S36) — mỗi chi nhánh ACTIVE 1 phần tử, đủ hàng xếp trước.
+ * `enough` = đủ cho mọi dòng; `selectable` = người gọi được chọn (ADMIN chỉ chi nhánh mình).
+ * Số liệu là ảnh chụp — `confirm` vẫn có thể trả `error.stock.insufficient`.
+ */
+export type BranchAvailability = {
+    branchId: string
+    branchName: string
+    enough: boolean
+    selectable: boolean
+    lines: BranchAvailabilityLine[]
 }

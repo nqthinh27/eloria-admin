@@ -171,6 +171,13 @@ export default {
              * lấy đúng `totalAmount` nên không thể thu vượt). Giữ lại phòng dữ liệu/log cũ.
              */
             paymentExceedsTotal: 'Số tiền thu vượt quá phần còn phải thu.',
+            /** S36 (2026-10-15): đơn online chưa gán chi nhánh phải chọn chi nhánh khi duyệt. */
+            branchRequired: 'Chọn chi nhánh xuất hàng trước khi duyệt.',
+            branchAlreadyAssigned: 'Đơn đã có chi nhánh xuất hàng — không đổi được khi duyệt.',
+        },
+        /** S35 (2026-10-15): đơn POS/OTHER bắt buộc gửi `method`; đơn ONLINE bỏ qua. */
+        payment: {
+            methodRequired: 'Phải chọn hình thức thanh toán.',
         },
         /**
          * 2 thao tác đồng thời trên cùng một đơn (vd vừa đóng gói vừa huỷ, hoặc thu tiền 2 lần).

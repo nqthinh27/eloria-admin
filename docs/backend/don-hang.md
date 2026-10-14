@@ -141,6 +141,30 @@ totalAmount            = max(0, subtotal − discountAmount + shippingFee)
 - Hình thức `QR` **KHÔNG thu thẳng** — phải qua `QrPaymentDialog` (cả POS lẫn dialog chi tiết đơn):
   `GET /bank-account/order/{id}/qr` → khách quét → NV **tự đối chiếu app ngân hàng** (chưa có webhook)
   → bấm "Xác nhận đã nhận tiền" → `payment {method:'QR'}`. Tiền mặt/thẻ/COD thu thẳng.
+- **Đơn `ONLINE` thu đúng `paymentMethod` của đơn** (user chốt 2026-10-15): dialog Thu tiền **không
+  có ô chọn hình thức**, chỉ hiện chữ (QR ⇒ sang `QrPaymentDialog`; COD ⇒ thu thẳng `{method:'COD'}`).
+  Đơn `ONLINE` thiếu `paymentMethod` (dữ liệu cũ) và đơn `POS`/`OTHER` vẫn cho chọn.
+  **Backend S35 (2026-10-15)**: đơn `ONLINE` **bỏ qua** `method` gửi lên (gửi `{}` được, gửi khác
+  không lỗi) — dòng thanh toán luôn = phương thức khách chọn. Đơn `POS`/`OTHER` thiếu `method` ⇒
+  `400 error.payment.methodRequired`. FE vẫn gửi đúng `paymentMethod` của đơn.
+
+## Đơn online chưa gán chi nhánh — chọn chi nhánh khi duyệt (backend S36, 2026-10-15)
+
+Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-s35-s36-admin.md` (phiên client đo thật).
+
+- Đơn storefront mới: mã `ONL-…`, `branchId`/`branchName` = `null`, **chưa trừ kho** (giữ chỗ trên tồn
+  toàn chuỗi). Đơn cũ đã gán chi nhánh giữ luồng cũ.
+- `POST /order/{id}/confirm {branchId}` — **bắt buộc** khi đơn chưa gán (thiếu ⇒ `error.order.branchRequired`);
+  gán chi nhánh + trừ kho tại đó trong 1 transaction. Lỗi: `error.stock.insufficient`, `error.branch.inactive`,
+  `403 error.forbidden` (ADMIN chọn chi nhánh khác), `error.order.branchAlreadyAssigned` (đơn đã gán, gửi chi nhánh khác).
+- `GET /order/{id}/branch-availability` ⇒ `[{branchId, branchName, enough, selectable, lines[{skuId, skuCode,
+  productName, required, available}]}]`, đủ hàng xếp trước. FE (`ConfirmBranchDialog`) chỉ cho chọn
+  `enough && selectable`, chi nhánh thiếu hiện `còn / cần` từng SKU; `confirm` lỗi ⇒ nạp lại tồn
+  (không hiện `logInfo` — CONVENTIONS mục 3).
+- `POST /order/search` thêm `unassigned: true` (hàng chờ, ưu tiên hơn `branchId`). Phạm vi (user chốt 2026-10-15):
+  SUPER_ADMIN + ADMIN thấy đơn chưa gán (ADMIN search mặc định = chi nhánh mình + đơn chưa gán); STAFF không.
+  FE: bộ lọc chi nhánh có mục "Chưa gán chi nhánh" cho ADMIN+; cột Chi nhánh hiện badge cho đơn ONLINE `branchName` null.
+- Invoice đơn chưa gán: `branchName/branchPhone/branchAddress = null` (`print-invoice` đã bỏ qua khi null).
 - Ở POS đơn được **tạo trước rồi mới hiện QR** ⇒ tồn đã trừ. Đóng dialog chưa xác nhận ⇒ đơn **chưa
   thu tiền**, **tuyệt đối không tạo lại đơn**. Chi tiết ảnh QR: [ngan-hang-qr.md](ngan-hang-qr.md).
 

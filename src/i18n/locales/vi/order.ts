@@ -153,6 +153,9 @@ export default {
             allStatuses: 'Tất cả trạng thái',
             allPaymentStatuses: 'Tất cả thanh toán',
             allBranches: 'Tất cả chi nhánh',
+            /** Bộ lọc hàng chờ đơn online chưa gán chi nhánh (S36) — gửi `unassigned: true`. */
+            unassignedFilter: 'Chưa gán chi nhánh',
+            unassigned: 'Chưa gán chi nhánh',
             resultLabel: 'đơn hàng',
 
             empty: 'Chưa có đơn hàng nào',
@@ -288,6 +291,19 @@ export default {
 
             confirmTitle: 'Xác nhận đơn {{code}}?',
             confirmDescription: 'Đơn chuyển sang trạng thái "Đã xác nhận". Tồn kho không thay đổi.',
+            /** Duyệt đơn online chưa gán chi nhánh (S36) — chọn chi nhánh xuất hàng. */
+            confirmBranch: {
+                description:
+                    'Chọn chi nhánh xuất hàng. Khi duyệt, đơn được gán vào chi nhánh này và trừ tồn kho tại đó.',
+                label: 'Chi nhánh xuất hàng',
+                empty: 'Không có chi nhánh nào đang hoạt động.',
+                noneEnough: 'Không chi nhánh nào bạn được chọn còn đủ hàng cho đơn này.',
+                enough: 'Đủ hàng',
+                notEnough: 'Thiếu hàng',
+                notSelectable: 'Ngoài chi nhánh của bạn',
+                shortLine: '{{sku}}: còn {{available}} / cần {{required}}',
+                submit: 'Duyệt và xuất từ chi nhánh này',
+            },
 
             packTitle: 'Đóng gói đơn {{code}}?',
             packDescription: 'Đơn chuyển sang trạng thái "Đã đóng gói". Tồn kho không thay đổi.',
@@ -309,6 +325,7 @@ export default {
             payDescription:
                 'Thu đúng một lần cho toàn bộ giá trị đơn hàng. Sau khi thu sẽ không thu thêm được.',
             payAmount: 'Số tiền thu',
+            payMethodLocked: 'Đơn online thu đúng hình thức khách đã chọn khi đặt hàng.',
         },
 
         /* ================= Nhãn enum ================= */

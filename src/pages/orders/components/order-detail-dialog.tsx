@@ -27,6 +27,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import { ConfirmBranchDialog } from './confirm-branch-dialog'
 import { printInvoice } from './print-invoice'
 import { QrPaymentDialog } from './qr-payment-dialog'
 
@@ -208,15 +209,29 @@ export function OrderDetailDialog({
     /**
      * Bấm "Thu tiền": **`QR` phải qua bước quét mã trước**, không thu thẳng — khách cần thấy mã
      * để chuyển khoản. Hình thức khác thu ngay như cũ.
+     *
+     * **Đơn `ONLINE` thu đúng hình thức khách đã chọn lúc đặt** (user chốt 2026-10-15) — không cho
+     * chọn lại, tránh ghi nhầm "Tiền mặt" cho đơn VietQR/COD. Backend S35 (2026-10-15) cũng bỏ qua
+     * `method` của đơn `ONLINE`; FE vẫn gửi đúng `paymentMethod` cho rõ ý. Đơn `ONLINE` thiếu
+     * `paymentMethod` (dữ liệu cũ) ⇒ vẫn cho chọn.
      */
+    const lockedMethod =
+        order?.channel === EOrderChannel.ONLINE ? (order.paymentMethod ?? null) : null
+    const effectiveMethod = lockedMethod ?? payMethod
+
     const handlePayConfirm = useCallback(() => {
-        if (payMethod === EPaymentMethod.QR) {
+        if (effectiveMethod === EPaymentMethod.QR) {
             setPayOpen(false)
             setQrOpen(true)
             return
         }
-        void submitPayment(payMethod, () => setPayOpen(false))
-    }, [payMethod, submitPayment])
+        void submitPayment(effectiveMethod, () => setPayOpen(false))
+    }, [effectiveMethod, submitPayment])
+
+    const openPayDialog = useCallback(() => {
+        setPayMethod(EPaymentMethod.CASH)
+        setPayOpen(true)
+    }, [])
 
     /* ---------------- Nút hành động khả dụng theo vòng đời ---------------- */
     const isClosed = order ? CLOSED_STATUSES.includes(order.status) : true
@@ -226,6 +241,8 @@ export function OrderDetailDialog({
      * (`REFUNDED`) cũng không in: hoá đơn khi đó không phản ánh đúng giao dịch.
      */
     const canPrint = isPaid
+    /** Đơn storefront chưa duyệt, chưa gán chi nhánh (S36) — chưa trừ kho. */
+    const isUnassigned = !!order && order.channel === EOrderChannel.ONLINE && !order.branchId
 
     /**
      * Bước vòng đời tiếp theo, hoặc `null` khi không còn nút nào để bày.
@@ -274,7 +291,10 @@ export function OrderDetailDialog({
         ? [
               { label: t('order.detail.customer'), value: order.customerName || t('order.pos.cart.guest') },
               { label: t('order.detail.channel'), value: t(`order.channel.${order.channel}`) },
-              { label: t('order.detail.branch'), value: order.branchName ?? '—' },
+              {
+                  label: t('order.detail.branch'),
+                  value: order.branchName ?? (isUnassigned ? t('order.list.unassigned') : '—'),
+              },
               {
                   label: t('order.detail.createdDate'),
                   value: formatDateTime(order.createdDate),
@@ -582,7 +602,7 @@ export function OrderDetailDialog({
                                     type="button"
                                     variant="outline"
                                     disabled={isPaid}
-                                    onClick={() => setPayOpen(true)}>
+                                    onClick={openPayDialog}>
                                     {t('order.action.pay')}
                                 </Button>
                             )}
@@ -617,8 +637,21 @@ export function OrderDetailDialog({
             </Dialog>
 
             {/* ---------------- Xác nhận từng bước vòng đời ---------------- */}
+            {/* Đơn online chưa gán chi nhánh (S36) ⇒ phải chọn chi nhánh xuất hàng khi duyệt. */}
+            <ConfirmBranchDialog
+                open={pending === 'confirm' && isUnassigned}
+                onOpenChange={(open) => !open && setPending(null)}
+                orderId={order?.id ?? null}
+                orderCode={order?.orderCode ?? ''}
+                onConfirm={(branchId) =>
+                    runAction(
+                        () => orderApi.confirm(order!.id, { branchId }),
+                        'order.toast.confirmed',
+                    )
+                }
+            />
             <ConfirmDialog
-                open={pending === 'confirm'}
+                open={pending === 'confirm' && !isUnassigned}
                 onOpenChange={(open) => !open && setPending(null)}
                 title={t('order.action.confirmTitle', { code: order?.orderCode ?? '' })}
                 description={t('order.action.confirmDescription')}
@@ -716,23 +749,42 @@ export function OrderDetailDialog({
                     <p className="text-muted-foreground text-sm">
                         {t('order.action.payDescription')}
                     </p>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="order-pay-method">{t('order.pos.checkout.paymentMethod')}</Label>
-                        <Select
-                            value={payMethod}
-                            onValueChange={(value) => setPayMethod(value as EPaymentMethod)}>
-                            <SelectTrigger id="order-pay-method" className="w-full">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {PAY_METHODS.map((method) => (
-                                    <SelectItem key={method} value={method}>
-                                        {t(`order.paymentMethod.${method}`)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {lockedMethod ? (
+                        /* Đơn online: chỉ đọc — hình thức do khách chọn lúc đặt. */
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                    {t('order.pos.checkout.paymentMethod')}
+                                </span>
+                                <span className="font-medium">
+                                    {t(`order.paymentMethod.${lockedMethod}`)}
+                                </span>
+                            </div>
+                            <p className="text-muted-foreground text-xs">
+                                {t('order.action.payMethodLocked')}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-1.5">
+                            <Label htmlFor="order-pay-method">
+                                {t('order.pos.checkout.paymentMethod')}
+                            </Label>
+                            <Select
+                                value={payMethod}
+                                onValueChange={(value) => setPayMethod(value as EPaymentMethod)}>
+                                <SelectTrigger id="order-pay-method" className="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {PAY_METHODS.map((method) => (
+                                        <SelectItem key={method} value={method}>
+                                            {t(`order.paymentMethod.${method}`)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between border-t pt-3 font-semibold">
                         <span>{t('order.action.payAmount')}</span>
                         <span className="tabular-nums">
@@ -746,7 +798,7 @@ export function OrderDetailDialog({
                         <Button type="button" disabled={paying} onClick={handlePayConfirm}>
                             {paying && <Loader2 className="size-4 animate-spin" />}
                             {/* QR chưa thu ngay — bước tiếp theo là hiện mã cho khách quét. */}
-                            {payMethod === EPaymentMethod.QR
+                            {effectiveMethod === EPaymentMethod.QR
                                 ? t('order.qr.show')
                                 : t('order.action.pay')}
                         </Button>
