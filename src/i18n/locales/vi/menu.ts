@@ -31,6 +31,8 @@ export default {
         toggleSidebar: 'Thu gọn menu',
         expandSidebar: 'Mở rộng menu',
         openMenu: 'Mở menu',
+        collapseGroup: 'Thu gọn nhóm {{group}}',
+        expandGroup: 'Mở rộng nhóm {{group}}',
         notifications: 'Thông báo',
         allBranches: 'Tất cả chi nhánh',
         branchSelector: 'Chọn chi nhánh',

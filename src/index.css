@@ -189,6 +189,36 @@
 }
 
 /*
+ * Thanh cuộn tuỳ biến toàn app — thay thanh cuộn mặc định (to, xám đục) của trình duyệt bằng
+ * bản mảnh, bo tròn, màu theo token --border/--muted-foreground. Áp dụng toàn cục (html) nên
+ * mọi vùng overflow-auto/overflow-scroll trong app đều hưởng, không cần class riêng từng nơi.
+ */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
  * Kiểu hiển thị nội dung bài viết (CMS Phase 20) — dùng cho vùng soạn thảo + khung xem trước.
  * Chỉ định nghĩa đúng bộ thẻ whitelist của backend (h2–h4 · p · ul/ol · a · strong/em ·
  * blockquote · img · hr) để WYSIWYG không lệch với thẻ mà storefront render.

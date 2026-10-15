@@ -31,6 +31,8 @@ export default {
         toggleSidebar: 'Collapse menu',
         expandSidebar: 'Expand menu',
         openMenu: 'Open menu',
+        collapseGroup: 'Collapse {{group}} group',
+        expandGroup: 'Expand {{group}} group',
         notifications: 'Notifications',
         allBranches: 'All branches',
         branchSelector: 'Select branch',
