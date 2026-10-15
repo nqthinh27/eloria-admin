@@ -160,6 +160,11 @@ export function CategoryDetailModal({
             fields={fields}
             values={{}}
             canEdit={false}
+            // Field "tile/cover" nhúng HoverSwapPreview/CoverSlidesPreview bị chật ở bề rộng mặc
+            // định (chốt 2026-10-15, user cho phép tới 80% màn hình) — xem comment ở CategoryFormDialog.
+            // `w-fit`: tự co theo nội dung, `max-w-*` chỉ là trần; `min-w` giữ sàn cho khối xem
+            // trước ảnh (tự nó không có "kích thước nội dung" để đẩy `w-fit` rộng ra).
+            contentClassName="w-fit min-w-[24rem] sm:max-w-[80vw] lg:max-w-3xl"
         />
     )
 }

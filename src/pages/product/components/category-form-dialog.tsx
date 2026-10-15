@@ -297,7 +297,17 @@ export function CategoryFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={(next) => !isSubmitting && onOpenChange(next)}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+            {/*
+              Rộng hơn mức 2xl mặc định (chốt 2026-10-15, user cho phép tới 80% màn hình): khối
+              "2 ô tile + xem trước đổi ảnh khi rê chuột" (`grid-cols-[1fr_9rem]` bên dưới) bị bóp
+              chật ở 2xl — cột nội dung còn quá hẹp cho nút + ghi chú kích thước ảnh.
+              `w-fit` thay `w-full` mặc định ⇒ tự co theo bề ngang nội dung thật thay vì luôn
+              bằng đúng trần — `sm:max-w-[80vw] lg:max-w-3xl` chỉ còn là TRẦN, không phải đích.
+              `min-w` giữ sàn: khối xem trước ảnh (`HoverSwapPreview`/`CoverSlidesPreview`) tự nó
+              không có "kích thước nội dung" (ảnh co giãn theo khung `w-full`) nên không tự đẩy
+              `w-fit` rộng ra — thiếu sàn này dialog co về mức rất hẹp, ảnh xem trước bị bóp lại.
+            */}
+            <DialogContent className="max-h-[90vh] w-fit min-w-[24rem] overflow-y-auto sm:max-w-[80vw] lg:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>
                         {isEdit ? t('category.form.editTitle') : t('category.form.addTitle')}

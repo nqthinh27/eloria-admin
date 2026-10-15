@@ -3,6 +3,7 @@ import { useForm, type FieldValues, type Path } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Loader2, Pencil } from 'lucide-react'
 
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -61,6 +62,13 @@ type DetailModalProps<TValues extends FieldValues> = {
      * các màn đã dùng từ Phase 7.
      */
     canEdit?: boolean
+    /**
+     * Ghi đè bề rộng mặc định (`sm:max-w-lg`, 512px) — dùng khi field `fullWidth` nhúng nội dung
+     * rộng (vd `HoverSwapPreview`/`CoverSlidesPreview` ở Danh mục SP) bị bóp chật ở bề rộng mặc định
+     * (chốt 2026-10-15, user cho phép tới 80% màn hình). Đa số modal dùng `DetailModal` là lưới field
+     * text đơn giản nên **không cần** truyền prop này — chỉ ghi đè ở modal thật sự chật.
+     */
+    contentClassName?: string
 }
 
 /**
@@ -78,6 +86,7 @@ export function DetailModal<TValues extends FieldValues>({
     values,
     onSave,
     canEdit = true,
+    contentClassName,
 }: DetailModalProps<TValues>) {
     const { t } = useTranslation('common')
     const [isEditing, setIsEditing] = useState(false)
@@ -113,7 +122,8 @@ export function DetailModal<TValues extends FieldValues>({
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+            <DialogContent
+                className={cn('max-h-[90vh] overflow-y-auto sm:max-w-lg', contentClassName)}>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
