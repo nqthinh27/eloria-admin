@@ -21,12 +21,6 @@ export default {
             actionView: 'View details',
         },
 
-        viewer: {
-            previous: 'Previous image',
-            next: 'Next image',
-            close: 'Close',
-        },
-
         form: {
             addTitle: 'Add product',
             editTitle: 'Edit product',
@@ -184,7 +178,6 @@ export default {
                 code: 'CODE',
                 name: 'CATEGORY NAME',
                 parent: 'PARENT CATEGORY',
-                default: 'DEFAULT',
                 sortOrder: 'ORDER',
                 status: 'STATUS',
                 actions: 'ACTIONS',
@@ -196,6 +189,8 @@ export default {
             actionDelete: 'Delete category',
             actionSetDefault: 'Set as default',
             defaultBadge: 'Default',
+            defaultTooltip:
+                "The default category is used for the banner at the bottom of the home page, and as the Products page cover image when shoppers aren't filtering by any category.",
             allDefaults: 'All categories',
             onlyDefault: 'Default category only',
             filterDefaultLabel: 'Filter by default category',

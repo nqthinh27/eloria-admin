@@ -14,6 +14,7 @@ import { StatusBadge } from '@/components/status-badge'
 import { ViewOnWeb } from '@/components/view-on-web'
 import { productStorefrontUrl } from '@/lib/storefront-url'
 import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
+import { ClickableImage } from '@/components/image/clickable-image'
 import { ImageSpecHint } from '@/components/image/image-spec-hint'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -693,9 +694,10 @@ export function ProductDetailModal({
                                 {current.images.map((url, index) => (
                                     <div key={url} className="space-y-1">
                                     <div className="relative">
-                                        <img
+                                        <ClickableImage
                                             src={imageSrc(url)}
                                             alt={current.name}
+                                            images={current.images.map(imageSrc)}
                                             className="bg-muted aspect-[4/5] w-full rounded-md object-cover"
                                         />
                                         {canWrite && (

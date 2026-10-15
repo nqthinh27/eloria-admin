@@ -49,7 +49,7 @@ export function buildPostColumns(
             size: 110,
             enableSorting: false,
             meta: { columnLabel: t('post.list.column.cover') },
-            cell: ({ row }) => <PostCover url={row.original.coverUrl} />,
+            cell: ({ row }) => <PostCover url={row.original.coverUrl} title={row.original.title} />,
         },
         {
             id: 'title',

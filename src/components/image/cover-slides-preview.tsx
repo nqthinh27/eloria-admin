@@ -5,6 +5,7 @@ import { ImageIcon, Pause, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { COVER_ROTATE_MS, IMAGE_SPEC, resolveImageSrc } from '@/lib/image-spec'
 import { Button } from '@/components/ui/button'
+import { ImageLightbox } from './image-lightbox'
 
 type CoverSlidesPreviewProps = {
     /** `coverLink1..5` theo đúng thứ tự ô — ô trống được bỏ qua như backend làm (`compactCoverLinks`). */
@@ -38,12 +39,14 @@ export function CoverSlidesPreview({ links, title, description, className }: Cov
     const reduced = usePrefersReducedMotion()
     const [index, setIndex] = useState(0)
     const [paused, setPaused] = useState(false)
+    const [lightboxOpen, setLightboxOpen] = useState(false)
 
     const slides = useMemo(() => links.map((l) => l.trim()).filter(Boolean), [links])
     // `index` chỉ tăng mãi; lấy dư theo số ảnh hiện có nên bớt/thêm ô giữa chừng không bao giờ vượt biên.
     const count = slides.length
     const safeIndex = count > 0 ? index % count : 0
-    const running = count > 1 && !paused && !reduced
+    // Mở lightbox ⇒ tạm dừng tự chuyển, giống bấm nút tạm dừng — khỏi lệch ảnh đang xem.
+    const running = count > 1 && !paused && !reduced && !lightboxOpen
 
     useEffect(() => {
         if (!running) return
@@ -55,8 +58,12 @@ export function CoverSlidesPreview({ links, title, description, className }: Cov
 
     return (
         <div className={cn('space-y-1.5', className)}>
-            <div
-                className="bg-muted relative w-full overflow-hidden rounded-md border"
+            <button
+                type="button"
+                disabled={count === 0}
+                onClick={() => setLightboxOpen(true)}
+                title={count > 0 ? t('viewer.openHint') : undefined}
+                className="bg-muted relative block w-full overflow-hidden rounded-md border disabled:cursor-default"
                 style={{ aspectRatio: String(ratio) }}>
                 {count === 0 ? (
                     <span className="text-muted-foreground absolute inset-0 flex flex-col items-center justify-center gap-1 px-4 text-center text-xs">
@@ -88,7 +95,7 @@ export function CoverSlidesPreview({ links, title, description, className }: Cov
                         )}
                     </>
                 )}
-            </div>
+            </button>
 
             {count > 0 && (
                 <div className="flex items-center gap-2">
@@ -119,6 +126,12 @@ export function CoverSlidesPreview({ links, title, description, className }: Cov
             {reduced && count > 1 && (
                 <p className="text-muted-foreground text-xs">{t('slides.reducedMotion')}</p>
             )}
+            <ImageLightbox
+                title={lightboxOpen ? (title ?? t('slides.previewTitle')) : null}
+                images={slides.map(resolveImageSrc)}
+                startIndex={safeIndex}
+                onOpenChange={setLightboxOpen}
+            />
         </div>
     )
 }

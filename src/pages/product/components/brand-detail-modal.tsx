@@ -6,6 +6,7 @@ import { EntityStatus } from '@/types/common'
 import type { Brand } from '@/types/product'
 import { StatusBadge } from '@/components/status-badge'
 import { DetailModal, type DetailField } from '@/components/detail-modal'
+import { ClickableImage } from '@/components/image/clickable-image'
 
 /**
  * Modal "Chi tiết thương hiệu" — nút Chi tiết là bắt buộc ở mọi bảng (CONVENTIONS mục 5.3).
@@ -52,9 +53,9 @@ export function BrandDetailModal({
             formatValue: () =>
                 brand.logoUrl ? (
                     <div className="flex items-center gap-3">
-                        <img
+                        <ClickableImage
                             src={resolveImageSrc(brand.logoUrl)}
-                            alt=""
+                            alt={brand.name}
                             className="size-12 rounded-md border object-contain"
                             onError={(event) => (event.currentTarget.style.display = 'none')}
                         />

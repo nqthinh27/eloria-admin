@@ -33,7 +33,7 @@ import { useTableState } from '@/hooks/use-table-state'
 import { SearchSelect } from '@/components/search-select'
 import { ProductFormDialog } from './components/product-form-dialog'
 import { ProductDetailModal } from './components/product-detail-modal'
-import { ProductImageViewer } from './components/product-image-viewer'
+import { ImageLightbox } from '@/components/image/image-lightbox'
 
 const ALL = 'ALL'
 const PAGE_SIZE = 12
@@ -437,8 +437,8 @@ export default function ProductListPage() {
                     onUpdate={handleUpdate}
                 />
 
-                <ProductImageViewer
-                    name={viewerProduct?.name ?? null}
+                <ImageLightbox
+                    title={viewerProduct?.name ?? null}
                     images={viewerProduct?.images.map(imageSrc) ?? []}
                     onOpenChange={(open) => !open && setViewerProduct(null)}
                 />

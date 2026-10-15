@@ -60,6 +60,15 @@ export default {
         previewTitle: 'Xem trước đúng khung trên web khách',
     },
 
+    /** Dialog xem ảnh toàn màn hình — dùng chung cho grid/bảng/detail/form (CONVENTIONS mục 5). */
+    viewer: {
+        previous: 'Ảnh trước',
+        next: 'Ảnh sau',
+        close: 'Đóng',
+        openHint: 'Bấm để xem toàn màn hình',
+        counter: '{{current}} / {{total}}',
+    },
+
     frame: {
         desktop: 'Máy tính (từ {{px}} px)',
         mobile: 'Điện thoại ({{px}} px)',

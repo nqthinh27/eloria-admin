@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ImageIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { IMAGE_SPEC, resolveImageSrc, type ImageSpecKey } from '@/lib/image-spec'
+import { ImageLightbox } from './image-lightbox'
 
 type HoverSwapPreviewProps = {
     /** Ảnh mặc định (ô 1). */
@@ -19,6 +21,9 @@ type HoverSwapPreviewProps = {
  * dần khi hover. Chỉ CSS (`group-hover`), không state, không thêm dependency.
  *
  * Chỉ có ảnh 1 ⇒ ghi chú "không có ảnh hover" thay vì để người nhập tưởng khung bị lỗi.
+ *
+ * Bấm vào ô ⇒ mở `ImageLightbox` xem toàn màn hình (CONVENTIONS mục 5, chốt 2026-10-15); có cả 2
+ * ảnh thì lightbox cho chuyển qua lại — đúng nghĩa "ảnh chồng nhau" của ô này.
  */
 export function HoverSwapPreview({
     primary,
@@ -27,14 +32,20 @@ export function HoverSwapPreview({
     className,
 }: HoverSwapPreviewProps) {
     const { t } = useTranslation('image')
+    const [open, setOpen] = useState(false)
     const a = primary.trim()
     const b = secondary.trim()
     const ratio = IMAGE_SPEC[spec].ratio
+    const gallery = [a, b].filter(Boolean).map(resolveImageSrc)
 
     return (
         <div className={cn('space-y-1.5', className)}>
-            <div
-                className="group bg-muted relative w-full cursor-pointer overflow-hidden rounded-md border"
+            <button
+                type="button"
+                disabled={gallery.length === 0}
+                onClick={() => setOpen(true)}
+                title={gallery.length > 0 ? t('viewer.openHint') : undefined}
+                className="group bg-muted relative block w-full overflow-hidden rounded-md border disabled:cursor-default"
                 style={{ aspectRatio: String(ratio) }}>
                 {a ? (
                     <img
@@ -55,10 +66,15 @@ export function HoverSwapPreview({
                         className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                     />
                 )}
-            </div>
+            </button>
             <p className="text-muted-foreground text-xs leading-relaxed">
                 {!a && !b ? t('hover.noImages') : a && b ? t('hover.hint') : t('hover.noHover')}
             </p>
+            <ImageLightbox
+                title={open ? t('hover.primary') : null}
+                images={gallery}
+                onOpenChange={setOpen}
+            />
         </div>
     )
 }

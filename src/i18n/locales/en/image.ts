@@ -57,6 +57,15 @@ export default {
         previewTitle: 'Preview in the real storefront frame',
     },
 
+    /** Fullscreen image viewer dialog — shared across grid/table/detail/form (CONVENTIONS section 5). */
+    viewer: {
+        previous: 'Previous image',
+        next: 'Next image',
+        close: 'Close',
+        openHint: 'Click to view fullscreen',
+        counter: '{{current}} / {{total}}',
+    },
+
     frame: {
         desktop: 'Desktop (from {{px}} px)',
         mobile: 'Phone ({{px}} px)',

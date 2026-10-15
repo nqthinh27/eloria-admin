@@ -68,7 +68,9 @@ export function buildBannerColumns(
             size: 130,
             enableSorting: false,
             meta: { columnLabel: t('banner.list.column.image') },
-            cell: ({ row }) => <BannerThumb url={row.original.imageUrl} />,
+            cell: ({ row }) => (
+                <BannerThumb url={row.original.imageUrl} title={row.original.title} />
+            ),
         },
         {
             id: 'title',

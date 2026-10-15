@@ -16,6 +16,7 @@ import {
 } from '@/lib/image-spec'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ClickableImage } from './clickable-image'
 import { ImageFramePreview } from './image-frame-preview'
 import { ImageIssueList } from './image-issue-list'
 import { ImageSpecHint } from './image-spec-hint'
@@ -131,7 +132,7 @@ export function ImageUploadField({
                     className="bg-muted relative w-12 shrink-0 overflow-hidden rounded-md border"
                     style={{ aspectRatio: String(frameSpec.ratio > 2 ? 2 : frameSpec.ratio) }}>
                     {src && !thumbFailed ? (
-                        <img
+                        <ClickableImage
                             src={src}
                             alt=""
                             onError={() => setThumbFailed(true)}

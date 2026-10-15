@@ -21,11 +21,6 @@ export default {
             actionView: 'Xem chi tiết',
         },
 
-        viewer: {
-            previous: 'Ảnh trước',
-            next: 'Ảnh sau',
-            close: 'Đóng',
-        },
 
         form: {
             addTitle: 'Thêm sản phẩm',
@@ -186,7 +181,6 @@ export default {
                 code: 'MÃ',
                 name: 'TÊN DANH MỤC',
                 parent: 'DANH MỤC CHA',
-                default: 'MẶC ĐỊNH',
                 sortOrder: 'THỨ TỰ',
                 status: 'TRẠNG THÁI',
                 actions: 'THAO TÁC',
@@ -198,6 +192,8 @@ export default {
             actionDelete: 'Xoá danh mục',
             actionSetDefault: 'Đặt làm mặc định',
             defaultBadge: 'Mặc định',
+            defaultTooltip:
+                'Danh mục mặc định dùng cho banner ảnh ngang cuối Trang chủ, và làm ảnh bìa trang Sản phẩm khi khách chưa lọc danh mục nào.',
             allDefaults: 'Tất cả danh mục',
             onlyDefault: 'Chỉ danh mục mặc định',
             filterDefaultLabel: 'Lọc theo danh mục mặc định',
