@@ -276,10 +276,9 @@ export default function ReturnListPage() {
                 accessorKey: 'branchName',
                 header: t('return.list.column.branch'),
                 size: 160,
-                // `branchName` sort được (Hibernate tự join) — đo thật 200, nhưng giữ bảo thủ như
-                // các màn khác của repo để nhất quán.
-                enableSorting: false,
-                meta: { columnLabel: t('return.list.column.branch') },
+                // `branchName` sort được (Hibernate tự join) — đo thật 200 (docs/backend/doi-tra.md
+                // mục Sort) ⇒ phải mở, không được khoá "cho chắc" (CONVENTIONS mục 5.2, chốt 2026-10-15).
+                meta: { sortField: 'branchName', columnLabel: t('return.list.column.branch') },
                 cell: ({ row }) => row.original.branchName ?? '—',
             },
             {

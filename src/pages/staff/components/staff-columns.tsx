@@ -38,8 +38,8 @@ type StaffColumnActions = {
  * còn lại đặt `size` gần đúng độ dài nội dung thật để THAO TÁC (nội dung ngắn nhất) không bị kéo dãn.
  *
  * ⚠️ **Sort phía server** (CONVENTIONS mục 5.2): `id` cột ở FE khác tên field backend nên phải khai
- * `meta.sortField`. Cột **CHI NHÁNH bị khoá sort** vì `branchName` chỉ có ở DTO, không phải cột
- * thật của `SysUser` — sort vào đó backend trả **500**, xem CLAUDE.md mục "Sort phía server".
+ * `meta.sortField`. Cột **CHI NHÁNH** sort theo `branchName` — tuy chỉ có ở DTO nhưng Hibernate tự
+ * join sort được (đo thật 200, docs/backend/README.md mục Sort) nên vẫn phải mở, không khoá.
  */
 export function buildStaffColumns(
     t: TFunction<['staff', 'common']>,
@@ -83,9 +83,9 @@ export function buildStaffColumns(
             id: 'branch',
             header: t('staff.list.column.branch'),
             size: 160,
-            // ⚠️ `branchName` KHÔNG phải cột của `SysUser` (chỉ có ở DTO) ⇒ sort vào đây backend 500.
-            enableSorting: false,
-            meta: { columnLabel: t('staff.list.column.branch') },
+            // `branchName` tuy chỉ có ở DTO nhưng Hibernate tự join sort được — đo thật 200
+            // (docs/backend/README.md mục Sort, đo 2026-09-08) ⇒ mở sort (CONVENTIONS mục 5.2).
+            meta: { sortField: 'branchName', columnLabel: t('staff.list.column.branch') },
             cell: ({ row }) => row.original.branchName ?? t('staff.list.noBranch'),
         },
         {

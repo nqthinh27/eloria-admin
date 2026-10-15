@@ -136,9 +136,11 @@ export default function OrderListPage() {
     /*
      * Khai trước `load` vì `toSearchSort` cần `meta.sortField` của cột để dịch id cột → field BE.
      *
-     * ⚠️ **Sort phía server** (CONVENTIONS mục 5.2): chỉ mở sort cho cột là **field thật của entity
-     * `OrderSale`**. Cột nào chỉ có ở DTO (`branchName`, `paidAmount`) phải khai
-     * `enableSorting: false` — sort vào đó backend trả **500** (`PropertyReferenceException`).
+     * ⚠️ **Sort phía server** (CONVENTIONS mục 5.2): chỉ mở sort cho field thật của entity `OrderSale`
+     * **hoặc** field DTO mà Hibernate tự join sort được (đo thật 200, không phải đoán) — `branchName`
+     * thuộc nhóm này (docs/backend/README.md mục Sort, đo 2026-09-08). Cột nào chỉ có ở DTO và
+     * **chưa đo được** (`paidAmount`) mới phải khai `enableSorting: false` — sort nhầm backend trả
+     * **500** (`PropertyReferenceException`).
      */
     const columns = useMemo<ColumnDef<Order, unknown>[]>(
         () => [
@@ -204,9 +206,9 @@ export default function OrderListPage() {
             {
                 accessorKey: 'branchName',
                 header: t('order.list.column.branch'),
-                // ⚠️ `branchName` KHÔNG phải cột của `OrderSale` (chỉ có ở DTO) ⇒ sort vào đây backend 500.
-                enableSorting: false,
-                meta: { columnLabel: t('order.list.column.branch') },
+                // `branchName` tuy chỉ có ở DTO nhưng Hibernate tự join sort được — đo thật 200
+                // (docs/backend/README.md mục Sort, đo 2026-09-08) ⇒ mở sort (CONVENTIONS mục 5.2).
+                meta: { sortField: 'branchName', columnLabel: t('order.list.column.branch') },
                 cell: ({ row }) =>
                     row.original.branchName ??
                     (row.original.channel === EOrderChannel.ONLINE ? (

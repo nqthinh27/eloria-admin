@@ -83,8 +83,13 @@ export function buildBankAccountColumns(
             id: 'isDefault',
             header: t('bankAccount.list.column.isDefault'),
             size: 120,
-            enableSorting: false,
-            meta: { columnLabel: t('bankAccount.list.column.isDefault'), align: 'center' },
+            // `isDefault` sort được (đo thật 200, docs/backend/ngan-hang-qr.md mục Sort) ⇒ mở sort
+            // (CONVENTIONS mục 5.2, chốt 2026-10-15).
+            meta: {
+                sortField: 'isDefault',
+                columnLabel: t('bankAccount.list.column.isDefault'),
+                align: 'center',
+            },
             cell: ({ row }) =>
                 row.original.isDefault ? (
                     <Badge>{t('bankAccount.list.defaultBadge')}</Badge>

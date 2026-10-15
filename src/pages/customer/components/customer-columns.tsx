@@ -92,9 +92,9 @@ export function buildCustomerColumns(
             id: 'branch',
             header: t('customer.list.column.branch'),
             size: 160,
-            // ⚠️ `branchName` KHÔNG phải cột của `SysUser` (chỉ có ở DTO) ⇒ sort vào đây backend 500.
-            enableSorting: false,
-            meta: { columnLabel: t('customer.list.column.branch') },
+            // `branchName` tuy chỉ có ở DTO nhưng Hibernate tự join sort được — đo thật 200
+            // (docs/backend/README.md mục Sort, đo 2026-09-08) ⇒ mở sort (CONVENTIONS mục 5.2).
+            meta: { sortField: 'branchName', columnLabel: t('customer.list.column.branch') },
             cell: ({ row }) => row.original.branchName ?? t('customer.list.noBranch'),
         },
         {

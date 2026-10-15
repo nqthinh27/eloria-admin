@@ -257,7 +257,28 @@ export function DataTable<TData>({
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id} className="hover:bg-transparent">
                                 {headerGroup.headers.map((header) => {
-                                    const canSort = header.column.getCanSort()
+                                    /*
+                                     * ⚠️ **Không dùng thẳng `header.column.getCanSort()`/
+                                     * `getToggleSortingHandler()`** ở chế độ sort server (`manualSorting`,
+                                     * tức có `onSortingChange`): TanStack `getCanSort()` bắt buộc
+                                     * `!!column.accessorFn`, mà đa số cột của repo khai `id:` + tự render
+                                     * `cell` từ `row.original.x` (không khai `accessorKey`) ⇒ `accessorFn`
+                                     * luôn `undefined` ⇒ nút sort **im lặng không bao giờ hiện**, dù cột đã
+                                     * khai đúng `meta.sortField` và backend sort được thật (bug phát hiện
+                                     * 2026-10-15, rà toàn repo theo CONVENTIONS mục 5.2). Ở chế độ server,
+                                     * dữ liệu đã được backend sắp sẵn theo `sorting` state (gửi qua
+                                     * `onSortingChange` → `toSearchSort`), `getSortedRowModel` không được
+                                     * dùng (`manualSorting: true`) nên `accessorFn` là thừa — canSort chỉ
+                                     * cần dựa vào `meta.sortField` có khai hay không. Chế độ sort client
+                                     * (không có `onSortingChange`, vd Danh mục SP) vẫn giữ hành vi gốc của
+                                     * TanStack vì còn dùng `getSortedRowModel` thật — cột nào cần sort ở
+                                     * chế độ đó phải tự khai `accessorKey`, không sửa được ở đây.
+                                     */
+                                    const isManualSort = Boolean(onSortingChange)
+                                    const canSort = isManualSort
+                                        ? header.column.columnDef.enableSorting !== false &&
+                                          Boolean(header.column.columnDef.meta?.sortField)
+                                        : header.column.getCanSort()
                                     const sortDir = header.column.getIsSorted()
                                     return (
                                         <TableHead
@@ -284,7 +305,11 @@ export function DataTable<TData>({
                                                      * i18n dạng thường sẽ lệch hẳn với các cột khác.
                                                      */
                                                     className="hover:text-foreground mx-auto flex items-center justify-center gap-1 uppercase"
-                                                    onClick={header.column.getToggleSortingHandler()}>
+                                                    onClick={
+                                                        isManualSort
+                                                            ? () => header.column.toggleSorting(undefined, false)
+                                                            : header.column.getToggleSortingHandler()
+                                                    }>
                                                     {flexRender(
                                                         header.column.columnDef.header,
                                                         header.getContext(),

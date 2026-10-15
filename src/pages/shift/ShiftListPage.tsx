@@ -161,9 +161,9 @@ export default function ShiftListPage() {
                 id: 'branchName',
                 accessorKey: 'branchName',
                 header: t('order.shift.list.column.branch'),
-                /* ⚠️ Cũng là field DTO-only ⇒ sort gây 500. */
-                enableSorting: false,
-                meta: { columnLabel: t('order.shift.list.column.branch') },
+                // `branchName` sort được (Hibernate tự join) — đo thật 200 (docs/backend/ca-lam-viec.md
+                // mục Sort) ⇒ phải mở, không được khoá "cho chắc" (CONVENTIONS mục 5.2, chốt 2026-10-15).
+                meta: { sortField: 'branchName', columnLabel: t('order.shift.list.column.branch') },
                 cell: ({ row }) => row.original.branchName ?? '—',
             },
             {
