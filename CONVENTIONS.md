@@ -179,9 +179,32 @@ Rule chung cho **mọi** entity có cột `status` (chốt với user 2026-08-09
   Nhập…) ⇒ **`PageHeader`** slot `actions`; nút **điều khiển bảng** (Tải lại · Hiển thị cột) ⇒
   **`DataTableToolbar`** slot `tableControls`, cùng hàng search/filter (trái: search + Select;
   phải: cụm điều khiển). Chi tiết + lý do: skill **create-table**.
+  - ⚠️ **Rule áp dụng cả khi màn chia nhiều tab dùng chung MỘT `PageHeader`** (vd `InventoryPage` —
+    3 tab Tồn kho/Phiếu kho/Kiểm kê), không phải chỉ màn 1 bảng duy nhất. Tab nào có nút ghi dữ liệu
+    thì **lift state mở form lên component cha sở hữu `PageHeader`**, truyền xuống tab con qua props
+    (`open`/`onOpenChange`…) — **cấm** vẽ nút thành một hàng riêng phía trên toolbar của tab con chỉ
+    vì tab con "không có `PageHeader` riêng" (sai lầm đã xảy ra ở `LedgerTab`, sửa 2026-10-15).
+    `PageHeader actions` đổi nội dung theo tab đang mở (`tab === 'ledger' ? <Button>… : undefined`).
 - **Droplist danh sách dài dùng [`SearchSelect`](src/components/search-select.tsx)** (tìm kiếm bỏ dấu,
   khớp tên lẫn mã, chọn 1/nhiều). Danh sách ngắn (<8) dùng `Select` thường. Phải phân trang ⇒ search
   phía server (mục 5.7).
+- **Ảnh hiển thị ở BẤT KỲ đâu (grid/bảng/modal chi tiết/form sửa) đều phải bấm được để xem toàn màn
+  hình** (chốt 2026-10-15): dùng [`ClickableImage`](src/components/image/clickable-image.tsx) để bọc
+  một `<img>` đơn (chỉ cần thay thẻ, không tự quản lý state) — nhiều ảnh chồng nhau (hover-swap, dải
+  ảnh bìa tự chuyển, lưới ảnh sản phẩm…) thì dùng thẳng
+  [`ImageLightbox`](src/components/image/image-lightbox.tsx) (`images` + `startIndex`) để chuyển qua
+  lại bằng nút `‹ ›`/phím `←/→`, không mở từng ảnh một cách rời rạc. Áp dụng cho **ảnh nội dung thật**
+  (sản phẩm, danh mục, thương hiệu, banner, bài viết…); **không áp dụng** cho ảnh chức năng không phải
+  để "xem" — mã QR thanh toán, ảnh barcode SKU, ảnh chèn trong trình soạn thảo CMS (khác ngữ cảnh: bấm
+  vào đó là để chọn/sửa, không phải để phóng to).
+- **Bề rộng `DialogContent` mặc định (`sm:max-w-lg`/`sm:max-w-2xl`…) chỉ là điểm khởi đầu, không
+  phải trần cứng** (chốt 2026-10-15, user cho phép tới 80% màn hình): dialog nào có layout nhiều cột
+  hoặc nhúng khối xem trước cố định bề ngang (vd cột preview `HoverSwapPreview`/`CoverSlidesPreview`
+  cạnh form upload, như `CategoryFormDialog`/`CategoryDetailModal`) mà bị bóp chật ở bề rộng mặc định
+  thì **nới riêng** bằng `className`/`contentClassName` (vd `sm:max-w-[80vw] lg:max-w-3xl` — vw cho
+  màn vừa, cap cứng `lg:` để khỏi quá rộng trên màn hình lớn). **Không** đổi bề rộng mặc định dùng
+  chung (`DetailModal`, base `DialogContent`) vì phần lớn modal khác là lưới field đơn giản, hẹp vẫn
+  vừa — chỉ ghi đè đúng tại nơi thật sự chật.
 - **Đa ngôn ngữ VI + EN từ đầu.** Mọi text qua i18n, **không hardcode chuỗi trong JSX**. Mặc định `vi`;
   key mới bổ sung **cả `vi` và `en`**. Bộ chuyển ngôn ngữ ở top bar, trái chuông thông báo
   (bổ sung ngoài mockup, style bám top bar).
@@ -215,6 +238,16 @@ Mọi bảng dựng bằng [`DataTable`](src/components/data-table/data-table.ts
    [docs/backend/README.md](docs/backend/README.md) mục Sort — field DTO-only sort là **HTTP 500**),
    và là **sort phía server** (`field,ASC|DESC`). Cấm sort mặc định TanStack chạy tự do. Tên field là
    field DTO backend (`meta.sortField` khi lệch). **Đổi sort ⇒ về trang 1.**
+   - ⚠️ **Chiều ngược lại cũng là luật, không phải tuỳ chọn** (chốt 2026-10-15): cột nào ứng với field
+     mà whitelist xác nhận sort được (kể cả field chỉ có ở DTO nhưng Hibernate tự join sort được, ví
+     dụ `branchName` — xem README.md mục Sort) thì **BẮT BUỘC mở sort**, hiện icon sort. **Cấm khoá
+     sort "cho chắc"/"bảo thủ" khi field đã đo rõ là an toàn** — rà lại ngay khi thêm cột mới hoặc khi
+     whitelist cập nhật (field vừa được xác nhận thêm sort được).
+   - Ngoại lệ hợp lệ — vẫn được khoá dù field sort được: **(a)** bảng chạy **sort phía client** vì đã
+     nạp trọn tập kết quả một lần, không phân trang server (vd Danh mục SP — xem comment tại chỗ,
+     *không cần* `meta.sortField` vì không đẩy gì lên `SearchPagination.sort`); **(b)** sort trên field
+     đó **vô nghĩa về mặt UX** dù kỹ thuật an toàn, ví dụ văn bản mô tả dài (Thương hiệu cột MÔ TẢ) —
+     phải ghi rõ lý do tại chỗ, không được khoá mà không giải thích.
 
 Trạng thái bảng (cột ẩn, sort) là **state của màn**, không lưu localStorage.
 Chi tiết + checklist thi công: skill **create-table**.
@@ -346,6 +379,27 @@ lỗi chỉ nổ ở bước sau (duyệt phiếu mới trừ tồn) — **ngư�
 ✅ **Tìm SKU khớp cả mã lẫn tên sản phẩm** — `keyword` của `POST /sku/search` soi `sku.id` · `ean` ·
 `product.name` · `product.code` (**BE29**, backend mở rộng 2026-09-13). Nhờ vậy tra phía server
 **không còn kém** lọc phía FE, và đó chính là điều kiện để ô chọn SKU luôn chạy server mode.
+
+### 5.8 Tab lọc trạng thái có đếm — **cùng hàng filter bar, nhãn `Tên (số)`** (chốt 2026-10-15)
+
+Áp dụng khi màn danh sách lọc theo trạng thái (Tất cả / Hoạt động / Ngừng hoạt động…) **và** backend
+list đó trả kèm số đếm theo trạng thái — tức response kiểu `BaseListResStatus` (`activeTotal` +
+`inactiveTotal`, xem [docs/backend/README.md](docs/backend/README.md) mục response). Tính đến
+2026-10-15, các domain có sẵn số đếm này: Sản phẩm · SKU · Danh mục · Thương hiệu · Chi nhánh ·
+Nhân viên · Tài khoản ngân hàng · Banner — xem `docs/backend/*.md` từng domain để xác nhận còn đúng.
+Domain **không** có số đếm (vd Khuyến mại — BE21, xem `docs/backend/khuyen-mai.md`) thì **giữ nguyên
+`Select` trạng thái như hiện tại**, không tự chế số đếm phía FE.
+
+- **Vị trí:** tab trạng thái đứng **cùng hàng với `DataTableToolbar`** (cạnh ô search, trong slot
+  `filters`) — thay cho `Select` "Tất cả trạng thái/Hoạt động/Ngừng hoạt động" đang dùng, **không**
+  phải một hàng `PillTabs` riêng phía trên bảng. Khác với tab **đổi hẳn tập dữ liệu/API** (tab kênh ở
+  Đơn hàng, tab Tồn kho·Phiếu kho·Kiểm kê) — loại đó vẫn đứng hàng riêng dưới `PageHeader` như cũ,
+  rule này chỉ nói về tab **lọc trạng thái trên cùng một danh sách**.
+- **Nhãn bắt buộc có số đếm**: `Tất cả (total)` · `Hoạt động (activeTotal)` · `Ngừng hoạt động
+  (inactiveTotal)` — số lấy thẳng từ field backend trả về trong response `search` **gần nhất**, không
+  tự đếm bằng `data.length` phía FE (sai ngay khi dữ liệu nhiều hơn 1 trang).
+- Đổi tab ⇒ coi như đổi filter: về trang 1, giữ nguyên các filter/search khác (mục 5.1 về giữ ngữ
+  cảnh chỉ áp cho *sau khi ghi dữ liệu*, đổi tab vẫn theo quy ước đổi-filter-thường).
 
 ---
 
