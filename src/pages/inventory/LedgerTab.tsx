@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Eye, FileStack, MoreHorizontal, Plus, Send, X } from 'lucide-react'
+import { Check, Eye, FileStack, MoreHorizontal, Send, X } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { warehouseLedgerApi } from '@/api/inventory'
@@ -57,7 +57,17 @@ const TYPE_TONE: Record<string, StatusTone> = {
  *
  * Vòng đời: `DRAFT → WAITING_APPROVAL → ACCEPTED | REJECTED`. **Chỉ `ACCEPTED` mới ghi tồn thật.**
  */
-export function LedgerTab() {
+type LedgerTabProps = {
+    /**
+     * Nút "Tạo phiếu kho" sống ở `PageHeader` của `InventoryPage` (cha) — cùng hàng tiêu đề màn
+     * (CONVENTIONS mục 5, chốt 2026-08-28), vì tab này không có `PageHeader` riêng. Dialog tạo
+     * phiếu vẫn thuộc về tab này, chỉ có cờ mở/đóng được cha điều khiển.
+     */
+    formOpen: boolean
+    onFormOpenChange: (open: boolean) => void
+}
+
+export function LedgerTab({ formOpen, onFormOpenChange }: LedgerTabProps) {
     const { t } = useTranslation(['inventory', 'common'])
     const { user } = useAuth()
     const canApprove = hasRole(user?.role, ERole.ADMIN)
@@ -82,7 +92,6 @@ export function LedgerTab() {
     const table = useTableState()
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
-    const [formOpen, setFormOpen] = useState(false)
     const [detailId, setDetailId] = useState<string | null>(null)
     const [submitLedger, setSubmitLedger] = useState<WarehouseLedger | null>(null)
     const [approveLedger, setApproveLedger] = useState<WarehouseLedger | null>(null)
@@ -150,13 +159,13 @@ export function LedgerTab() {
                 accessorKey: 'branchName',
                 header: t('inventory.ledger.column.branch'),
                 /*
-                 * ⚠️ Ô này ghép **hai** field DTO (`branchName → toBranchName`), mà cả hai đều
-                 * KHÔNG phải cột của entity `WarehouseLedger` (entity chỉ giữ `branchId`) ⇒ sort
-                 * vào đây backend 500. Không map sang `branchId` vì sắp theo UUID cho ra thứ tự
-                 * ngẫu nhiên với người dùng, tệ hơn là không cho sort.
+                 * Ô này ghép **hai** field DTO (`branchName → toBranchName`). `branchName` tuy chỉ
+                 * có ở DTO nhưng Hibernate tự join sort được — đo thật 200 (docs/backend/README.md
+                 * mục Sort, đo 2026-09-08) ⇒ mở sort theo `branchName` (chiều đi, bỏ qua
+                 * `toBranchName`) thay vì khoá hẳn hay sort theo `branchId` (UUID vô nghĩa với người
+                 * dùng) — CONVENTIONS mục 5.2, chốt 2026-10-15.
                  */
-                enableSorting: false,
-                meta: { columnLabel: t('inventory.ledger.column.branch') },
+                meta: { sortField: 'branchName', columnLabel: t('inventory.ledger.column.branch') },
                 cell: ({ row }) => (
                     <span className="text-sm">
                         {row.original.branchName}
@@ -390,19 +399,6 @@ export function LedgerTab() {
 
     return (
         <div className="space-y-4">
-            {/*
-              Nút **tác động dữ liệu** tách khỏi hàng lọc (CONVENTIONS mục 5, chốt 2026-08-28).
-              Tab này **không có `PageHeader` riêng** — tiêu đề màn do `InventoryPage` (component cha)
-              sở hữu, nên không đưa nút lên đó được; thay vào đó cho nút đứng **một hàng riêng** phía
-              trên toolbar. Hàng dưới vì vậy chỉ còn search/filter + điều khiển bảng.
-            */}
-            <div className="flex justify-end">
-                <Button onClick={() => setFormOpen(true)}>
-                    <Plus />
-                    {t('inventory.action.createLedger')}
-                </Button>
-            </div>
-
             <DataTableToolbar
                 searchValue={keyword}
                 onSearchChange={(value) => table.resetTo(() => setKeyword(value))}
@@ -500,7 +496,7 @@ export function LedgerTab() {
 
             <LedgerFormDialog
                 open={formOpen}
-                onOpenChange={setFormOpen}
+                onOpenChange={onFormOpenChange}
                 branches={branches}
                 canChooseBranch={canFilterBranch}
                 onCreated={reload}

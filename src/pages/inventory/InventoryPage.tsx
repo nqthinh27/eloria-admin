@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Plus } from 'lucide-react'
 
+import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { PageHeader } from '@/components/page-header'
 import { PillTabs } from '@/components/pill-tabs'
@@ -23,12 +25,27 @@ import { StockCountTab } from './StockCountTab'
 export default function InventoryPage() {
     const { t } = useTranslation('inventory')
     const [tab, setTab] = useState('stock')
+    const [ledgerFormOpen, setLedgerFormOpen] = useState(false)
 
     return (
         <>
+            {/*
+              Nút **tác động dữ liệu** của tab đang mở phải cùng hàng tiêu đề màn (CONVENTIONS mục 5,
+              chốt 2026-08-28) — kể cả khi màn chia nhiều tab chỉ dùng chung MỘT `PageHeader`: tab nào
+              có hành động ghi dữ liệu thì `PageHeader` hiện nút của đúng tab đó, tab còn lại (Tồn kho,
+              Kiểm kê) không có nút tạo nên để trống.
+            */}
             <PageHeader
                 title={t('inventory.pageTitle')}
                 description={t('inventory.pageDescription')}
+                actions={
+                    tab === 'ledger' ? (
+                        <Button onClick={() => setLedgerFormOpen(true)}>
+                            <Plus />
+                            {t('inventory.action.createLedger')}
+                        </Button>
+                    ) : undefined
+                }
             />
 
             <Tabs value={tab} onValueChange={setTab} className="space-y-4">
@@ -51,7 +68,7 @@ export default function InventoryPage() {
                 </TabsContent>
 
                 <TabsContent value="ledger">
-                    <LedgerTab />
+                    <LedgerTab formOpen={ledgerFormOpen} onFormOpenChange={setLedgerFormOpen} />
                 </TabsContent>
 
                 <TabsContent value="count">
