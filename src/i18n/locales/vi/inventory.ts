@@ -41,8 +41,6 @@ export default {
             alert: {
                 outOfStock: '{{count}} SKU — Hết hàng',
                 outOfStockHint: 'cần bổ sung gấp',
-                lowStock: '{{count}} SKU — Tồn dưới mức tối thiểu',
-                lowStockHint: 'cần bổ sung sớm',
             },
             /** Ghi chú cột không có nguồn dữ liệu — xem báo cáo Phase 10. */
             minStockUnset: 'Chưa đặt',

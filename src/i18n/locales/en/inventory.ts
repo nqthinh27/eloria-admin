@@ -41,8 +41,6 @@ export default {
             alert: {
                 outOfStock: '{{count}} SKUs — Out of stock',
                 outOfStockHint: 'restock urgently',
-                lowStock: '{{count}} SKUs — Below minimum',
-                lowStockHint: 'restock soon',
             },
             minStockUnset: 'Not set',
         },

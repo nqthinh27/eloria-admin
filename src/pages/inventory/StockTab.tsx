@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangle, Boxes, XCircle } from 'lucide-react'
+import { Boxes, XCircle } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { stockItemApi } from '@/api/inventory'
@@ -79,22 +79,24 @@ export function StockTab() {
     }, [canFilterBranch, refreshBranches])
 
     /*
-     * Thẻ cảnh báo phía trên bảng (mockup `13`).
+     * Thẻ cảnh báo "Hết hàng" phía trên bảng (mockup `13`).
      *
      * ⚠️ Đếm trên **trang hiện tại**, không phải toàn hệ thống: backend chưa có API trả tổng số
-     * SKU hết hàng / dưới ngưỡng (`stock-item/search` chỉ trả `total`, không có `outOfStockTotal`
-     * như `activeTotal` của các module khác). Nhãn đã ghi rõ phạm vi để không hiểu nhầm là số
+     * SKU hết hàng (`stock-item/search` chỉ trả `total`, không có `outOfStockTotal` như
+     * `activeTotal` của các module khác). Nhãn đã ghi rõ phạm vi để không hiểu nhầm là số
      * toàn chuỗi — xem báo cáo Phase 10.
+     *
+     * ⚠️ **Đã bỏ hẳn thẻ "Tồn dưới mức tối thiểu" (2026-10-15, user chốt)** — cùng lý do per-page
+     * ở trên, cộng thêm việc backend **chưa có API đặt ngưỡng `minStock`** nên nhánh `low` của
+     * `stockTone` chưa bao giờ thực sự nổ (xem comment trên `stockTone`). Dựng lại thẻ này khi
+     * backend có cả ngưỡng thật lẫn số đếm toàn hệ thống.
      */
     const alertCounts = useMemo(() => {
         let outOfStock = 0
-        let low = 0
         for (const item of data) {
-            const tone = stockTone(item)
-            if (tone === 'outOfStock') outOfStock += 1
-            else if (tone === 'low') low += 1
+            if (stockTone(item) === 'outOfStock') outOfStock += 1
         }
-        return { outOfStock, low }
+        return { outOfStock }
     }, [data])
 
     /*
@@ -359,37 +361,20 @@ export function StockTab() {
 
     return (
         <div className="space-y-4">
-            {/* Thẻ cảnh báo — chỉ hiện khi có dòng tương ứng trong trang hiện tại. */}
-            {(alertCounts.outOfStock > 0 || alertCounts.low > 0) && (
-                <div className="grid gap-4 md:grid-cols-2">
-                    {alertCounts.outOfStock > 0 && (
-                        <div className="bg-destructive-muted flex items-start gap-3 rounded-xl p-4">
-                            <XCircle className="text-destructive mt-0.5 size-5 shrink-0" />
-                            <div>
-                                <p className="text-destructive text-sm font-medium">
-                                    {t('inventory.stock.alert.outOfStock', {
-                                        count: alertCounts.outOfStock,
-                                    })}
-                                </p>
-                                <p className="text-muted-foreground text-xs">
-                                    {t('inventory.stock.alert.outOfStockHint')}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                    {alertCounts.low > 0 && (
-                        <div className="bg-warning-muted flex items-start gap-3 rounded-xl p-4">
-                            <AlertTriangle className="text-warning mt-0.5 size-5 shrink-0" />
-                            <div>
-                                <p className="text-warning text-sm font-medium">
-                                    {t('inventory.stock.alert.lowStock', { count: alertCounts.low })}
-                                </p>
-                                <p className="text-muted-foreground text-xs">
-                                    {t('inventory.stock.alert.lowStockHint')}
-                                </p>
-                            </div>
-                        </div>
-                    )}
+            {/* Thẻ cảnh báo — chỉ hiện khi có dòng hết hàng trong trang hiện tại. */}
+            {alertCounts.outOfStock > 0 && (
+                <div className="bg-destructive-muted flex items-start gap-3 rounded-xl p-4">
+                    <XCircle className="text-destructive mt-0.5 size-5 shrink-0" />
+                    <div>
+                        <p className="text-destructive text-sm font-medium">
+                            {t('inventory.stock.alert.outOfStock', {
+                                count: alertCounts.outOfStock,
+                            })}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                            {t('inventory.stock.alert.outOfStockHint')}
+                        </p>
+                    </div>
                 </div>
             )}
 
