@@ -14,10 +14,12 @@ import { EntityStatus, ERole } from '@/types/common'
 import type { Category, CategoryPayload } from '@/types/product'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
+import { ClickableImage } from '@/components/image/clickable-image'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -307,11 +309,17 @@ export default function CategoryListPage() {
      * ⚠️ **Không khai `meta.sortField`** cho màn này: bảng sort phía client (xem ghi chú ở
      * `<DataTable>` bên dưới) nên không có field nào được đẩy lên backend.
      * `meta.columnLabel` thì vẫn bắt buộc — đó là nhãn hiển thị trong dropdown bật/tắt cột.
+     *
+     * ⚠️ **`accessorKey` thì NGƯỢC LẠI bắt buộc phải khai** (dù `cell` đã tự render riêng): sort
+     * phía client của TanStack cần `accessorFn` để biết lấy giá trị nào ra so sánh — thiếu nó,
+     * `getCanSort()` luôn `false` nên nút sort **không bao giờ hiện**, kể cả khi cột rõ ràng sort
+     * được (bug phát hiện 2026-10-15, rà toàn repo theo CONVENTIONS mục 5.2).
      */
     const columns = useMemo<ColumnDef<Category, unknown>[]>(
         () => [
             {
                 id: 'code',
+                accessorKey: 'code',
                 header: t('category.list.column.code'),
                 // Cột định danh, nằm trong dải ghim ⇒ không cho ẩn (CONVENTIONS mục 5.6).
                 size: 140,
@@ -325,6 +333,7 @@ export default function CategoryListPage() {
             },
             {
                 id: 'name',
+                accessorKey: 'name',
                 header: t('category.list.column.name'),
                 // Cột ghim ⇒ bắt buộc khai `size` để dải ghim không lệch khi cuộn (mục 5.6).
                 size: 260,
@@ -337,9 +346,9 @@ export default function CategoryListPage() {
                     return (
                         <div className="flex items-center gap-3">
                             {thumb ? (
-                                <img
+                                <ClickableImage
                                     src={resolveImageSrc(thumb)}
-                                    alt=""
+                                    alt={row.original.name}
                                     className="bg-muted size-8 shrink-0 rounded-lg object-cover"
                                 />
                             ) : (
@@ -353,18 +362,8 @@ export default function CategoryListPage() {
                 },
             },
             {
-                id: 'default',
-                header: t('category.list.column.default'),
-                size: 120,
-                // Badge ⇒ căn giữa (CONVENTIONS mục 5.6). Toàn bảng chỉ có tối đa 1 dòng có badge.
-                meta: { columnLabel: t('category.list.column.default'), align: 'center' },
-                cell: ({ row }) =>
-                    row.original.isDefault === true ? (
-                        <StatusBadge tone="info">{t('category.list.defaultBadge')}</StatusBadge>
-                    ) : null,
-            },
-            {
                 id: 'parent',
+                accessorKey: 'parentName',
                 header: t('category.list.column.parent'),
                 size: 180,
                 meta: { columnLabel: t('category.list.column.parent') },
@@ -379,6 +378,7 @@ export default function CategoryListPage() {
             },
             {
                 id: 'sortOrder',
+                accessorKey: 'sortOrder',
                 header: t('category.list.column.sortOrder'),
                 size: 100,
                 // Số thứ tự sắp xếp ⇒ căn phải cho thẳng cột chữ số (CONVENTIONS mục 5.6).
@@ -389,16 +389,31 @@ export default function CategoryListPage() {
             },
             {
                 id: 'status',
+                accessorKey: 'status',
                 header: t('category.list.column.status'),
                 size: 140,
                 // Badge ⇒ căn giữa (CONVENTIONS mục 5.6).
                 meta: { columnLabel: t('category.list.column.status'), align: 'center' },
-                cell: ({ row }) =>
-                    row.original.status === EntityStatus.ACTIVE ? (
-                        <StatusBadge tone="success">{t('category.list.statusActive')}</StatusBadge>
-                    ) : (
-                        <StatusBadge tone="muted">{t('category.list.statusInactive')}</StatusBadge>
-                    ),
+                // Badge "Mặc định" gộp chung cột này (chỉ tối đa 1 dòng có) thay vì chiếm hẳn 1 cột riêng.
+                cell: ({ row }) => (
+                    <div className="flex flex-col items-center gap-1">
+                        {row.original.status === EntityStatus.ACTIVE ? (
+                            <StatusBadge tone="success">{t('category.list.statusActive')}</StatusBadge>
+                        ) : (
+                            <StatusBadge tone="muted">{t('category.list.statusInactive')}</StatusBadge>
+                        )}
+                        {row.original.isDefault === true && (
+                            <Tooltip>
+                                <TooltipTrigger className="cursor-help">
+                                    <StatusBadge tone="info">
+                                        {t('category.list.defaultBadge')}
+                                    </StatusBadge>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('category.list.defaultTooltip')}</TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
+                ),
             },
             {
                 id: 'actions',
