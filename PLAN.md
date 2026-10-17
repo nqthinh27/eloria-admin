@@ -243,6 +243,7 @@ phải mock. Ngược lại, **domain đơn hàng vẫn CHƯA có entity/resourc
 | `@tanstack/react-table` | DataTable (sort/filter/paging) | 5 |
 | `date-fns` | Format ngày tiếng Việt | 5 |
 | `recharts` | Biểu đồ dashboard | ~~15~~ → **12** *(đã cài 2026-08-29, `^3.10.1`)* |
+| `@stomp/stompjs` | WebSocket STOMP: quả chuông thông báo, xác nhận chuyển khoản realtime (WebSocket thuần tới `/v1.0/websocket/websocket` — **không cần `sockjs-client`**) | **25** — ⏳ *chưa duyệt, hỏi user khi mở phase* |
 
 Cài **đúng phase cần**, không cài trước hàng loạt.
 
@@ -280,6 +281,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **22** | ✅ **(2026-10-11 — xong FE + upload BE31/P13.3; unit test ghi nợ)** **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
 | **23** | ✅ **(2026-10-11 — xong FE + upload; đã đo storefront/INACTIVE/XOÁ/RBAC ADMIN)** **Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định** | 5, 9, 22 | *(không mockup — pattern `12`)* |
 | **24** | 🟡 **(R1 — 2026-10-11 xong FE; còn kiểm deploy 2 lần + ảnh thật)** **CMS catalog sẵn sàng release: cấu hình chi nhánh online · SEO SP/danh mục · "Xem trên web" · chống bản cũ** | 9, 22, 23 | *(không mockup)* |
+| **25** | ⏳ **(R3.5 — thêm 2026-10-17, chờ backend P18)** **Thông báo (quả chuông) · kết nối WebSocket · xác nhận chuyển khoản realtime · mã đơn mới** | 3, 11, 15, 10, 13 | *(không mockup — popover chuông theo shadcn)* |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
@@ -3046,7 +3048,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 > Không có mockup riêng cho các màn này — dựng theo pattern bảng/form dùng chung (skill
 > `create-table`) và cùng ngôn ngữ giao diện các phase trước.
 >
-> **Thứ tự chạy (replan 2026-10-13): 22 → 23 → 24 (Release R1) → 20 (R2, Content/CMS) → 21a + Phase 20 mục 4 (R3, mua hàng) → 21b (R4, điểm).** ~~Thứ tự 2026-10-11: … → 21④ (R2) → 20 → 21 còn lại (R3).~~ ~~Thứ tự cũ: 22 → 20 → 21.~~ Phase 22 (chuẩn ảnh CMS) **không chờ backend**, làm được ngay, và
+> **Thứ tự chạy (replan 2026-10-13, bổ sung 2026-10-17): 22 → 23 → 24 (Release R1) → 20 (R2, Content/CMS) → 21a + Phase 20 mục 4 (R3, mua hàng) → 25 (R3.5, thông báo + realtime + webhook thanh toán — backend P18) → 21b (R4, điểm).** ~~Thứ tự 2026-10-11: … → 21④ (R2) → 20 → 21 còn lại (R3).~~ ~~Thứ tự cũ: 22 → 20 → 21.~~ Phase 22 (chuẩn ảnh CMS) **không chờ backend**, làm được ngay, và
 > Phase 20 dùng lại component của nó ⇒ làm 22 trước thì khỏi dựng ô upload hai lần. Phase 21 phụ
 > thuộc backend P13+P16 nên đi sau cùng.
 
@@ -3471,3 +3473,98 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 ### Ngoài phạm vi
 - Phí ship / điểm thưởng / voucher (Phase 21, R3) · bài viết / banner / trang tĩnh (Phase 20, R3).
 - Webhook revalidate tức thời (backend P17 — chỉ kéo vào R1 nếu khách không chấp nhận trễ 5–10 phút).
+
+---
+
+## Phase 25 — Thông báo (quả chuông) · WebSocket · Xác nhận chuyển khoản realtime ⏳ **CHỜ backend P18** — **Release R3.5** *(thêm 2026-10-17, làm trước Phase 21b)*
+
+> **Vì sao có phase này.** Backend P18 thêm 3 thứ admin phải dùng: ① thông báo theo quyền + chi nhánh
+> (đơn hàng, phiếu kho/kiểm kê, ca, đổi/trả, cảnh báo vận hành) đẩy realtime qua WebSocket; ② webhook
+> nhận tiền chuyển khoản ⇒ màn POS/chi tiết đơn **tự chuyển "đã thanh toán"**, không cần nhân viên tự
+> soi app ngân hàng; ③ mã đơn rút gọn `{CN}-{yyMMdd}-{seq4}` (nội dung chuyển khoản = mã đơn bỏ gạch).
+> **Contract đầy đủ** (destination, envelope, API, quy tắc người nhận, bảng `type`/`refType`): backend
+> `35.1.eloria-backend/PLAN-storefront.md` mục **Phase 18** + handoff `fe-handoff-phase18-admin.md` khi
+> backend đóng phase — không chép lại ở đây.
+
+### Điều kiện tiên quyết
+- Backend **18a** đóng (mục 1, 5) · **18b** đóng (mục 2–4) · **18c** đóng (mục 5–6) — làm được theo
+  từng cụm khi từng phần backend xong. Có handoff; **đo API thật trước khi code** (skill `update-api-doc`).
+- **Dependency mới** `@stomp/stompjs` — **user duyệt trước** (mục C). Kết nối WebSocket thuần tới
+  `/v1.0/websocket/websocket` (endpoint SockJS của backend có sẵn đường raw WS) ⇒ không cần `sockjs-client`.
+  Không thêm thư viện infinite scroll: dùng `IntersectionObserver`.
+- Chốt với user (U1–U3 cuối phase) trước khi dựng mục 4.
+
+### Việc cần làm
+1. **Lớp realtime dùng chung** — `src/lib/realtime-client.ts` + `contexts/RealtimeProvider.tsx`:
+   - 1 kết nối/tab, chỉ mở khi AuthProvider đã có access token; đóng khi logout / `notifySessionExpired`.
+   - CONNECT gửi header `Authorization: Bearer <token>` lấy từ `token-store`; api-client refresh token
+     ⇒ **reconnect bằng token mới** (token cũ hết hạn thì backend cắt phiên — luật W8 backend).
+   - Heartbeat 10s; reconnect backoff 1s → 30s; resubscribe tự động; phát sự kiện `reconnected` để màn
+     đang mở **đồng bộ lại bằng REST** (event lúc mất kết nối không được gửi lại).
+   - API cho component: `useRealtime(destination, handler)` (tự unsubscribe khi unmount).
+   - Event mang `version` (+ `ts`): bỏ event có `version` cũ hơn dữ liệu đang hiển thị (event có thể tới sai thứ tự).
+   - Luật repo: chỉ `realtime-client` được mở WebSocket (tương tự luật "chỉ api-client được gọi HTTP") — ghi thêm vào CONVENTIONS.
+   - `vite.config.ts`: thêm `ws: true` cho proxy `/v1.0` ở cả `server` lẫn `preview`. `nginx.conf` đã có
+     `Upgrade`/`Connection` — kiểm `proxy_read_timeout` (mặc định 60s, heartbeat 10s giữ phiên sống).
+2. **API + type thông báo** — `src/api/notification.ts`: `list({ cursor, size: 10 })` (keyset — trả
+   `{ data, nextCursor, hasMore }`, **không** dùng `page` như các bảng khác) · `unseenCount()` ·
+   `markAllSeen()` · `markRead(id)`. `types/notification.ts`: `ENotificationType`, `ENotificationRefType`,
+   `NotificationRes`, envelope WS. Đồng bộ 100% api-docs.
+3. **Quả chuông** ở `components/shell/app-topbar.tsx` (thay icon `Bell` placeholder) — đúng contract 7 bước của backend:
+   - Badge: `0` ẩn · `1–99` hiện số · `100` hiện `99+` (backend trả tối đa 100).
+   - Nhận WS `/user/queue/notifications` ⇒ `badge = min(badge + 1, 100)`, **không gọi lại count**; danh sách đã tải ⇒ chèn lên đầu (bỏ trùng theo `id`).
+   - Bấm chuông ⇒ mở popover, gọi `markAllSeen` (badge về 0 ngay), tải trang đầu 10 dòng.
+   - Đang mở mà có thông báo mới ⇒ badge +1 **và** chèn lên đầu danh sách.
+   - Cuộn tới cuối ⇒ tải tiếp bằng `nextCursor` tới khi `hasMore = false`; skeleton lúc tải, trạng thái rỗng.
+   - Dòng `isRead = false` được highlight; thời gian tương đối (`date-fns`, locale theo i18n).
+   - Reconnect / tab được focus lại ⇒ gọi lại `unseenCount` (+ tải lại trang đầu nếu popover đang mở).
+   - Nội dung thông báo **chỉ tiếng Việt** do server render (backend Q8) — UI EN vẫn hiện nội dung VI; chuỗi khung UI vẫn đủ VI/EN.
+4. **Mở chứng từ từ thông báo** — bấm dòng ⇒ `markRead(id)` (bỏ highlight ngay) ⇒ điều hướng:
+
+   | `refType` | Đích |
+   |---|---|
+   | `ORDER` | `/orders?open={refId}` → `OrderDetailDialog` |
+   | `WAREHOUSE_LEDGER` | `/inventory?tab=ledger&open={refId}` |
+   | `WORK_SHIFT` | `/shifts?open={refId}` |
+   | `RETURN_REQUEST` | `/returns?open={refId}` |
+   | `STOCK_ITEM` | `/inventory?tab=stock&sku={refId}` |
+   | `PAYMENT_TRANSACTION` | không có màn đích (chưa có API đối soát) ⇒ popup đọc nội dung thông báo |
+
+   Các trang list hiện **chưa hỗ trợ deep-link** (`useSearchParams` mới chỉ dùng ở `ResetPassword`) ⇒ thêm
+   hook dùng chung `useOpenFromQuery('open')`: mở dialog chi tiết theo param, xoá param khi đóng; đang
+   đứng đúng trang thì chỉ mở dialog, không tải lại list. Chứng từ trả 403/404 (đã ngoài phạm vi chi
+   nhánh) ⇒ toast, không trang trắng.
+5. **Thanh toán chuyển khoản realtime** — `pages/orders/components/qr-payment-dialog.tsx` (dùng ở POS và chi tiết đơn):
+   - Mở dialog ⇒ subscribe `/topic/admin/order/{orderId}`; nhận `ORDER_PAYMENT_CONFIRMED` ⇒ hiện "Đã nhận tiền" rồi đi tiếp **y hệt** luồng sau khi bấm xác nhận tay (POS: đơn COMPLETED, in hoá đơn…); đóng dialog ⇒ unsubscribe.
+   - Nút **"Xác nhận đã nhận tiền" giữ nguyên** làm fallback khi webhook không chạy. Bấm đúng lúc webhook vừa về ⇒ backend trả lỗi đã thu (`ORDER_ALREADY_PAID`) ⇒ coi là **thành công**, không báo lỗi.
+   - Reconnect trong lúc dialog mở ⇒ GET đơn 1 lần (bù event lỡ).
+   - Sửa comment đầu file ("Backend chưa có webhook banking…") cho đúng luồng mới.
+   - `OrderDetailDialog` subscribe cùng topic, nhận `ORDER_STATUS_CHANGED` ⇒ làm mới dữ liệu đơn. Danh sách đơn **không** subscribe (đã có chuông).
+6. **Mã đơn & mã chi nhánh**:
+   - Mã đơn mới `{CN}-{yyMMdd}-{seq4}` (vd `Q1-261017-0001`, online `ONL-261017-0001`); đơn cũ giữ mã cũ — rà chỗ FE giả định định dạng cũ (comment ví dụ `HK-20260811-233611-0001` trong type chi nhánh, placeholder ô tìm mã đơn…).
+   - Form chi nhánh (`branch-form-dialog.tsx`) hiện **chưa có ô mã** dù type có `code` ⇒ thêm ô mã tuỳ chọn, zod: tối đa **6** ký tự `A-Z0-9` (tự viết hoa); bỏ trống ⇒ backend tự suy từ tên. Map lỗi validate backend.
+
+### Output mong muốn (DoD)
+- 2 tài khoản trên 2 trình duyệt (STAFF CN A, SUPER_ADMIN): khách đặt đơn online ở storefront ⇒ SA (và
+  ADMIN) thấy badge +1 tức thời, STAFF không; bấm chuông ⇒ 0; có thông báo mới khi đang mở ⇒ +1 và lên đầu danh sách.
+- Có >100 thông báo chưa thấy ⇒ `99+`; cuộn hết danh sách không trùng / không nhảy dòng khi có thông báo mới chen vào giữa.
+- Bấm thông báo của từng `refType` ⇒ mở đúng dialog chứng từ, hết highlight; chứng từ ngoài phạm vi ⇒ toast.
+- POS hiện QR ⇒ bắn webhook giả bằng cURL ở backend ⇒ dialog tự chuyển thành công không cần bấm;
+  webhook không chạy ⇒ bấm tay vẫn chạy; bấm tay đúng lúc webhook về ⇒ không báo lỗi.
+- Logout ⇒ kết nối WS đóng (DevTools › Network › WS); token được refresh ⇒ kết nối lại bằng token mới;
+  tắt backend 30s rồi bật ⇒ tự kết nối lại + badge đồng bộ lại.
+- Proxy WS chạy ở `npm run dev` và `npm run preview`; trên nginx thật kết nối sống >5 phút không rớt.
+- Form chi nhánh chặn mã >6 ký tự / ký tự lạ; đơn mới hiện mã định dạng mới.
+- i18n VI/EN cân key; `types/` đồng bộ api-docs; lint + build sạch; bàn giao (skill `handoff`).
+
+### Chốt với user trước khi code
+- **U1** — Bấm thông báo: luôn **điều hướng tới trang list + mở dialog chi tiết** (đề xuất — chi tiết chứng từ
+  vốn đã là dialog trên trang list) hay **mở popup ngay tại chỗ** không rời trang hiện tại?
+- **U2** — Có cần âm thanh / thông báo hệ điều hành (Notification API) khi có thông báo mới? *Đề xuất: không ở v1.*
+- **U3** — Duyệt dependency `@stomp/stompjs` ở mục C.
+
+### Ngoài phạm vi
+- Màn quản lý `api_key` (backend không mở REST — DB admin thêm tay) · màn đối soát `payment_transaction`
+  (chưa có API; cần thì dùng skill `request-backend`) · thông báo cho khách hàng — khách nhận **email** khi
+  đơn đổi trạng thái do backend tự gửi (P18d), admin **không** cần thêm nút/màn nào (thao tác duyệt/giao/hủy
+  như cũ là đủ để kích hoạt mail).
