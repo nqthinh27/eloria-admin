@@ -111,6 +111,6 @@ export const shiftApi = {
      * của nhân viên khác).
      */
     getById(id: string, signal?: AbortSignal) {
-        return apiClient.get<WorkShift>(`/work-shift/${id}`, { signal })
+        return apiClient.get<WorkShift>(`/work-shift/${encodeURIComponent(id)}`, { signal })
     },
 }

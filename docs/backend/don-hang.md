@@ -49,7 +49,8 @@
 - `customerId` khi tạo đơn được validate: không tồn tại / không phải CUSTOMER ⇒ `error.user.notExisted`.
   Gắn được **khách bất kỳ**, không giới hạn chi nhánh (Phase 3b).
 - Mã đơn: prefix = `branch.code`, fallback viết tắt tên 5 ký tự (`Chi nhánh Trung tâm` → `CNTT-…`),
-  dạng `HK-20260811-233611-0001`.
+  dạng `HK-20260811-233611-0001`. **Từ Phase 18c** đơn tạo mới là `{CN}-{yyMMdd}-{seq4}` (vd `Q1-261018-0001`,
+  online `ONL-261018-0001`), đơn cũ giữ mã cũ ⇒ FE chỉ hiển thị, không parse; `branch.code` tối đa 6 ký tự `A-Z0-9`.
 
 ## Vòng đời tách theo kênh — đơn POS TỰ HOÀN THÀNH khi thu tiền (2026-08-22, đo thật 8/8 kịch bản)
 

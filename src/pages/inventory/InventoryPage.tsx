@@ -9,6 +9,9 @@ import { PillTabs } from '@/components/pill-tabs'
 import { StockTab } from './StockTab'
 import { LedgerTab } from './LedgerTab'
 import { StockCountTab } from './StockCountTab'
+import { useOpenFromQuery } from '@/hooks/use-open-from-query'
+
+const INVENTORY_TABS = ['stock', 'ledger', 'count']
 
 /**
  * Màn "Kho hàng & Tồn kho" — 3 tab pill theo `13-kho-hang-ton-kho.png`,
@@ -25,6 +28,18 @@ import { StockCountTab } from './StockCountTab'
 export default function InventoryPage() {
     const { t } = useTranslation('inventory')
     const [tab, setTab] = useState('stock')
+
+    /*
+     * Deep-link từ quả chuông (`?tab=ledger|stock`): chuyển tab. `consume: false` vì `open`/`sku` do
+     * tab đích tự xử lý (và tự xoá) khi mount — hai hook cùng xoá param sẽ ghi đè nhau.
+     */
+    useOpenFromQuery(
+        'tab',
+        (value) => {
+            if (INVENTORY_TABS.includes(value)) setTab(value)
+        },
+        { consume: false, pattern: /^(stock|ledger|count)$/ },
+    )
     const [ledgerFormOpen, setLedgerFormOpen] = useState(false)
 
     return (

@@ -18,6 +18,7 @@ import {
 } from '@/types/order'
 import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
+import { useOpenFromQuery } from '@/hooks/use-open-from-query'
 import { toSearchSort, useTableState } from '@/hooks/use-table-state'
 import { PageHeader } from '@/components/page-header'
 import { PillTabs } from '@/components/pill-tabs'
@@ -105,6 +106,14 @@ export default function OrderListPage() {
     const [paymentFilter, setPaymentFilter] = useState<string>(ALL)
     const [branchFilter, setBranchFilter] = useState<string>(ALL)
     const [detailId, setDetailId] = useState<string | null>(null)
+
+    /*
+     * Deep-link từ quả chuông (`/orders?open=<id>`). Kiểm tra đơn còn xem được (đổi chi nhánh ⇒ 403/404,
+     * api-client đã toast) TRƯỚC khi mở dialog, để không bật một dialog trống.
+     */
+    useOpenFromQuery('open', (id) => {
+        orderApi.getById(id).then(() => setDetailId(id), () => undefined)
+    })
 
     /*
       Đếm đơn treo **trong trang đang xem**. Backend không có filter "đơn treo" nên không lọc được

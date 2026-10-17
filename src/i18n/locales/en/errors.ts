@@ -82,6 +82,11 @@ export default {
             notExisted: 'Banner does not exist.',
             periodInvalid: 'The effective start date must be before the end date.',
         },
+        // Notifications / bell (Phase 18b)
+        notification: {
+            notExisted: 'This notification no longer exists.',
+            cursorInvalid: 'Could not load the next page of notifications, please try again.',
+        },
         color: {
             notExisted: 'Color does not exist.',
             codeExisted: 'Color code already exists.',

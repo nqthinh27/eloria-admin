@@ -60,6 +60,7 @@ export default defineConfig(({ mode }) => {
         "/v1.0": {
           target: proxyTarget,
           changeOrigin: true,
+          ws: true, // WebSocket STOMP `/v1.0/websocket/websocket` (Phase 25)
         },
       },
     },
@@ -70,6 +71,7 @@ export default defineConfig(({ mode }) => {
         "/v1.0": {
           target: proxyTarget,
           changeOrigin: true,
+          ws: true, // WebSocket STOMP `/v1.0/websocket/websocket` (Phase 25)
         },
       },
     },

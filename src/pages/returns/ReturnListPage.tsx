@@ -9,6 +9,7 @@ import { formatDateTime, formatVnd } from '@/lib/format'
 import { toastError, toastSuccess } from '@/lib/toast'
 import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
+import { useOpenFromQuery } from '@/hooks/use-open-from-query'
 import { toSearchSort, useTableState } from '@/hooks/use-table-state'
 import { ERole } from '@/types/common'
 import { EReturnStatus, EReturnType, type ReturnRequest } from '@/types/return'
@@ -128,12 +129,12 @@ export default function ReturnListPage() {
         [],
     )
 
-    const openDetail = useCallback(async (row: ReturnRequest) => {
+    const openDetail = useCallback(async (id: string) => {
         setDetail(null)
         setDetailOpen(true)
         setDetailLoading(true)
         try {
-            setDetail(await returnApi.getById(row.id))
+            setDetail(await returnApi.getById(id))
         } catch (err) {
             toastError(err)
             setDetailOpen(false)
@@ -141,6 +142,9 @@ export default function ReturnListPage() {
             setDetailLoading(false)
         }
     }, [])
+
+    // Deep-link từ quả chuông (`/returns?open=<id>`); lỗi 403/404 đã được toast, dialog tự đóng.
+    useOpenFromQuery('open', (id) => void openDetail(id))
 
     const columns = useMemo<ColumnDef<ReturnRequest, unknown>[]>(
         () => [
@@ -343,7 +347,7 @@ export default function ReturnListPage() {
                                 className="size-8 shrink-0"
                                 title={t('common:action.detail')}
                                 aria-label={t('common:action.detail')}
-                                onClick={() => void openDetail(request)}
+                                onClick={() => void openDetail(request.id)}
                             >
                                 <Eye className="size-4" />
                             </Button>

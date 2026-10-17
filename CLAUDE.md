@@ -90,7 +90,8 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
 - **Thứ tự release (replan 2026-10-13)**: R1 catalog (Phase 22·23·24) → **R2 = Phase 20 Content/CMS**
   (làm **trước** luồng khách hàng; chờ backend P15 + quyết định D1–D11 ở `35.3.eloria-client/PLAN.md`)
   → R3 mua hàng (Phase 21a + Phase 20 mục 4) → **R3.5 thông báo + WebSocket + xác nhận chuyển khoản
-  realtime (Phase 25, chờ backend P18 — thêm 2026-10-17)** → R4 điểm (Phase 21b). Chi tiết: PLAN mục Replan 2026-10-13.
+  realtime (Phase 25 — xong FE 2026-10-18; còn xử lý review + test + đo nginx/ADMIN)** → R4 điểm (Phase 21b). Chi tiết: PLAN mục Replan 2026-10-13.
+  **Phase 26 (đăng nhập OTP Zalo + menu tài khoản, thêm 2026-10-18)** chờ backend P19 — đổi contract login (BREAKING, deploy cùng backend).
 - Backend: **118 path** (đo 2026-09-13 — **lỗi thời**: đã thêm P13/13.1–13.4, đếm lại khi chạy `update-api-doc`). Việc chờ backend còn mở: **BE2 · BE3 · BE4 · BE6 · BE7 · BE10 ·
   BE11 · BE12 · BE13 · BE14 · BE18 · BE21 · BE27 · BE30 · BE35 · BE36 · BE37** — chi tiết ở PLAN mục B.
 - Dòng thời gian phase & khảo sát backend: [docs/history.md](docs/history.md) ·

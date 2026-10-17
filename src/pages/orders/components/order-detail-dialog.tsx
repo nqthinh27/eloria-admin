@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Loader2, Printer, ShoppingCart } from 'lucide-react'
 
 import { orderApi } from '@/api/order'
+import { useOrderRealtime } from '@/hooks/use-order-realtime'
 import { formatDateTime, formatVnd } from '@/lib/format'
+import { isPaymentRaceError } from '@/lib/order-realtime'
 import { toastError, toastSuccess } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import {
@@ -135,6 +137,42 @@ export function OrderDetailDialog({
     }, [orderId, load])
 
     /**
+     * Tải lại **ngầm** khi có tin WebSocket / sau khi nối lại: không đụng `loading`, không xoá đơn
+     * đang hiển thị nếu GET lỗi, không ghi đè ghi chú đang gõ dở.
+     */
+    const refreshQuietly = useCallback(async () => {
+        if (!orderId) return
+        try {
+            const result = await orderApi.getById(orderId)
+            setOrder(result)
+            if (!noteEditing) setNote(result.description ?? '')
+        } catch {
+            // api-client đã toast; giữ nguyên dữ liệu cũ.
+        }
+    }, [orderId, noteEditing])
+
+    /*
+     * Đơn đổi trạng thái / thanh toán ở nơi khác (webhook ngân hàng, người khác thao tác) ⇒ làm
+     * mới. Bỏ qua tin trùng với những gì đang hiển thị (vd chính mình vừa thao tác xong).
+     */
+    useOrderRealtime(
+        orderId,
+        (_type, data) => {
+            if (
+                order &&
+                order.status === data.status &&
+                order.paymentStatus === data.paymentStatus
+            ) {
+                return
+            }
+            void refreshQuietly()
+            onChanged?.()
+        },
+        () => void refreshQuietly(),
+        order?.version,
+    )
+
+    /**
      * Chạy một bước vòng đời rồi đồng bộ lại state.
      *
      * Khi lỗi vẫn **tải lại đơn**: race trên cùng một đơn có thể trả 409 — hoặc **500** do
@@ -195,7 +233,19 @@ export function OrderDetailDialog({
             if (!order) return
             setPaying(true)
             try {
-                await runAction(() => orderApi.pay(order.id, { method }), 'order.toast.paid')
+                await runAction(async () => {
+                    try {
+                        // Tự xử lý `alreadyPaid` nên tắt toast mặc định (xem dưới).
+                        return await orderApi.pay(order.id, { method }, { skipErrorToast: true })
+                    } catch (error) {
+                        // Thua cuộc đua với webhook ngân hàng ⇒ đọc lại đơn; đã PAID thì là thành công.
+                        if (isPaymentRaceError(error)) {
+                            const fresh = await orderApi.getById(order.id)
+                            if (fresh.paymentStatus === EPaymentStatus.PAID) return fresh
+                        }
+                        throw error
+                    }
+                }, 'order.toast.paid')
                 closeDialog()
             } catch {
                 // `runAction` đã tải lại đơn — trạng thái thật hiển thị ngay.
@@ -817,6 +867,13 @@ export function OrderDetailDialog({
                 onConfirm={() =>
                     submitPayment(EPaymentMethod.QR, () => setQrOpen(false))
                 }
+                onPaid={() => {
+                    // Tiền về qua webhook: tải lại đơn, đóng dialog QR, báo thành công.
+                    void refreshQuietly()
+                    onChanged?.()
+                    setQrOpen(false)
+                    toastSuccess('order.toast.paid', { ns: 'order' })
+                }}
             />
         </>
     )

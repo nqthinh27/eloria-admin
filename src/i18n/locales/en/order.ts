@@ -270,10 +270,12 @@ export default {
             unavailableHint:
                 'No receiving bank account has been configured. Contact an administrator to set one up.',
             retry: 'Try again',
-            /** Staff reconcile against the banking app themselves — no webhook yet. */
+            /** Fallback when the webhook is down — staff reconcile against the banking app, then press. */
             confirm: 'Confirm payment received',
             confirmHint:
                 'Only press this once the money has landed in the account. It marks the order as paid.',
+            received: 'Payment received',
+            receivedHint: 'The bank transfer has arrived. Finishing the order…',
         },
 
         /* ================= Lifecycle actions ================= */

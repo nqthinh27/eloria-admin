@@ -12,6 +12,8 @@ import { useBranch } from '@/hooks/use-branch'
 import { useCart } from '@/hooks/use-cart'
 import { ERole } from '@/types/common'
 import type { Invoice, Order } from '@/types/order'
+import { useOrderRealtime } from '@/hooks/use-order-realtime'
+import { isPaidEvent, isPaymentRaceError } from '@/lib/order-realtime'
 import { EPaymentMethod, EPaymentStatus } from '@/types/order'
 import { EShiftStatus, type WorkShift } from '@/types/shift'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -273,6 +275,48 @@ function PosScreen() {
      * Thu lỗi ⇒ **không đóng modal**: đơn vẫn tồn tại và tồn đã trừ, tuyệt đối không tạo lại đơn —
      * chỉ bật cờ cảnh báo để nhân viên biết vào màn Đơn hàng thu lại.
      */
+    /**
+     * Đọc lại đơn sau khi tiền về qua webhook (hoặc thua cuộc đua với webhook). Trả `true` khi đơn
+     * đã `PAID` và màn đã cập nhật như luồng thu thành công; `false` nếu chưa/không đọc được.
+     */
+    const syncPaidOrder = useCallback(async (): Promise<boolean> => {
+        if (!created) return false
+        // Đã đồng bộ rồi (vd tin WS tới trước, `onPaid` của QR dialog tới sau) ⇒ không báo lần hai.
+        if (created.paymentStatus === EPaymentStatus.PAID) return true
+        try {
+            const fresh = await orderApi.getById(created.id)
+            if (fresh.paymentStatus !== EPaymentStatus.PAID) return false
+            setCreated(fresh)
+            setPaymentFailed(false)
+            setQrOpen(false)
+            toastSuccess('order.toast.paid', { ns: 'order' })
+            return true
+        } catch {
+            return false
+        }
+    }, [created])
+
+    /*
+     * Modal phiếu mở với đơn chưa thu: khách chuyển khoản lúc QR dialog đã đóng (hoặc chưa mở) ⇒ vẫn
+     * phải tự chuyển "đã thanh toán". Khi QR dialog đang mở thì chính nó nghe topic (còn hiện
+     * "Đã nhận tiền"), nên ở đây tạm không nghe để tránh xử lý hai lần.
+     */
+    useOrderRealtime(
+        created && created.paymentStatus !== EPaymentStatus.PAID && !qrOpen ? created.id : null,
+        (_type, data) => {
+            if (isPaidEvent(data)) void syncPaidOrder()
+        },
+        () => void syncPaidOrder(),
+        created?.version,
+    )
+
+    const handleQrPaid = useCallback(async () => {
+        if (await syncPaidOrder()) return
+        // Tin WS báo đã trả nhưng GET chưa thấy PAID/lỗi mạng — để nhân viên xác nhận tay.
+        setQrOpen(false)
+        setPaymentFailed(true)
+    }, [syncPaidOrder])
+
     const payCreatedOrder = useCallback(async () => {
         if (!created) return
         setConfirming(true)
@@ -281,28 +325,36 @@ function PosScreen() {
              * `OrderResDTO.paymentMethod` khai nullable; đơn POS luôn được tạo kèm hình thức nên
              * thực tế không rỗng — fallback `CASH` chỉ để khỏi gửi `null` lên backend.
              */
-            const paid = await orderApi.pay(created.id, {
-                method: created.paymentMethod ?? EPaymentMethod.CASH,
-            })
+            const paid = await orderApi.pay(
+                created.id,
+                { method: created.paymentMethod ?? EPaymentMethod.CASH },
+                // Tự xử lý `alreadyPaid` (webhook về trước khi bấm tay) nên tắt toast mặc định.
+                { skipErrorToast: true },
+            )
             toastSuccess('order.toast.paid', { ns: 'order' })
             setCreated(paid)
             setPaymentFailed(false)
             setQrOpen(false)
         } catch (error) {
+            if (isPaymentRaceError(error)) {
+                // Có thể webhook vừa thu xong — đọc lại đơn; PAID ⇒ thành công, chưa ⇒ báo lỗi.
+                if (await syncPaidOrder()) return
+            }
             toastError(error)
             setPaymentFailed(true)
             setQrOpen(false)
         } finally {
             setConfirming(false)
         }
-    }, [created])
+    }, [created, syncPaidOrder])
 
     /**
      * Ghi nhận **đã thu tiền** từ modal phiếu.
      *
      * ⚠️ Hình thức `QR` phải qua **dialog quét mã** trước (user chốt 2026-08-21): khách cần nhìn
-     * thấy mã để chuyển khoản, nhân viên tự đối chiếu app ngân hàng rồi mới xác nhận
-     * (backend chưa có webhook banking). Các hình thức còn lại thu thẳng.
+     * thấy mã để chuyển khoản. Tiền về qua webhook ⇒ dialog tự chuyển thành công (WebSocket);
+     * webhook không chạy ⇒ nhân viên đối chiếu app ngân hàng rồi bấm xác nhận tay. Các hình thức
+     * còn lại thu thẳng.
      */
     const handleConfirmPayment = useCallback(() => {
         if (!created) return
@@ -507,6 +559,7 @@ function PosScreen() {
                 amount={created?.totalAmount ?? 0}
                 confirming={confirming}
                 onConfirm={() => void payCreatedOrder()}
+                onPaid={handleQrPaid}
             />
 
             {/*

@@ -51,7 +51,7 @@ export const warehouseLedgerApi = {
 
     /** `[STAFF] GET /warehouse-ledger/{id}` — bản duy nhất cần gọi để lấy `lines` đầy đủ. */
     getById(id: string, signal?: AbortSignal) {
-        return apiClient.get<WarehouseLedger>(`/warehouse-ledger/${id}`, { signal })
+        return apiClient.get<WarehouseLedger>(`/warehouse-ledger/${encodeURIComponent(id)}`, { signal })
     },
 
     /** `[STAFF] POST /warehouse-ledger` — phiếu tạo ra ở `DRAFT`, **chưa** tác động tồn. */

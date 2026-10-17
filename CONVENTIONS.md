@@ -138,6 +138,10 @@ Rule chung cho **mọi** entity có cột `status` (chốt với user 2026-08-09
     | **Network / timeout / abort** | Toast lỗi kết nối; abort do huỷ request thì bỏ qua im lặng |
   - Cho caller **opt-out** xử lý mặc định (`skipErrorToast`…) khi màn cần tự xử lý.
 - Không lặp lại logic 401/403/500 ở từng màn. Cần hành vi khác ⇒ mở rộng client dùng chung.
+- **WebSocket** (Phase 25): chỉ `src/lib/realtime-client.ts` được mở kết nối (STOMP, token ở header `CONNECT`,
+  không đưa lên URL); component/hook nghiệp vụ nhận tin qua `useRealtime(destination, handler)` /
+  `useRealtimeResync(cb)` (`hooks/use-realtime.ts`), **cấm** `new WebSocket` / `new Client` ở nơi khác.
+  Tin xảy ra lúc mất kết nối không được replay ⇒ màn đang mở phải đồng bộ lại bằng REST khi `resync`.
 
 ---
 

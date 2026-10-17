@@ -57,6 +57,12 @@ export class ApiError extends Error {
         this.serverMessage = params.serverMessage ?? null
     }
 
+    /**
+     * Đã hiện toast cho lỗi này rồi (interceptor của api-client). `unwrap` đọc cờ này để không toast
+     * lần hai khi cùng một `ApiError` đi tiếp qua nó.
+     */
+    toasted = false
+
     /** Có nên im lặng bỏ qua không (request bị huỷ chủ động). */
     get isSilent(): boolean {
         return this.kind === ApiErrorKind.CANCELED

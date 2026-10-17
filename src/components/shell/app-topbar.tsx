@@ -1,10 +1,12 @@
-import { Bell, Menu } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { AccountMenu } from './account-menu'
 import { AppBreadcrumb } from './app-breadcrumb'
 import { LanguageSwitcher } from './language-switcher'
+import { ErrorBoundary } from '@/components/error-boundary'
+import { NotificationBell, NotificationBellFallback } from './notification-bell'
 
 /**
  * Top bar theo mockup: breadcrumb bên trái; bên phải là bộ chuyển ngôn ngữ,
@@ -40,15 +42,11 @@ export function AppTopbar({ onOpenMobileMenu }: { onOpenMobileMenu: () => void }
             <div className="flex shrink-0 items-center gap-2">
                 <LanguageSwitcher />
 
-                {/* Thông báo — chưa có API, Phase sau nối dữ liệu thật. */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative size-9"
-                    title={t('shell.notifications')}>
-                    <Bell className="size-4.5" />
-                    <span className="sr-only">{t('shell.notifications')}</span>
-                </Button>
+                {/* Thông báo thật — WebSocket + API /notification (Phase 25). */}
+                {/* Lỗi render trong chuông không được kéo sập cả khung ứng dụng. */}
+                <ErrorBoundary fallback={<NotificationBellFallback />}>
+                    <NotificationBell />
+                </ErrorBoundary>
 
                 <AccountMenu />
             </div>

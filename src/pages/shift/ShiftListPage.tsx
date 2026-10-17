@@ -10,6 +10,7 @@ import { toastError, toastSuccess } from '@/lib/toast'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
+import { useOpenFromQuery } from '@/hooks/use-open-from-query'
 import { toSearchSort, useTableState } from '@/hooks/use-table-state'
 import { ERole } from '@/types/common'
 import { EShiftStatus, type WorkShift } from '@/types/shift'
@@ -98,6 +99,11 @@ export default function ShiftListPage() {
 
     const [detailShift, setDetailShift] = useState<WorkShift | null>(null)
     const [rejectShift, setRejectShift] = useState<WorkShift | null>(null)
+
+    // Deep-link từ quả chuông (`/shifts?open=<id>`); ca ngoài phạm vi ⇒ 403/404 đã toast, không mở gì.
+    useOpenFromQuery('open', (id) => {
+        shiftApi.getById(id).then(setDetailShift, () => undefined)
+    })
     const [closeShift, setCloseShift] = useState<WorkShift | null>(null)
     /** Chống bấm "Duyệt ca" hai lần khi request đang bay (menu tự đóng ngay sau khi bấm). */
     const approvingRef = useRef(false)

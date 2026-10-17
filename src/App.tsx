@@ -7,6 +7,7 @@ import { NewVersionPopup } from '@/components/new-version-popup'
 import { Toaster } from '@/components/ui/sonner'
 import { runtimeEnv } from '@/config/runtime-env'
 import { AuthProvider } from '@/contexts/AuthProvider'
+import { RealtimeProvider } from '@/contexts/RealtimeProvider'
 import Router from './Router'
 
 const AppRouter = runtimeEnv('VITE_USE_HASH_ROUTE') === 'true' ? HashRouter : BrowserRouter
@@ -15,7 +16,9 @@ export default function App() {
     return (
         <AppRouter>
             <AuthProvider>
-                <Router />
+                <RealtimeProvider>
+                    <Router />
+                </RealtimeProvider>
             </AuthProvider>
             <Toaster position="top-right" richColors closeButton />
             <NewVersionPopup />

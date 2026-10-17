@@ -129,6 +129,28 @@ function runRefreshOnce(): Promise<string> {
     return refreshPromise
 }
 
+/**
+ * Làm mới access token cho `realtime-client` trước khi nối lại WebSocket (dùng chung single-flight
+ * với interceptor 401 ⇒ không sinh hai lần `/refresh`).
+ *
+ * - `ok` — token mới đã nằm trong `token-store`.
+ * - `expired` — `/refresh` trả 401/403 ⇒ hết phiên thật: dọn phiên như interceptor (`notifySessionExpired`).
+ * - `unreachable` — lỗi mạng/5xx ⇒ cứ thử lại sau, KHÔNG đá người dùng ra.
+ */
+export async function renewAccessToken(): Promise<'ok' | 'expired' | 'unreachable'> {
+    try {
+        await runRefreshOnce()
+        return 'ok'
+    } catch (error) {
+        const status = axios.isAxiosError(error) ? error.response?.status : undefined
+        if (status === 401 || status === 403) {
+            notifySessionExpired()
+            return 'expired'
+        }
+        return 'unreachable'
+    }
+}
+
 function isNoRetryPath(url: string | undefined): boolean {
     if (!url) return false
     return NO_RETRY_PATHS.some((path) => url.includes(path))
@@ -254,6 +276,7 @@ http.interceptors.response.use(
 
         if (!config?.skipErrorToast && !apiError.isSilent) {
             toastError(apiError)
+            apiError.toasted = true
         }
 
         return Promise.reject(apiError)
@@ -285,8 +308,9 @@ async function unwrap<T>(config: RequestConfig): Promise<T> {
         const apiError = toApiError(error)
 
         // Lỗi ném ra từ chính khối trên chưa đi qua interceptor ⇒ tự toast ở đây.
-        if (error instanceof ApiError && !config.skipErrorToast && !apiError.isSilent) {
+        if (error instanceof ApiError && !config.skipErrorToast && !apiError.isSilent && !apiError.toasted) {
             toastError(apiError)
+            apiError.toasted = true
         }
 
         throw apiError

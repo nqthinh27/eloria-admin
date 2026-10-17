@@ -6,6 +6,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { stockItemApi } from '@/api/inventory'
 import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
+import { UUID_PATTERN, useOpenFromQuery } from '@/hooks/use-open-from-query'
 import { toSearchSort, useTableState } from '@/hooks/use-table-state'
 import { hasRole } from '@/config/roles'
 import { cn } from '@/lib/utils'
@@ -41,6 +42,8 @@ function stockTone(item: StockItem) {
     return 'normal' as const
 }
 
+const SKU_PARAM_PATTERN = /^[A-Za-z0-9._-]{1,64}$/
+
 /** Tab "Tồn kho" theo `13-kho-hang-ton-kho.png` — `POST /stock-item/search`. */
 export function StockTab() {
     const { t } = useTranslation(['inventory', 'common'])
@@ -70,6 +73,25 @@ export function StockTab() {
      */
     const table = useTableState([], { total: false, minStock: false })
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
+
+    /*
+     * Deep-link từ quả chuông cho thông báo tồn thấp (`/inventory?tab=stock&sku=<mã SKU>&branch=<id>`):
+     * lọc bảng theo đúng mã SKU. `branch` chỉ có tác dụng với SUPER_ADMIN (role thấp hơn bị backend
+     * ép về chi nhánh mình).
+     */
+    useOpenFromQuery(
+        'sku',
+        (sku, params) => {
+            const branchParam = params.get('branch')
+            const branchId = branchParam && UUID_PATTERN.test(branchParam) ? branchParam : null
+            table.resetTo(() => {
+                setKeyword(sku)
+                if (canFilterBranch && branchId) setBranchFilter(branchId)
+            })
+        },
+        // SKU là mã (không phải uuid): chỉ nhận chữ/số/`._-`, tối đa 64 ký tự.
+        { extraParams: ['branch'], pattern: SKU_PARAM_PATTERN },
+    )
 
     useEffect(() => {
         if (!canFilterBranch) return

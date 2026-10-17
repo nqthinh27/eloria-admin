@@ -19,6 +19,7 @@ import {
 import {
     Form,
     FormControl,
+    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -30,6 +31,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const buildSchema = (t: (key: string) => string) =>
     z.object({
         name: z.string().trim().min(1, t('staff.branch.form.validation.nameRequired')),
+        /*
+         * Mã chi nhánh — tuỳ chọn, tối đa 6 ký tự chữ + số (backend `@Size(max=6)` +
+         * `^[A-Za-z0-9]*$`; là prefix mã đơn `{CN}-{yyMMdd}-{seq4}`). Ô nhập tự viết hoa khi gõ, nhưng
+         * mã cũ chữ thường nạp từ backend vẫn hợp lệ (không buộc đổi mã mới sửa được chi nhánh).
+         * Bỏ trống ⇒ backend tự suy từ tên.
+         */
+        code: z
+            .string()
+            .trim()
+            .max(6, t('staff.branch.form.validation.codeLength'))
+            .regex(/^[A-Za-z0-9]*$/, t('staff.branch.form.validation.codePattern'))
+            .optional(),
         phoneNumber: z.string().optional(),
         address: z.string().optional(),
         provinceCode: z.string().optional(),
@@ -73,6 +86,7 @@ export function BranchFormDialog({
         resolver: zodResolver(schema),
         defaultValues: {
             name: '',
+            code: '',
             phoneNumber: '',
             address: '',
             provinceCode: undefined,
@@ -100,6 +114,7 @@ export function BranchFormDialog({
         if (!open) return
         form.reset({
             name: branch?.name ?? '',
+            code: branch?.code ?? '',
             phoneNumber: branch?.phoneNumber ?? '',
             address: branch?.address ?? '',
             provinceCode: branch?.provinceCode ?? undefined,
@@ -134,6 +149,7 @@ export function BranchFormDialog({
     const onSubmit = async (values: BranchFormValues) => {
         const payload: BranchPayload = {
             name: values.name,
+            code: values.code || undefined,
             phoneNumber: values.phoneNumber || undefined,
             address: values.address || undefined,
             provinceCode: values.provinceCode,
@@ -174,6 +190,28 @@ export function BranchFormDialog({
                                     <FormControl>
                                         <Input {...field} placeholder={t('staff.branch.form.namePlaceholder')} />
                                     </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="code"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('staff.branch.form.code')}</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            maxLength={12}
+                                            autoCapitalize="characters"
+                                            placeholder={t('staff.branch.form.codePlaceholder')}
+                                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>{t('staff.branch.form.codeHint')}</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}

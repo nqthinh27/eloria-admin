@@ -33,7 +33,7 @@ export const returnApi = {
 
     /** `[STAFF] GET /return/{id}` — bản duy nhất có `lines`. */
     getById(id: string, signal?: AbortSignal) {
-        return apiClient.get<ReturnRequest>(`/return/${id}`, { signal })
+        return apiClient.get<ReturnRequest>(`/return/${encodeURIComponent(id)}`, { signal })
     },
 
     /** `[STAFF] POST /return` — tạo yêu cầu **trả hàng** (có hoặc không hoá đơn) → `PENDING_APPROVAL`. */

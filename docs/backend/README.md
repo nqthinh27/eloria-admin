@@ -198,7 +198,7 @@ SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
 | Cấu hình hệ thống | `SUPER_ADMIN` | `GET /system-config` · `PUT /system-config` |
 
 - `BranchResDTO.code` — mã CN (vd `HK`), nhận ở `POST/PUT /branch`; dùng làm **prefix mã đơn/mã ca**
-  (`HK-20260811-...`). Không có `code` ⇒ backend fallback **viết tắt tên** (`Chi nhánh Trung tâm` → `CNTT-…`).
+  (`HK-20260811-...`; đơn mới từ P18c: `{CN}-{yyMMdd}-{seq4}`). Tối đa 6 ký tự `A-Z0-9`. Không có `code` ⇒ backend fallback **viết tắt tên** (`Chi nhánh Trung tâm` → `CNTT-…`).
 - `BranchResDTO.staffCount` — số nhân viên chi nhánh, dùng cho màn Chi nhánh thay vì tự đếm.
 - **`system-config` (đo thật 2026-10-11)**: `GET` ⇒ mảng phẳng `{key, value, description}` (3 khoá seed:
   `store.branch_id` · `store.shipping_fee` · `store.freeship_threshold`); `PUT` body = **mảng** `{key, value}`,

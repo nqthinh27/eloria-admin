@@ -34,7 +34,7 @@ function escapeHtml(value: string): string {
  *           HÓA ĐƠN MUA HÀNG          ← fix cứng, IN HOA in đậm, căn giữa
  *  ─────────────────────────────────
  *  Thời gian : 14:32:07 21/08/2026    ← từ đây căn TRÁI
- *  Mã đơn    : HK-20260821-143207-0007
+ *  Mã đơn    : Q1-261018-0007
  *  Khách hàng: Chị Lan
  *  SĐT       : 0901234567
  *  Nhân viên : Nguyễn Văn A

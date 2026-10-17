@@ -164,7 +164,13 @@ export type OrderPayment = {
  */
 export type Order = {
     id: string
-    /** Mã đơn hiển thị cho người dùng, ví dụ `HK-20260815-013254-0007`. */
+    /**
+     * Phiên bản bản ghi (`@Version` — backend thêm vào `OrderResDTO` 2026-10-18). Cùng thang với
+     * `version` trong tin WebSocket của đơn ⇒ tin có `version` **nhỏ hơn** bản đang hiển thị là tin
+     * cũ, bỏ qua. Có thể vắng ở bản backend cũ ⇒ coi là chưa biết.
+     */
+    version?: number | null
+    /** Mã đơn hiển thị cho người dùng, đơn mới `Q1-261018-0001` / `ONL-261018-0001` (từ Phase 18c), đơn cũ `HK-20260815-013254-0007`. FE không parse mã — chỉ hiển thị. */
     orderCode: string
     /** Vòng đời đơn — **khác** `status` (0/1 của bản ghi). */
     status: EOrderStatus
@@ -508,3 +514,22 @@ export type BranchAvailability = {
     selectable: boolean
     lines: BranchAvailabilityLine[]
 }
+
+/**
+ * `data` của tin WebSocket `/topic/admin/order/{orderId}` (backend Phase 18c) — envelope
+ * `{ type, data, ts }` với `type` là `ORDER_PAYMENT_CONFIRMED` | `ORDER_STATUS_CHANGED`.
+ *
+ * `version` tăng đơn điệu theo đơn: tin có `version` nhỏ hơn bản đã thấy là tin tới trễ ⇒ bỏ.
+ * `source` chỉ có ở tin thanh toán: `WEBHOOK` (tiền về tự động) | `MANUAL` (nhân viên bấm xác nhận).
+ */
+export type OrderRealtimeData = {
+    orderId: string
+    orderCode: string
+    status: EOrderStatus
+    paymentStatus: EPaymentStatus
+    version: number
+    amount?: number
+    source?: 'WEBHOOK' | 'MANUAL'
+}
+
+export type OrderRealtimeType = 'ORDER_PAYMENT_CONFIRMED' | 'ORDER_STATUS_CHANGED'

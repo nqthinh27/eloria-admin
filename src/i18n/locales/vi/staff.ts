@@ -131,6 +131,10 @@ export default {
                 editTitle: 'Sửa chi nhánh',
                 name: 'Tên chi nhánh',
                 namePlaceholder: 'Nhập tên chi nhánh',
+                code: 'Mã chi nhánh',
+                codePlaceholder: 'Vd: Q1, HK',
+                codeHint:
+                    'Tuỳ chọn, tối đa 6 ký tự A–Z/0–9 — dùng làm tiền tố mã đơn (vd Q1-261018-0001). Bỏ trống: hệ thống tự suy từ tên.',
                 phoneNumber: 'Số điện thoại',
                 phoneNumberPlaceholder: 'Nhập số điện thoại',
                 address: 'Địa chỉ',
@@ -146,6 +150,8 @@ export default {
                 submitting: 'Đang lưu…',
                 validation: {
                     nameRequired: 'Vui lòng nhập tên chi nhánh',
+                    codeLength: 'Mã chi nhánh tối đa 6 ký tự',
+                    codePattern: 'Mã chi nhánh chỉ gồm chữ A–Z và số 0–9, không dấu, không khoảng trắng',
                 },
             },
 

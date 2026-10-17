@@ -271,10 +271,12 @@ export default {
             unavailableHint:
                 'Hệ thống chưa cấu hình tài khoản ngân hàng nhận tiền. Liên hệ quản trị viên để thiết lập.',
             retry: 'Thử lại',
-            /** Nhân viên tự đối chiếu app ngân hàng rồi mới bấm — chưa có webhook tự động. */
+            /** Đường dự phòng khi webhook không chạy — nhân viên tự đối chiếu app ngân hàng rồi mới bấm. */
             confirm: 'Xác nhận đã nhận tiền',
             confirmHint:
                 'Chỉ bấm sau khi đã kiểm tra tiền về tài khoản. Thao tác này ghi nhận đơn đã thanh toán.',
+            received: 'Đã nhận tiền',
+            receivedHint: 'Hệ thống đã nhận chuyển khoản của khách. Đang hoàn tất đơn…',
         },
 
         /* ================= Hành động vòng đời ================= */

@@ -43,7 +43,8 @@ export const bankAccountApi = {
      * ⚠️ **Trả PNG thuần, KHÔNG bọc `BaseResponse`** ⇒ bắt buộc dùng `getBlob()`;
      * `apiClient.get()` sẽ hỏng vì `unwrap` đọc `body.code` (cùng pattern `GET /sku/{id}/barcode`).
      *
-     * Số tiền và nội dung chuyển khoản (`ELORIA` + mã đơn) đã **nhúng cứng trong ảnh** — FE
+     * Số tiền và nội dung chuyển khoản (`ELORIA` + mã đơn bỏ gạch, vd `ELORIAONL2610180002` — PO chốt
+     * lại 2026-10-18 để vendor lọc giao dịch theo tiền tố) đã **nhúng cứng trong ảnh** — FE
      * không tự dựng, cũng không sửa được. Đơn bị **branch data-scope**: STAFF/ADMIN chỉ lấy được
      * QR của đơn thuộc chi nhánh mình (`error.forbidden`).
      *

@@ -131,6 +131,10 @@ export default {
                 editTitle: 'Edit branch',
                 name: 'Branch name',
                 namePlaceholder: 'Enter branch name',
+                code: 'Branch code',
+                codePlaceholder: 'e.g. Q1, HK',
+                codeHint:
+                    'Optional, up to 6 characters A–Z/0–9 — used as the order code prefix (e.g. Q1-261018-0001). Leave empty to derive it from the name.',
                 phoneNumber: 'Phone number',
                 phoneNumberPlaceholder: 'Enter phone number',
                 address: 'Address',
@@ -146,6 +150,8 @@ export default {
                 submitting: 'Saving…',
                 validation: {
                     nameRequired: 'Please enter a branch name',
+                    codeLength: 'Branch code is at most 6 characters',
+                    codePattern: 'Branch code may only contain letters A–Z and digits 0–9 (no accents or spaces)',
                 },
             },
 

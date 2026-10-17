@@ -1,4 +1,4 @@
-import { apiClient, search } from '@/lib/api-client'
+import { apiClient, search, type ApiRequestOptions } from '@/lib/api-client'
 import type { BaseListRes, SearchPagination } from '@/types/common'
 import type {
     BranchAvailability,
@@ -56,7 +56,7 @@ export const orderApi = {
 
     /** `[STAFF] GET /order/{id}` — bản duy nhất có `lines` + `payments` đầy đủ. */
     getById(id: string, signal?: AbortSignal) {
-        return apiClient.get<Order>(`/order/${id}`, { signal })
+        return apiClient.get<Order>(`/order/${encodeURIComponent(id)}`, { signal })
     },
 
     /**
@@ -135,13 +135,17 @@ export const orderApi = {
      * Hai lần thu đồng thời ⇒ `409 error.dataIntegrity.violation` (unique constraint) — xử lý
      * như `error.concurrentModification`: tải lại đơn.
      *
+     * ⚠️ Webhook ngân hàng (Phase 18c) có thể thu đơn QR **ngay trước** khi nhân viên bấm xác nhận
+     * tay ⇒ `error.order.alreadyPaid` lúc này là **thành công** (xem `isPaymentRaceError`, kèm `409 concurrentModification`). Caller
+     * muốn tự xử lý truyền `{ skipErrorToast: true }`.
+     *
      * ⚠️ **Đơn `POS`: bước này tự đóng luôn đơn** (backend 2026-08-22) — bán tại quầy không có
      * khâu giao vận nên `payment` đặt thẳng `status = COMPLETED` + `completedDate`, bỏ qua
      * `confirm`/`pack`/`ship`. ⇒ **Không gọi `complete()` sau `pay()` với đơn POS**, sẽ nhận
      * `error.order.invalidStatus`. Đơn `ONLINE` không bị ảnh hưởng, vẫn đi hết vòng đời.
      */
-    pay(id: string, payload: OrderPaymentReq) {
-        return apiClient.post<Order>(`/order/${id}/payment`, payload)
+    pay(id: string, payload: OrderPaymentReq, options?: ApiRequestOptions) {
+        return apiClient.post<Order>(`/order/${id}/payment`, payload, options)
     },
 
     /**

@@ -6,8 +6,10 @@ export type Branch = {
     name: string
     /**
      * Mã chi nhánh (vd `HK`) — **field mới 2026-08-11**, nullable (chi nhánh cũ chưa có).
-     * Backend dùng làm **prefix mã đơn hàng**: `HK-20260811-233611-0001`. Chi nhánh không có `code`
-     * thì fallback về **viết tắt tên** (`Chi nhánh Trung tâm` → `CNTT-…`) — đã đo thật cả 2 case.
+     * Backend dùng làm **prefix mã đơn hàng**. Đơn tạo từ Phase 18c: `{CN}-{yyMMdd}-{seq4}`, vd
+     * `Q1-261018-0001` (đơn online: `ONL-261018-0001`); đơn cũ giữ mã cũ `HK-20260811-233611-0001`.
+     * Chi nhánh không có `code` thì fallback về **viết tắt tên** (`Chi nhánh Trung tâm` → `CNTT-…`).
+     * Tối đa 6 ký tự `A-Z0-9` (backend validate).
      */
     code: string | null
     phoneNumber: string | null

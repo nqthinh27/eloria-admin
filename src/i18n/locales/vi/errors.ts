@@ -99,6 +99,11 @@ export default {
             notExisted: 'Banner không tồn tại.',
             periodInvalid: 'Ngày bắt đầu hiệu lực phải trước ngày kết thúc.',
         },
+        // Thông báo / quả chuông (Phase 18b)
+        notification: {
+            notExisted: 'Thông báo này không còn nữa.',
+            cursorInvalid: 'Không tải được trang thông báo tiếp theo, vui lòng thử lại.',
+        },
         color: {
             notExisted: 'Màu không tồn tại.',
             codeExisted: 'Mã màu đã tồn tại.',

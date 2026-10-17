@@ -4,6 +4,7 @@ import { Check, Eye, FileStack, MoreHorizontal, Send, X } from 'lucide-react'
 import type { ColumnDef } from '@tanstack/react-table'
 
 import { warehouseLedgerApi } from '@/api/inventory'
+import { useOpenFromQuery } from '@/hooks/use-open-from-query'
 import { useAuth } from '@/hooks/use-auth'
 import { useBranch } from '@/hooks/use-branch'
 import { toSearchSort, useTableState } from '@/hooks/use-table-state'
@@ -93,6 +94,11 @@ export function LedgerTab({ formOpen, onFormOpenChange }: LedgerTabProps) {
     const { page, setPage, sorting, setSorting, columnVisibility, setColumnVisibility } = table
 
     const [detailId, setDetailId] = useState<string | null>(null)
+
+    // Deep-link từ quả chuông (`/inventory?tab=ledger&open=<id>`); kiểm tra xem được trước khi mở dialog.
+    useOpenFromQuery('open', (id) => {
+        warehouseLedgerApi.getById(id).then(() => setDetailId(id), () => undefined)
+    })
     const [submitLedger, setSubmitLedger] = useState<WarehouseLedger | null>(null)
     const [approveLedger, setApproveLedger] = useState<WarehouseLedger | null>(null)
     const [rejectLedger, setRejectLedger] = useState<WarehouseLedger | null>(null)

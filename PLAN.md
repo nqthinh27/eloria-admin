@@ -6,6 +6,8 @@
 
 Trạng thái: **Phase 0 → 12 đã xong** (0–1: 2026-08-06 · 2–3: 2026-08-07 · 4–7: 2026-08-08 · 8–9: 2026-08-09 · 10: 2026-08-10 · 11: 2026-08-18 · **12: 2026-08-29**). **Phase 14 (Khuyến mại) đã xong 2026-09-07.** **Phase 16 (Hoàn thiện) đã xong 2026-09-08.** **Phase 15 (Ca làm việc) đã xong 2026-09-09.** **Phase 13 (Đổi/Trả) đã xong 2026-09-12** ⇒ **trọn 17 phase hoàn thành**; chỉ còn Phase 17 (Mở rộng Khuyến mại) là phần mở rộng tuỳ chọn.
 
+> **Ảnh chụp tiến độ 2026-10-17:** Phase 0–16 ✅ · 18, 19 ✅ · 22, 23 ✅ · 24 🟡 (xong FE, còn kiểm deploy 2 lần + ảnh thật) · 20 ✅ (xong FE, còn kiểm tay upload/RBAC) · 21a 🟡 (còn mục ④) · **25 ⏳ chờ backend P18** (backend mới có commit *plan* `f545513`, chưa có entity `notification`/`api_key`/endpoint chuông — đo 2026-10-17) · 21b ⏳ chờ backend P16 · 17 ⏸️. Việc FE duy nhất làm được ngay: **Phase 21a mục ④**. Bám backend P14.1 (S35/S36) đã xong 2026-10-15.
+
 > ## ✅ **PHASE 11 ĐÃ XONG (2026-08-18)** — Bán hàng & Đơn hàng
 >
 > 3 màn chạy trên **API thật**: `/pos` (mockup `03`) · `/orders` (mockup `04`) · dialog chi tiết
@@ -276,12 +278,13 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **17** | ⏸️ Mở rộng Khuyến mại — **để cuối**; không chặn gì. *(Màn Quản lý giá: **không làm**, user chốt 2026-09-08)* | 14 | *(chưa có mockup)* |
 | **18** | ✅ **Quản lý Tài khoản ngân hàng** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 11 | *(không mockup — pattern `04`/`07`)* |
 | **19** | ✅ **Quản lý Thương hiệu** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 9 | *(không mockup — pattern `04`/`07`)* |
-| **20** | ⏳ **CMS: Bài viết & Banner** — *chờ backend P15* · **R3** (mục 4 → R2) | 5, 22 | *(không mockup — pattern `04`/`07`)* |
-| **21** | ⏳ **Cấu hình Storefront, Điểm thưởng & Voucher công khai** — *chờ backend P13+P16* · mục ④ **R2**, còn lại **R3** (`store.branch_id` kéo lên Phase 24) | 5, 8, 14 | *(không mockup)* |
+| **20** | ✅ **CMS: Bài viết & Banner** — **xong FE 2026-10-13** (R2); mục 4 `customerNote` xong 2026-10-14; còn kiểm tay upload ảnh/RBAC | 5, 22 | *(không mockup — pattern `04`/`07`)* |
+| **21** | 🟡 **Cấu hình Storefront & Điểm thưởng** *(voucher công khai đã gỡ)* — **21a** (R3): mục 5 xong 2026-10-14, **mục ④ biên bản luồng đơn store chưa làm** · **21b** (R4, `loyalty.*` + CRM điểm): *chờ backend P16* (`store.branch_id` đã ở Phase 24) | 5, 8, 14 | *(không mockup)* |
 | **22** | ✅ **(2026-10-11 — xong FE + upload BE31/P13.3; unit test ghi nợ)** **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
 | **23** | ✅ **(2026-10-11 — xong FE + upload; đã đo storefront/INACTIVE/XOÁ/RBAC ADMIN)** **Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định** | 5, 9, 22 | *(không mockup — pattern `12`)* |
 | **24** | 🟡 **(R1 — 2026-10-11 xong FE; còn kiểm deploy 2 lần + ảnh thật)** **CMS catalog sẵn sàng release: cấu hình chi nhánh online · SEO SP/danh mục · "Xem trên web" · chống bản cũ** | 9, 22, 23 | *(không mockup)* |
-| **25** | ⏳ **(R3.5 — thêm 2026-10-17, chờ backend P18)** **Thông báo (quả chuông) · kết nối WebSocket · xác nhận chuyển khoản realtime · mã đơn mới** | 3, 11, 15, 10, 13 | *(không mockup — popover chuông theo shadcn)* |
+| **25** | 🟡 **(R3.5 — xong FE 2026-10-18, bám backend P18a–c; còn xử lý review M1–M4 + test + kiểm nginx/ADMIN/âm thanh)** **Thông báo (quả chuông) · kết nối WebSocket · xác nhận chuyển khoản realtime · mã đơn mới** | 3, 11, 15, 10, 13 | *(không mockup — popover chuông theo shadcn)* |
+| **26** | ⏳ **(thêm 2026-10-18, chờ backend P19)** **Đăng nhập 2 bước OTP Zalo · menu tài khoản: hồ sơ · đổi mật khẩu (⇒ đăng xuất) · đổi Zalo nhận OTP · gỡ Zalo nhân viên** | 2, 3, 7 | `00-dang-nhap.png` (+1 hàng OTP); modal theo shadcn |
 
 > ### ✅ **CẬP NHẬT 2026-09-07 — Phase 14 ĐÃ MỞ KHOÁ; 13 & 15 vẫn chờ backend**
 >
@@ -3476,7 +3479,9 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 25 — Thông báo (quả chuông) · WebSocket · Xác nhận chuyển khoản realtime ⏳ **CHỜ backend P18** — **Release R3.5** *(thêm 2026-10-17, làm trước Phase 21b)*
+## Phase 25 — Thông báo (quả chuông) · WebSocket · Xác nhận chuyển khoản realtime 🟡 **xong FE 2026-10-18** — **Release R3.5** *(thêm 2026-10-17, làm trước Phase 21b)*
+
+> **Báo cáo cuối phiên 2026-10-18:** mục 1–6 xong FE, bám contract thật `35.1.eloria-backend/docs/api/fe-handoff-phase18-admin.md`. Chi tiết file/quyết định/đã đo/chưa đo: [handoff](docs/handoff/phien-2026-10-18-phase-25-thong-bao-websocket.md). **U1** (điều hướng + mở dialog) · **U2** (có âm báo nhẹ, theo PO 2026-10-18) · **U3** (dependency stomp) đã chốt. Điểm lệch so với kế hoạch: deep-link `?open=` thêm cho đơn/ca/phiếu kho/đổi trả/tồn kho; `useOrderRealtime` luôn đọc lại REST thay vì áp dụng tin trực tiếp (`OrderResDTO` chưa có `version`). **Review:** 4 MEDIUM (M1–M4) + L2/L4/L8/L9 đã sửa 2026-10-18 (PO duyệt; xem phụ lục handoff). **Còn mở:** LOW L1/L3/L5/L6/L7 · test framework · đo nginx/preview/ADMIN/âm thanh/form chi nhánh.
 
 > **Vì sao có phase này.** Backend P18 thêm 3 thứ admin phải dùng: ① thông báo theo quyền + chi nhánh
 > (đơn hàng, phiếu kho/kiểm kê, ca, đổi/trả, cảnh báo vận hành) đẩy realtime qua WebSocket; ② webhook
@@ -3568,3 +3573,99 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
   (chưa có API; cần thì dùng skill `request-backend`) · thông báo cho khách hàng — khách nhận **email** khi
   đơn đổi trạng thái do backend tự gửi (P18d), admin **không** cần thêm nút/màn nào (thao tác duyệt/giao/hủy
   như cũ là đủ để kích hoạt mail).
+
+---
+
+## Phase 26 — Đăng nhập 2 bước bằng OTP Zalo · Menu tài khoản (hồ sơ · đổi mật khẩu · đổi Zalo) ⏳ **CHỜ backend P19** *(thêm 2026-10-18 — đã chốt với PO 2026-10-18, xem "Đã chốt" cuối phase)*
+
+> **Vì sao có phase này.** PO yêu cầu (2026-10-18): ① đăng nhập web quản trị **bắt buộc OTP** gửi qua
+> **Zalo Bot** (OTP 60s, gửi lại sau 30s — cả 2 con số **lấy từ response**, backend đổi được trong
+> `application.yml`); tài khoản chưa liên kết Zalo được hướng dẫn quét QR + nhắn `/otp <mã>` cho bot;
+> ② menu avatar có **Tài khoản của tôi · Đổi mật khẩu · Đổi Zalo nhận OTP** (đều là modal tại trang);
+> ③ đổi mật khẩu thành công ⇒ **đăng xuất** (backend thu hồi mọi phiên theo `last_changed_password`).
+> **Contract đầy đủ**: backend `35.1.eloria-backend/PLAN-storefront.md` mục **Phase 19** (19a–19c) + handoff
+> `fe-handoff-phase19-admin.md` khi backend đóng — không chép lại ở đây.
+
+### Điều kiện tiên quyết
+- Backend **19a** đóng (mục 4) · **19b** đóng (mục 1–2) · **19c** đóng (mục 3, 5–7). Backend làm 19b–19c **sau 18c**
+  (P19 Q9) ⇒ mục 4 làm được sớm nhất. Có handoff; **đo API thật trước khi code** (skill `update-api-doc`).
+- **Không có cờ tắt MFA** ở bất kỳ môi trường nào (backend Q8) ⇒ dev cũng phải nhận OTP thật: backend local cần
+  webhook Zalo chạy qua tunnel của PO (hướng dẫn ở `35.1.eloria-backend/README.md`) và tài khoản test liên kết Zalo của người test.
+- **Ảnh QR do PO cung cấp** (Q7a) ⇒ đặt `public/zalo-bot-qr.png`; link bot lấy từ response (`botLink`) — không thêm
+  thư viện QR, backend không sinh QR. Đếm ngược dùng `setInterval` trong hook dùng chung. **Không dependency mới.**
+- **BREAKING**: `/authenticate` bắt buộc `otp` ⇒ **deploy cùng đợt** với backend 19b (bản FE cũ không đăng nhập được).
+
+### Hiện trạng (khảo sát 2026-10-18)
+- `pages/auth/Login.tsx`: form 2 ô (username, password) + zod, lỗi inline `formError` (đã hiển thị chung `error.login.fail` từ 2026-10-01 — comment `i18n/locales/vi/errors.ts:33`).
+- `api/auth.ts`: `login` luôn `rememberMe: true`, `skipErrorToast` + `skipAuthRefresh`; `changePassword` **có API nhưng chưa có UI**.
+- `components/shell/account-menu.tsx`: dropdown chỉ có **Đăng xuất**.
+- `contexts/AuthProvider.tsx`: `{status, user, login, logout}` — chưa có cách cập nhật `user` sau khi sửa hồ sơ.
+- `types/common.ts` `SysUser`: chưa có `zaloLinked`.
+- Nhân viên: `pages/staff/StaffListPage.tsx` + `components/reset-password-dialog.tsx` (tiền lệ hành động ADMIN trên 1 nhân viên).
+
+### Việc cần làm
+1. **API + type đăng nhập 2 bước** — `src/api/auth.ts`, `src/types/auth.ts`:
+   - `sendLoginOtp({username, password})` ⇒ `SendOtpRes = { status: 'OTP_SENT' | 'ZALO_LINK_REQUIRED', resendAfterSeconds, otpTtlSeconds?, linkCode?, linkTtlSeconds?, botLink? }` — `skipErrorToast`, `skipAuthRefresh`.
+   - Backend khoá tài khoản 5 lần sai/15 phút nhưng **vẫn trả lỗi chung** ⇒ FE không có trạng thái/thông báo "bị khoá"; câu gợi ý cố định dưới form: "Quên mật khẩu? Đặt lại mật khẩu cũng mở khoá tài khoản nếu bạn nhập sai nhiều lần."
+   - `login({username, password, otp})` (vẫn ép `rememberMe: true`); `AuthProvider.login` nhận thêm `otp`.
+   - 429 (rate-limit) ⇒ câu "Thao tác quá nhanh, thử lại sau ít phút" (không lộ gì về tài khoản).
+2. **Màn đăng nhập** — `pages/auth/Login.tsx` (mockup `00-dang-nhap.png`, thêm 1 hàng):
+   - Hàng **Mã OTP**: **1 ô gõ liền** (U1) `Input` (`inputMode="numeric"`, `autoComplete="one-time-code"`, chỉ nhận số, dài theo `otp-length`, dán được) + nút **Gửi OTP** bên phải cùng hàng.
+   - Bấm **Gửi OTP** ⇒ validate username + password (zod, chưa cần OTP) ⇒ `sendLoginOtp`:
+     - `OTP_SENT` ⇒ thông báo trung tính *"Đã gửi OTP qua Zalo. Mã có hiệu lực {otpTtlSeconds} giây."*; nút chuyển **"Gửi lại (30s)"** đếm ngược theo `resendAfterSeconds`, disable tới 0; focus ô OTP.
+     - `ZALO_LINK_REQUIRED` ⇒ mở **modal Liên kết Zalo** (2b); nút cũng vào đếm ngược.
+     - Nhánh sai username/mật khẩu backend **trả y hệt** `OTP_SENT` ⇒ FE **không** suy luận gì, không hiện lỗi ở bước này.
+   - **Đăng nhập** ⇒ zod bắt đủ 3 ô ⇒ `login` ⇒ mọi lỗi nghiệp vụ hiện **một câu**: *"Thông tin đăng nhập hoặc OTP không chính xác"* (map subKey `error.login.fail`). Lỗi ⇒ xoá ô OTP, giữ username/password.
+   - Sửa username/password sau khi đã gửi ⇒ **không** reset đếm ngược (cooldown backend tính theo username+IP — tránh UI hứa gửi được khi backend còn chặn).
+   - Hook dùng chung `hooks/use-countdown.ts` (`start(seconds)`, `remaining`, tự dọn interval) — dùng lại ở 2b và mục 6.
+   - **2b. Modal Liên kết Zalo** — `pages/auth/components/zalo-link-dialog.tsx` (khối nội dung tách `components/zalo/zalo-link-instructions.tsx` để mục 6 dùng lại):
+     - Ảnh QR tĩnh `public/zalo-bot-qr.png` do PO cấp (`alt` có nghĩa) + link **Mở Zalo Bot** (`botLink`, `target="_blank" rel="noopener noreferrer"`) — trên mobile ưu tiên bấm link.
+     - "Nhắn cho bot nội dung:" + khối `/otp ABCD2345` (mono, chữ to) + nút **Sao chép** (`navigator.clipboard`, fallback chọn text).
+     - Đếm ngược `linkTtlSeconds` ("Mã hết hạn sau 0:59"); hết hạn ⇒ làm mờ mã + nút **Lấy mã mới** (gọi lại `sendLoginOtp`, tuân `resendAfterSeconds`).
+     - "Bot sẽ gửi OTP qua Zalo ⇒ nhập vào ô Mã OTP" + nút **Tôi đã nhận OTP** ⇒ đóng modal, focus ô OTP. **Không poll** backend (OTP tới qua Zalo).
+     - Ghi chú: nhắn sai/hết hạn ⇒ bot trả "Mã kích hoạt không hợp lệ, vui lòng F5 lại trang"; nhắn nội dung khác ⇒ bot trả danh sách cú pháp hỗ trợ.
+3. **Menu avatar** — `components/shell/account-menu.tsx`: thêm 3 mục (lucide `UserRound`, `KeyRound`, `MessageCircle`) trên **Đăng xuất**; state mở modal nằm ở `AccountMenu`, modal render **ngoài** `DropdownMenuContent` (không bị đóng theo dropdown). Modal đặt ở `components/shell/account/`.
+4. **Modal Đổi mật khẩu** — `components/shell/account/change-password-dialog.tsx`:
+   - 3 ô: mật khẩu hiện tại · mới · nhập lại (zod: khớp nhau, khác mật khẩu cũ, độ dài theo `PasswordChangeDTO` backend); nút hiện/ẩn.
+   - `authApi.changePassword` thành công ⇒ toast *"Đổi mật khẩu thành công, vui lòng đăng nhập lại"* ⇒ `logout()` ⇒ `/login`. Không cố giữ phiên (backend 19a thu hồi mọi token, kể cả token hiện tại).
+   - Sai mật khẩu hiện tại ⇒ lỗi tại ô (subKey `PASSWORD_INCORRECT`), không đóng modal.
+   - Xác nhận `lib/api-client.ts`: tab/thiết bị khác cùng tài khoản nhận 401 ⇒ refresh 401 ⇒ `notifySessionExpired` ⇒ `/login` (đường sẵn có).
+5. **Modal Tài khoản của tôi** — `components/shell/account/profile-dialog.tsx` — mở ở **chế độ xem**, bấm **Sửa** mới thành form (U3):
+   - Xem: avatar, họ tên, username, email, SĐT, vai trò, chi nhánh, ngày sinh, giới tính, trạng thái Zalo (**Đã liên kết / Chưa liên kết** — không bao giờ có chat id, backend không trả).
+   - **Sửa**: `fullName`, `phoneNumber`, `dob` (`DateInput`), `gender`, `description`; username/email/role/chi nhánh **chỉ đọc** (backend Q5). `PUT /account/me`; trùng SĐT báo tại ô.
+   - Avatar: dùng lại `POST /sys-user/update-avatar` + chuẩn ảnh avatar sẵn có (`components/image/`).
+   - Lưu xong ⇒ cập nhật `user` trong `AuthProvider` (thêm `refreshUser()`/`updateUser` vào context) ⇒ topbar đổi tên/ảnh ngay.
+6. **Modal Đổi Zalo nhận OTP** — `components/shell/account/zalo-relink-dialog.tsx` (theo backend Q3):
+   - Bước 1 xác thực lại (backend Q3 đã chốt): mật khẩu hiện tại + OTP (nút **Gửi OTP** về Zalo hiện tại — `POST /account/zalo/relink/send-otp`, đếm ngược) ⇒ `POST /account/zalo/relink` ⇒ sai ⇒ **một** câu lỗi chung (`error.account.reauthFail`); sai nhiều lần cũng bị backend khoá như login. Tài khoản chưa liên kết ⇒ ẩn ô OTP.
+   - Bước 2: `ZaloLinkInstructions` (QR tĩnh + `botLink` + mã + sao chép + đếm ngược).
+   - Ghi chú trong modal: 1 Zalo có thể nhận OTP cho nhiều tài khoản (backend Q2) — không cần báo trùng.
+   - Poll `GET /account/zalo/status` 3s/lần **chỉ khi modal mở** và mã còn hạn; `zaloLinkedAt` mới hơn lúc bắt đầu ⇒ "Đã đổi tài khoản Zalo nhận OTP" ⇒ cập nhật `user` ⇒ đóng; hết hạn ⇒ dừng poll + **Lấy mã mới** (về bước 1).
+7. **Gỡ liên kết Zalo nhân viên** (ADMIN+) — `pages/staff/`: hành động **Gỡ liên kết Zalo** cạnh **Đặt lại mật khẩu** (`Can` + `confirm-dialog`; ẩn khi `zaloLinked = false`) ⇒ `POST /staff/{id}/reset-zalo`; nhãn trạng thái Zalo trong `staff-detail-modal.tsx`. Mục đích: nhân viên mất Zalo vẫn đăng nhập lại được bằng luồng QR.
+8. **Type + i18n**:
+   - `types/common.ts` `SysUser`: `zaloLinked: boolean`, `zaloLinkedAt: string | null` (đồng bộ api-docs, không bịa field).
+   - `i18n/locales/{vi,en}/auth.ts` (OTP, modal Zalo, đổi MK) · `menu.ts` (3 mục) · `staff.ts` (gỡ Zalo) · `errors.ts` (câu mới cho `error.login.fail`, thêm `error.account.reauthFail`, 429).
+9. **Tài liệu**: `docs/backend/README.md` mục tài khoản test (đăng nhập luôn cần OTP thật qua Zalo — không có cờ tắt; mỗi người test liên kết Zalo của mình, nhiều tài khoản test dùng chung 1 Zalo được) + domain doc auth ở `docs/backend/`. Skill `update-api-doc`: đăng nhập tay bằng OTP rồi dùng access token cho phiên đo.
+
+### Output mong muốn (DoD)
+- Tài khoản **đã liên kết**: user/MK ⇒ Gửi OTP ⇒ Zalo nhận mã ⇒ nhập ⇒ vào app; nút gửi lại khoá đúng thời gian backend trả.
+- Tài khoản **chưa liên kết**: Gửi OTP ⇒ modal QR + mã; quét QR, nhắn `/otp <mã>` ⇒ bot trả OTP ⇒ đăng nhập được; để mã hết hạn ⇒ **Lấy mã mới** chạy.
+- **Sai username / sai MK**: Gửi OTP hiện **đúng câu trung tính** như ca đúng (chụp 2 ca không khác chữ nào); nhập OTP bất kỳ ⇒ "Thông tin đăng nhập hoặc OTP không chính xác". Đúng user/MK + sai OTP ⇒ **cùng câu đó**.
+- DevTools › Network: không response nào chứa chat id Zalo; mã liên kết chỉ có trong response `ZALO_LINK_REQUIRED`.
+- Sai 5 lần liên tiếp ⇒ lần sau dù đúng vẫn hiện câu lỗi chung, không hiện chữ "khoá"; đặt lại mật khẩu qua email ⇒ đăng nhập được ngay.
+- Menu avatar đủ 4 mục; 3 modal mở/đóng tại trang, không đổi route.
+- Đổi mật khẩu ⇒ toast + về `/login`; tab thứ 2 đang mở ⇒ request kế tiếp bị đẩy về `/login`.
+- Sửa hồ sơ ⇒ topbar cập nhật ngay; trùng SĐT báo tại ô.
+- Đổi Zalo sang tài khoản Zalo khác ⇒ modal tự báo thành công; lần đăng nhập sau OTP về Zalo mới.
+- ADMIN gỡ Zalo nhân viên ⇒ nhân viên đăng nhập thấy modal QR; STAFF không thấy nút.
+- i18n VI/EN cân key; `types/` đồng bộ api-docs; lint + build sạch; bàn giao (skill `handoff`).
+
+### Đã chốt với user (2026-10-18)
+- **U1** — Ô OTP: **1 ô gõ liền**.
+- **U2** — Ảnh QR: **PO cung cấp ảnh tĩnh** ⇒ `public/zalo-bot-qr.png` (cần nhận file từ PO trước khi làm mục 2b).
+- **U3** — "Tài khoản của tôi": **xem trước, bấm Sửa**.
+- Kéo theo từ backend P19: lỗi đăng nhập luôn chung kể cả khi bị khoá (Q1) · 1 Zalo dùng chung nhiều tài khoản (Q2) ·
+  đổi Zalo cần MK + OTP Zalo cũ (Q3) · không đổi email (Q5) · không có cờ tắt MFA (Q8).
+
+### Ngoài phạm vi
+- Đổi email/username trong "Tài khoản của tôi" (backend Q5) · quản lý thiết bị/phiên đăng nhập · "ghi nhớ thiết bị,
+  không hỏi OTP 30 ngày" · OTP dự phòng qua SMS/email (mất Zalo ⇒ ADMIN gỡ liên kết, mục 7).
