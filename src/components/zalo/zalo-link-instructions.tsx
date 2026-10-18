@@ -65,7 +65,7 @@ export function ZaloLinkInstructions({
                     </p>
                 ) : (
                     <img
-                        src={`${baseUrl}/zalo-bot-qr.png`}
+                        src={`${baseUrl.replace(/\/+$/, '')}/zalo-bot-qr.png`}
                         alt={t('auth.zaloLink.qrAlt')}
                         className="size-44 rounded-lg border bg-white object-contain p-2"
                         onError={() => setQrFailed(true)}
