@@ -237,6 +237,8 @@ export default {
             printInvoice: 'Print invoice',
             /** Printing is blocked until payment is collected — decided 2026-08-21. */
             printBlocked: 'Order is unpaid — collect payment before printing the invoice',
+            transferUnpaidHint:
+                'Bank-transfer order, not paid yet. Once the money arrives (automatically via the bank, or when you confirm it) the order is marked paid and only then does the customer get an email/notification.',
         },
 
         /* ================= Printed invoice (`printInvoice`) ================= */
@@ -289,6 +291,8 @@ export default {
             complete: 'Complete order',
             cancel: 'Cancel order',
             pay: 'Collect payment',
+            /** Unpaid bank-transfer order: fallback when money arrived but the webhook did not match. */
+            confirmTransfer: 'Confirm transfer received',
 
             confirmTitle: 'Confirm order {{code}}?',
             confirmDescription: 'The order moves to "Confirmed". Stock is unchanged.',
@@ -330,7 +334,7 @@ export default {
 
         /* ================= Enum labels ================= */
         status: {
-            PENDING: 'Pending',
+            PENDING: 'Pending confirmation',
             CONFIRMED: 'Confirmed',
             PACKED: 'Packed',
             SHIPPING: 'Shipping',

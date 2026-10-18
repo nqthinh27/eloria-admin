@@ -238,6 +238,8 @@ export default {
             printInvoice: 'In hóa đơn',
             /** Chặn in khi chưa thu tiền — user chốt 2026-08-21. */
             printBlocked: 'Đơn chưa thanh toán — thu tiền xong mới in được hóa đơn',
+            transferUnpaidHint:
+                'Đơn chuyển khoản, khách chưa thanh toán. Khi tiền về (tự động qua ngân hàng hoặc bạn bấm xác nhận) đơn mới được ghi nhận đã thanh toán và khách mới nhận email/thông báo.',
         },
 
         /* ================= Hoá đơn in (`printInvoice`) ================= */
@@ -290,6 +292,8 @@ export default {
             complete: 'Hoàn tất đơn',
             cancel: 'Hủy đơn',
             pay: 'Thu tiền',
+            /** Đơn chuyển khoản chưa trả: dự phòng khi tiền về nhưng webhook chưa khớp. */
+            confirmTransfer: 'Xác nhận đã nhận chuyển khoản',
 
             confirmTitle: 'Xác nhận đơn {{code}}?',
             confirmDescription: 'Đơn chuyển sang trạng thái "Đã xác nhận". Tồn kho không thay đổi.',
@@ -332,7 +336,7 @@ export default {
 
         /* ================= Nhãn enum ================= */
         status: {
-            PENDING: 'Chờ xử lý',
+            PENDING: 'Chờ xác nhận',
             CONFIRMED: 'Đã xác nhận',
             PACKED: 'Đã đóng gói',
             SHIPPING: 'Đang giao',

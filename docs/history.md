@@ -10,6 +10,7 @@
 
 | Ngày | Sự kiện | Chi tiết ở |
 |---|---|---|
+| 2026-10-18 | **Luồng chuyển khoản (chủ dự án chốt lại)**: đơn CK vào "Chờ xác nhận" ngay với `UNPAID`, chỉ khi admin xác nhận tay/webhook mới `PAID` và mới báo khách. FE: nhãn `PENDING` → "Chờ xác nhận", nút "Xác nhận đã nhận chuyển khoản" cho đơn QR chưa trả. Đã hoàn nguyên hướng `AWAITING_PAYMENT` làm trước đó. **Chưa đo API thật** | [handoff](handoff/phien-2026-10-18-chuyen-khoan-tra-truoc.md) · [don-hang.md](backend/don-hang.md) |
 | 2026-10-18 | **Phase 25 xong FE** (bám backend P18a–c đã đo thật): WebSocket STOMP (`realtime-client`, backoff + refresh token), chuông thông báo (keyset, `99+`, âm báo, deep-link `?open=`), QR/chi tiết đơn tự cập nhật qua `/topic/admin/order/{id}`, mã đơn mới, ô mã chi nhánh ≤6 ký tự. Đo thật cả tắt/bật backend ~50s; còn 4 MEDIUM từ tự review chưa sửa, chưa có test lưu lại | [handoff](handoff/phien-2026-10-18-phase-25-thong-bao-websocket.md) · [PLAN Phase 25](../PLAN.md) |
 | 2026-10-15 | Bám backend S35/S36: duyệt đơn online chưa gán chi nhánh ⇒ chọn chi nhánh đủ hàng (`branch-availability` + `confirm {branchId}`), danh sách badge + lọc "Chưa gán chi nhánh" (`unassigned`), 3 subKey mới | [handoff](handoff/phien-2026-10-15-thu-tien-don-online.md) · [don-hang.md](backend/don-hang.md) |
 | 2026-10-15 | Dialog Thu tiền: đơn ONLINE bỏ ô chọn hình thức, thu đúng `paymentMethod` của đơn (QR ⇒ mã QR, COD ⇒ thu thẳng); POS giữ nguyên. Backend chưa validate (client mở S35) | [handoff](handoff/phien-2026-10-15-thu-tien-don-online.md) · [don-hang.md](backend/don-hang.md) |

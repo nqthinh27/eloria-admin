@@ -23,6 +23,7 @@
 
 - **`EOrderStatus` 8 giá trị** (B7 đã chốt — dùng thẳng, không map về 5 trạng thái mockup `04`):
   `PENDING | CONFIRMED | PACKED | SHIPPING | SHIPPED | COMPLETED | CANCELLED | REJECTED`.
+  `PENDING` hiển thị **"Chờ xác nhận"** (nhãn đổi 2026-10-18; trước là "Chờ xử lý").
 - `channel` = `ONLINE | POS | OTHER` (khớp 3 tab mockup; FE gửi được khi tạo đơn — BE5) ·
   `paymentStatus` = `UNPAID | PAID | REFUNDED` (**không còn `PARTIAL`**) ·
   `paymentMethod` = `CASH | CARD | QR | VOUCHER | POINT | STORE_CREDIT | COD` · `type` = `PURCHASE | REFUND`
@@ -182,3 +183,19 @@ Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-s35-s36-admin.md` (phiên clie
 - Khổ in nhiệt **80mm**, cỡ chữ nền **13px** (user phản hồi 11–12px quá nhỏ).
 - ⚠️ Dữ liệu seed có mojibake (`branch.address`, `staffName` dạng `Sá»‘ 1 ÄÆ°á»ng…`) — lỗi ghi DB phía
   backend, **user chốt FE không workaround** (đừng thêm code "sửa" mã hoá).
+
+## Chuyển khoản — đơn vào "Chờ xác nhận" ngay, chưa thanh toán (chủ dự án chốt 2026-10-18)
+
+> **Contract backend cuối:** `35.1.eloria-backend/docs/api/fe-handoff-phase18e-admin.md` — **không đổi** status/`ENotificationType`/WS/DTO;
+> chỉ đổi **email gửi khách** (1 email "Đặt hàng thành công — đã nhận thanh toán" sau khi `PAID`, không gửi lúc đặt). Chưa đo API thật ở FE.
+> Backend **không chặn** `confirm`/sửa/hủy đơn QR chưa trả; đã `PAID` thì `PUT` ⇒ `409 error.order.paidNotEditable`.
+
+Luồng chốt: khách chọn chuyển khoản ⇒ đơn vào **`PENDING` ("Chờ xác nhận") ngay** với `paymentStatus=UNPAID`; **chưa**
+gửi email/thông báo cho khách. Chỉ khi admin **xác nhận thanh toán thủ công** hoặc **webhook ghi nhận tiền về** ⇒
+`paymentStatus=PAID` và mới gửi email/thông báo cho khách. Chuông admin "Đơn hàng mới" vẫn xuất hiện như trước.
+
+**FE admin (không cần field/enum mới — dùng dữ liệu sẵn có):**
+- Danh sách/chi tiết: trạng thái "Chờ xác nhận" + cột/nhãn thanh toán **"Chưa thanh toán"** (có sẵn).
+- Chi tiết đơn `channel≠POS` + `paymentMethod=QR` + `paymentStatus=UNPAID`: nút "Thu tiền" đổi nhãn thành **"Xác nhận đã nhận
+  chuyển khoản"** (vẫn qua `QrPaymentDialog`), có dòng giải thích; nút "Xác nhận đơn" vẫn có như mọi đơn `PENDING`.
+- Khi webhook/xác nhận tay xong, tin `ORDER_PAYMENT_CONFIRMED` làm dialog đổi sang "Đã thanh toán" (cơ chế Phase 25, không đổi).

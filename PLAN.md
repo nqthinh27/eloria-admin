@@ -3481,6 +3481,8 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ## Phase 25 — Thông báo (quả chuông) · WebSocket · Xác nhận chuyển khoản realtime 🟡 **xong FE 2026-10-18** — **Release R3.5** *(thêm 2026-10-17, làm trước Phase 21b)*
 
+> **Cập nhật 2026-10-18 (chuyển khoản, chủ dự án chốt):** đơn CK vào "Chờ xác nhận" ngay, `paymentStatus=UNPAID`; chỉ khi admin xác nhận tay / webhook mới `PAID` và mới báo khách. FE: nhãn "Chờ xác nhận" + nút "Xác nhận đã nhận chuyển khoản". Xem [don-hang.md](docs/backend/don-hang.md) + [handoff](docs/handoff/phien-2026-10-18-chuyen-khoan-tra-truoc.md). Backend đã xác nhận contract (fe-handoff-phase18e-admin.md); còn đo thật.
+
 > **Báo cáo cuối phiên 2026-10-18:** mục 1–6 xong FE, bám contract thật `35.1.eloria-backend/docs/api/fe-handoff-phase18-admin.md`. Chi tiết file/quyết định/đã đo/chưa đo: [handoff](docs/handoff/phien-2026-10-18-phase-25-thong-bao-websocket.md). **U1** (điều hướng + mở dialog) · **U2** (có âm báo nhẹ, theo PO 2026-10-18) · **U3** (dependency stomp) đã chốt. Điểm lệch so với kế hoạch: deep-link `?open=` thêm cho đơn/ca/phiếu kho/đổi trả/tồn kho; `useOrderRealtime` luôn đọc lại REST thay vì áp dụng tin trực tiếp (`OrderResDTO` chưa có `version`). **Review:** 4 MEDIUM (M1–M4) + L2/L4/L8/L9 đã sửa 2026-10-18 (PO duyệt; xem phụ lục handoff). **Còn mở:** LOW L1/L3/L5/L6/L7 · test framework · đo nginx/preview/ADMIN/âm thanh/form chi nhánh.
 
 > **Vì sao có phase này.** Backend P18 thêm 3 thứ admin phải dùng: ① thông báo theo quyền + chi nhánh

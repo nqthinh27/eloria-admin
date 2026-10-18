@@ -287,6 +287,15 @@ export function OrderDetailDialog({
     const isClosed = order ? CLOSED_STATUSES.includes(order.status) : true
     const isPaid = order?.paymentStatus === EPaymentStatus.PAID
     /**
+     * Đơn chuyển khoản (`QR`) chưa thu tiền, không phải POS. Vẫn ở "Chờ xác nhận" như mọi đơn mới
+     * (chủ dự án chốt lại 2026-10-18) — chỉ khác là nút thu tiền mang nhãn "Xác nhận chuyển khoản".
+     */
+    const isTransferUnpaid =
+        !!order &&
+        order.channel !== EOrderChannel.POS &&
+        order.paymentMethod === EPaymentMethod.QR &&
+        order.paymentStatus === EPaymentStatus.UNPAID
+    /**
      * **Chỉ in được hoá đơn khi đã thu tiền** (user chốt 2026-08-21). Đơn hoàn tiền
      * (`REFUNDED`) cũng không in: hoá đơn khi đó không phản ánh đúng giao dịch.
      */
@@ -355,7 +364,7 @@ export function OrderDetailDialog({
     return (
         <>
             <Dialog open={orderId !== null} onOpenChange={onOpenChange}>
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                     <DialogHeader>
                         <DialogTitle>
                             {t('order.detail.title', { code: order?.orderCode ?? '' })}
@@ -405,6 +414,12 @@ export function OrderDetailDialog({
                                     </div>
                                 </div>
                             </div>
+
+                            {isTransferUnpaid && (
+                                <p className="bg-muted/50 rounded-lg p-3 text-sm">
+                                    {t('order.detail.transferUnpaidHint')}
+                                </p>
+                            )}
 
                             {order.shippingAddress && (
                                 <div className="bg-muted/50 rounded-lg p-3">
@@ -630,7 +645,7 @@ export function OrderDetailDialog({
                         </div>
                     ) : null}
 
-                    <DialogFooter className="gap-2 sm:justify-between">
+                    <DialogFooter className="flex-wrap gap-2 sm:items-center sm:justify-between">
                         {/*
                           * Chưa thu tiền ⇒ khoá nút in kèm `title` giải thích, thay vì để bấm rồi
                           * mới nhận ra hoá đơn không hợp lệ.
@@ -645,7 +660,7 @@ export function OrderDetailDialog({
                             {t('order.detail.printInvoice')}
                         </Button>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                             {/* Thu tiền: ẩn khi đơn đã đóng, disable khi đã PAID. */}
                             {order && !isClosed && (
                                 <Button
@@ -653,7 +668,9 @@ export function OrderDetailDialog({
                                     variant="outline"
                                     disabled={isPaid}
                                     onClick={openPayDialog}>
-                                    {t('order.action.pay')}
+                                    {isTransferUnpaid
+                                        ? t('order.action.confirmTransfer')
+                                        : t('order.action.pay')}
                                 </Button>
                             )}
 
