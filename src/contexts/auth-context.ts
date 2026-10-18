@@ -12,9 +12,11 @@ export type AuthContextValue = {
     status: AuthStatus
     user: SysUser | null
     /** Đăng nhập. Ném `ApiError` để form hiển thị lỗi inline. */
-    login: (username: string, password: string) => Promise<void>
+    login: (username: string, password: string, otp: string) => Promise<void>
     /** Đăng xuất — luôn dọn state phía client kể cả khi API lỗi. */
     logout: () => Promise<void>
+    /** Ghi đè `user` sau khi sửa hồ sơ / đổi Zalo để top bar đổi ngay (không cần F5). */
+    updateUser: (user: SysUser) => void
 }
 
 /** Tách khỏi provider để file provider chỉ export component (react-refresh). */

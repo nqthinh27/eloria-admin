@@ -19,6 +19,9 @@ export type Staff = {
     createdDate: string
     lastModifiedDate: string | null
     branchName: string | null
+    /** Phase 19: đã liên kết Zalo nhận OTP chưa (BE xác nhận 2026-10-18; không bao giờ có chat id). */
+    zaloLinked: boolean
+    zaloLinkedAt: string | null
 }
 
 /** `StaffSearchReqDTO`. `branchId` chỉ có tác dụng với SUPER_ADMIN (backend tự lọc theo role). */

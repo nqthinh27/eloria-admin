@@ -24,6 +24,7 @@ export default {
             actionEdit: 'Edit profile',
             actionAssignRole: 'Assign role',
             actionResetPassword: 'Reset password',
+            actionResetZalo: 'Unlink Zalo',
             actionLock: 'Lock account',
             actionUnlock: 'Unlock account',
             actionDelete: 'Delete staff',
@@ -87,6 +88,18 @@ export default {
             close: 'Close',
         },
 
+        resetZaloConfirm: {
+            title: 'Unlink Zalo',
+            description:
+                'Unlink the Zalo account that receives OTPs for {{name}}? On the next sign-in {{name}} will be guided to link a new Zalo with a QR code.',
+            submit: 'Unlink',
+        },
+        zalo: {
+            label: 'Zalo for OTP',
+            linked: 'Linked',
+            notLinked: 'Not linked',
+        },
+
         lockConfirm: {
             title: 'Lock account',
             description: '{{name}} will not be able to sign in after locking. Confirm lock?',
@@ -110,6 +123,7 @@ export default {
             statusUpdated: 'Status updated successfully',
             deleted: 'Staff deleted successfully',
             passwordReset: 'Password reset successfully',
+            zaloReset: 'Zalo unlinked',
         },
 
         branch: {

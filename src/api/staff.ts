@@ -55,6 +55,15 @@ export const staffApi = {
         return apiClient.post<ResetStaffPasswordRes>(`/staff/${id}/reset-password`)
     },
 
+    /**
+     * `[ADMIN] POST /staff/{id}/reset-zalo` (Phase 19c) — gỡ liên kết Zalo nhận OTP của nhân viên để họ
+     * đăng nhập lại bằng luồng QR (mất Zalo cũ). Scope chi nhánh như reset mật khẩu; không gỡ của người
+     * cùng/cao bậc.
+     */
+    resetZalo(id: string) {
+        return apiClient.post<null>(`/staff/${id}/reset-zalo`)
+    },
+
     /** `[ADMIN] DELETE /staff/{id}` — xoá mềm. */
     remove(id: string) {
         return apiClient.delete<null>(`/staff/${id}`)

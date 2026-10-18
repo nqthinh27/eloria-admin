@@ -47,6 +47,9 @@ export default {
         branchSelector: 'Select branch',
         languageSelector: 'Language',
         account: 'Account',
+        accountProfile: 'My account',
+        accountChangePassword: 'Change password',
+        accountRelinkZalo: 'Change Zalo for OTP',
         comingSoon: 'This screen will be built in a later phase.',
     },
     role: {

@@ -112,6 +112,18 @@ export function StaffDetailModal({ staff, onOpenChange, onSave }: StaffDetailMod
             ),
     }
 
+    /* Trạng thái Zalo nhận OTP (Phase 19): chỉ đã/chưa — backend không bao giờ trả chat id. */
+    const zaloField: DetailField<StaffDetailValues> = {
+        label: t('staff.zalo.label'),
+        readOnly: true,
+        formatValue: () =>
+            staff.zaloLinked ? (
+                <StatusBadge tone="success">{t('staff.zalo.linked')}</StatusBadge>
+            ) : (
+                <StatusBadge tone="muted">{t('staff.zalo.notLinked')}</StatusBadge>
+            ),
+    }
+
     const handleSave = async (submitted: StaffDetailValues) => {
         await onSave(staff.id, {
             fullName: submitted.fullName,
@@ -129,7 +141,7 @@ export function StaffDetailModal({ staff, onOpenChange, onSave }: StaffDetailMod
             open={staff !== null}
             onOpenChange={onOpenChange}
             title={staff.fullName}
-            fields={[statusField, ...fields]}
+            fields={[statusField, zaloField, ...fields]}
             values={values}
             onSave={handleSave}
         />

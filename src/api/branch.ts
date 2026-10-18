@@ -15,8 +15,8 @@ export const branchApi = {
     },
 
     /** `[STAFF] GET /branch/{id}`. */
-    getById(id: string) {
-        return apiClient.get<Branch>(`/branch/${id}`)
+    getById(id: string, signal?: AbortSignal) {
+        return apiClient.get<Branch>(`/branch/${id}`, { signal })
     },
 
     /** `[SUPER_ADMIN] POST /branch`. */

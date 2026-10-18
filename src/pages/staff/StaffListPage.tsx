@@ -69,6 +69,7 @@ export default function StaffListPage() {
     const [detailStaff, setDetailStaff] = useState<Staff | null>(null)
     const [assignRoleStaff, setAssignRoleStaff] = useState<Staff | null>(null)
     const [resetPasswordStaff, setResetPasswordStaff] = useState<Staff | null>(null)
+    const [resetZaloStaff, setResetZaloStaff] = useState<Staff | null>(null)
     const [toggleStatusStaff, setToggleStatusStaff] = useState<Staff | null>(null)
     const [deleteStaff, setDeleteStaff] = useState<Staff | null>(null)
 
@@ -80,6 +81,7 @@ export default function StaffListPage() {
                 onEditFull: setFormStaff,
                 onAssignRole: setAssignRoleStaff,
                 onResetPassword: setResetPasswordStaff,
+                onResetZalo: setResetZaloStaff,
                 onToggleStatus: setToggleStatusStaff,
                 onDelete: setDeleteStaff,
             }),
@@ -172,6 +174,14 @@ export default function StaffListPage() {
         const result = await staffApi.resetPassword(resetPasswordStaff.id)
         toastSuccess('staff.toast.passwordReset', { ns: 'staff' })
         return result.temporaryPassword
+    }
+
+    /** Gỡ liên kết Zalo (ADMIN+): nhân viên mất Zalo cũ đăng nhập lại bằng luồng QR. */
+    const handleResetZalo = async () => {
+        if (!resetZaloStaff) return
+        await staffApi.resetZalo(resetZaloStaff.id)
+        toastSuccess('staff.toast.zaloReset', { ns: 'staff' })
+        await reload()
     }
 
     const handleToggleStatus = async () => {
@@ -305,6 +315,17 @@ export default function StaffListPage() {
                     staff={resetPasswordStaff}
                     onOpenChange={(open) => !open && setResetPasswordStaff(null)}
                     onConfirm={handleResetPassword}
+                />
+
+                <ConfirmDialog
+                    open={resetZaloStaff !== null}
+                    onOpenChange={(open) => !open && setResetZaloStaff(null)}
+                    title={t('staff.resetZaloConfirm.title')}
+                    description={t('staff.resetZaloConfirm.description', { name: resetZaloStaff?.fullName })}
+                    variant="destructive"
+                    confirmLabel={t('staff.resetZaloConfirm.submit')}
+                    auditLogged
+                    onConfirm={handleResetZalo}
                 />
 
                 <ConfirmDialog

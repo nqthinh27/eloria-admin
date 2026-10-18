@@ -12,10 +12,14 @@ export default {
         // Xác thực / phiên đăng nhập
         authenticate: 'Xác thực thất bại. Vui lòng đăng nhập lại.',
         login: {
-            fail: 'Tài khoản hoặc mật khẩu không đúng.',
+            fail: 'Thông tin đăng nhập hoặc OTP không chính xác',
         },
         password: {
             incorrect: 'Mật khẩu không đúng.',
+        },
+        // Phase 19c: đổi Zalo — sai mật khẩu hoặc OTP đều chỉ báo MỘT câu chung.
+        account: {
+            reauthFail: 'Mật khẩu hoặc OTP không chính xác.',
         },
         token: {
             invalid: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.',

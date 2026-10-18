@@ -3,7 +3,11 @@ export default {
     error: {
         authenticate: 'Authentication failed. Please sign in again.',
         login: {
-            fail: 'Incorrect username or password.',
+            fail: 'Incorrect login details or OTP',
+        },
+        // Phase 19c: changing Zalo — wrong password or OTP gives ONE generic message.
+        account: {
+            reauthFail: 'Incorrect password or OTP.',
         },
         password: {
             incorrect: 'Incorrect password.',

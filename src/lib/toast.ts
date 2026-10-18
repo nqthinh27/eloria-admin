@@ -35,6 +35,11 @@ export function toastError(error: unknown) {
     toast.error(resolveErrorMessage(null, null, 'http.unknown'))
 }
 
+/** Toast lỗi từ một chuỗi đã dịch/chọn sẵn (vd câu lỗi chung của màn đăng nhập) — khác `toastError` nhận `ApiError`. */
+export function toastErrorMessage(message: string) {
+    toast.error(message)
+}
+
 export function toastInfo(messageKey: string, options?: ToastOptions) {
     const { ns, ...values } = options ?? {}
     toast.info(i18n.t(messageKey, { ns: ns ?? 'common', defaultValue: messageKey, ...values }))

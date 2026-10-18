@@ -76,8 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         void bootstrapPromise.current
     }, [clearSession])
 
-    const login = useCallback(async (username: string, password: string) => {
-        const result = await authApi.login({ username, password })
+    const login = useCallback(async (username: string, password: string, otp: string) => {
+        const result = await authApi.login({ username, password, otp })
 
         // Chặn CUSTOMER: đăng nhập được nhưng không thuộc web quản trị.
         if (!canAccessAdminApp(result.user.role)) {
@@ -107,9 +107,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [clearSession])
 
+    const updateUser = useCallback((next: SysUser) => {
+        applyUserLanguage(next)
+        setUser(next)
+    }, [])
+
     const value = useMemo(
-        () => ({ status, user, login, logout }),
-        [status, user, login, logout],
+        () => ({ status, user, login, logout, updateUser }),
+        [status, user, login, logout, updateUser],
     )
 
     return <AuthContext value={value}>{children}</AuthContext>

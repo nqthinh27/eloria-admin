@@ -3578,7 +3578,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ---
 
-## Phase 26 — Đăng nhập 2 bước bằng OTP Zalo · Menu tài khoản (hồ sơ · đổi mật khẩu · đổi Zalo) ⏳ **CHỜ backend P19** *(thêm 2026-10-18 — đã chốt với PO 2026-10-18, xem "Đã chốt" cuối phase)*
+## Phase 26 — Đăng nhập 2 bước bằng OTP Zalo · Menu tài khoản (hồ sơ · đổi mật khẩu · đổi Zalo) 🟡 **xong FE + nối API thật 2026-10-18 — còn PO kiểm tay với OTP Zalo thật** *(thêm 2026-10-18 — đã chốt với PO 2026-10-18, xem "Đã chốt" cuối phase)*
 
 > **Vì sao có phase này.** PO yêu cầu (2026-10-18): ① đăng nhập web quản trị **bắt buộc OTP** gửi qua
 > **Zalo Bot** (OTP 60s, gửi lại sau 30s — cả 2 con số **lấy từ response**, backend đổi được trong
@@ -3647,6 +3647,11 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
    - `types/common.ts` `SysUser`: `zaloLinked: boolean`, `zaloLinkedAt: string | null` (đồng bộ api-docs, không bịa field).
    - `i18n/locales/{vi,en}/auth.ts` (OTP, modal Zalo, đổi MK) · `menu.ts` (3 mục) · `staff.ts` (gỡ Zalo) · `errors.ts` (câu mới cho `error.login.fail`, thêm `error.account.reauthFail`, 429).
 9. **Tài liệu**: `docs/backend/README.md` mục tài khoản test (đăng nhập luôn cần OTP thật qua Zalo — không có cờ tắt; mỗi người test liên kết Zalo của mình, nhiều tài khoản test dùng chung 1 Zalo được) + domain doc auth ở `docs/backend/`. Skill `update-api-doc`: đăng nhập tay bằng OTP rồi dùng access token cho phiên đo.
+
+### Trạng thái thi công (2026-10-18)
+- ✅ Đủ 9 mục, `npm run lint` 0 lỗi + `npm run build` sạch. Bàn giao: [handoff](docs/handoff/phien-2026-10-18-phase-26-otp-zalo.md).
+- **Mock đã gỡ** (BE báo 19a–19c xong + đo thật 2026-10-18): API thật cho `send-otp` · `authenticate(otp)` · `PUT /account/me` · relink · status · `reset-zalo`. Đã đối chiếu shape `send-otp` + lỗi `authenticate` bằng curl vào backend của BE (khớp type); các bước thành công cần OTP Zalo thật **chưa chạy**.
+- DoD dưới đây: phần cần Zalo thật ghi ở handoff mục "PO kiểm tay".
 
 ### Output mong muốn (DoD)
 - Tài khoản **đã liên kết**: user/MK ⇒ Gửi OTP ⇒ Zalo nhận mã ⇒ nhập ⇒ vào app; nút gửi lại khoá đúng thời gian backend trả.

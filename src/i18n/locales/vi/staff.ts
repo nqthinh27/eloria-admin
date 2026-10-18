@@ -24,6 +24,7 @@ export default {
             actionEdit: 'Sửa hồ sơ',
             actionAssignRole: 'Gán vai trò',
             actionResetPassword: 'Đặt lại mật khẩu',
+            actionResetZalo: 'Gỡ liên kết Zalo',
             actionLock: 'Khoá tài khoản',
             actionUnlock: 'Mở khoá tài khoản',
             actionDelete: 'Xoá nhân viên',
@@ -87,6 +88,18 @@ export default {
             close: 'Đóng',
         },
 
+        resetZaloConfirm: {
+            title: 'Gỡ liên kết Zalo',
+            description:
+                'Gỡ liên kết Zalo nhận OTP của {{name}}? Lần đăng nhập sau {{name}} sẽ được hướng dẫn liên kết Zalo mới bằng mã QR.',
+            submit: 'Gỡ liên kết',
+        },
+        zalo: {
+            label: 'Zalo nhận OTP',
+            linked: 'Đã liên kết',
+            notLinked: 'Chưa liên kết',
+        },
+
         lockConfirm: {
             title: 'Khoá tài khoản',
             description: '{{name}} sẽ không thể đăng nhập sau khi khoá tài khoản. Xác nhận khoá?',
@@ -110,6 +123,7 @@ export default {
             statusUpdated: 'Cập nhật trạng thái thành công',
             deleted: 'Xoá nhân viên thành công',
             passwordReset: 'Đặt lại mật khẩu thành công',
+            zaloReset: 'Đã gỡ liên kết Zalo',
         },
 
         branch: {

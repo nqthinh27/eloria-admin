@@ -50,6 +50,10 @@ Quy tắc bắt buộc:
   Refresh thất bại → xoá state auth → điều hướng `/login`.
 - **Agent KHÔNG được tự đổi chiến lược này** (chuyển token sang localStorage, tự lưu refresh token,
   đổi scheme…) nếu chưa có yêu cầu rõ ràng từ người dùng.
+- **Đăng nhập 2 bước (Phase 26, 2026-10-18):** `POST /authenticate/send-otp` rồi `POST /authenticate` kèm `otp` (OTP gửi qua
+  Zalo Bot). Vẫn luôn `rememberMe: true`. Mọi lỗi đăng nhập hiện **đúng một câu chung** (`error.login.fail`), kể cả khi backend
+  đang khoá tài khoản — FE **không có** trạng thái/thông báo "bị khoá" và **không suy luận** gì từ response `send-otp`.
+  Đổi mật khẩu thành công ⇒ `logout()` (backend thu hồi mọi phiên). Chi tiết: docs/backend/README.md mục "Đăng nhập".
 - **Tài khoản test dev** (4 tài khoản, 3 role): [docs/backend/README.md](docs/backend/README.md)
   mục "Tài khoản test" — chỉ dùng gọi thử API local, **không hardcode vào code**, không đặt làm
   giá trị mặc định form đăng nhập.

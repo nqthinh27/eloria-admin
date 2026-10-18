@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { useForm, type FieldValues, type Path } from 'react-hook-form'
+import { useForm, type FieldValues, type Path, type UseFormReturn } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Loader2, Pencil } from 'lucide-react'
 
@@ -54,7 +54,7 @@ type DetailModalProps<TValues extends FieldValues> = {
     fields: DetailField<TValues>[]
     values: TValues
     /** Bỏ trống khi modal chỉ đọc (`canEdit: false`) — không có gì để lưu. */
-    onSave?: (values: TValues) => Promise<void>
+    onSave?: (values: TValues, form: UseFormReturn<TValues>) => Promise<void>
     /**
      * `false` ⇒ modal chỉ xem, ẩn hẳn nút "Sửa". Dùng khi role hiện tại không gọi được API cập nhật
      * (ví dụ STAFF ở màn Khách hàng — `PUT /customer/{id}` là `[ADMIN]`): để nút "Sửa" sẽ dẫn tới
@@ -105,7 +105,7 @@ export function DetailModal<TValues extends FieldValues>({
     const onSubmit = async (submitted: TValues) => {
         try {
             /* Modal chỉ đọc không truyền `onSave` — không bao giờ vào được nhánh này. */
-            await onSave?.(submitted)
+            await onSave?.(submitted, form)
             setIsEditing(false)
         } catch {
             // api-client đã toast lỗi; giữ nguyên chế độ sửa để người dùng thử lại.

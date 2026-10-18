@@ -114,4 +114,10 @@ export type SysUser = {
     dob: string | null
     gender: EGender | null
     membershipPoint: number | null
+    /** Số điện thoại của chính user (BE Phase 19 bỏ `@JsonIgnore` ở `/account/me`, `PUT` và login — xác nhận 2026-10-18). */
+    phoneNumber: string | null
+    /** Phase 19: đã liên kết Zalo nhận OTP chưa. Backend KHÔNG bao giờ trả chat id. */
+    zaloLinked: boolean
+    /** ISO instant lúc liên kết/đổi gần nhất; `null` khi chưa liên kết. */
+    zaloLinkedAt: string | null
 }

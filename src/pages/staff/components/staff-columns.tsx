@@ -1,5 +1,5 @@
 import type { ColumnDef } from '@tanstack/react-table'
-import { Eye, KeyRound, Lock, MoreHorizontal, Pencil, Shield, Trash2, Unlock } from 'lucide-react'
+import { Eye, KeyRound, Lock, MessageCircleOff, MoreHorizontal, Pencil, Shield, Trash2, Unlock } from 'lucide-react'
 import type { TFunction } from 'i18next'
 
 import { EntityStatus } from '@/types/common'
@@ -20,6 +20,7 @@ type StaffColumnActions = {
     onEditFull: (staff: Staff) => void
     onAssignRole: (staff: Staff) => void
     onResetPassword: (staff: Staff) => void
+    onResetZalo: (staff: Staff) => void
     onToggleStatus: (staff: Staff) => void
     onDelete: (staff: Staff) => void
 }
@@ -160,6 +161,13 @@ export function buildStaffColumns(
                                     <KeyRound className="size-4" />
                                     {t('staff.list.actionResetPassword')}
                                 </DropdownMenuItem>
+                                {/* Chỉ hiện khi nhân viên đang liên kết Zalo. */}
+                                {staff.zaloLinked && (
+                                    <DropdownMenuItem onSelect={() => actions.onResetZalo(staff)}>
+                                        <MessageCircleOff className="size-4" />
+                                        {t('staff.list.actionResetZalo')}
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onSelect={() => actions.onToggleStatus(staff)}>
                                     {isLocked ? (
                                         <Unlock className="size-4" />

@@ -65,7 +65,23 @@ Nguồn sự thật chính thức vẫn là `/v3/api-docs/api` — không hardco
 
 ## Đăng nhập & cookie refresh
 
-- `POST /authenticate` body `LoginReqDTO = {username, password, rememberMe}` — field là **`username`**,
+- ⚠️ **Phase 19 (2026-10-18) — đăng nhập 2 BƯỚC, OTP qua Zalo Bot, KHÔNG có cờ tắt MFA ở mọi môi trường**
+  *(contract từ `35.1.eloria-backend/PLAN-storefront.md` Phase 19 + phiên BE báo đã đo thật 2026-10-18; FE đã nối thật, đo lại `send-otp`/`authenticate` sai tài khoản ⇒ khớp; bước thành công cần OTP Zalo thật chưa chạy — xem handoff `phien-2026-10-18-phase-26-otp-zalo.md`)*:
+  1. `POST /authenticate/send-otp` `{username, password}` (⚠️ `password` 4–100 ký tự, ngắn hơn ⇒ 400 `error.input.invalid`) → luôn HTTP 200; `SendOtpResDTO {status: OTP_SENT|ZALO_LINK_REQUIRED,
+     resendAfterSeconds, otpTtlSeconds?, linkCode?, linkTtlSeconds?, botLink?}`. **Sai username/mật khẩu/đang khoá vẫn trả
+     `OTP_SENT` y hệt** (không suy luận gì ở FE). `ZALO_LINK_REQUIRED` chỉ khi đúng user/mật khẩu mà chưa liên kết Zalo
+     ⇒ FE hiện QR tĩnh + mã `/otp <linkCode>` (user nhắn bot ⇒ bot gửi OTP luôn). Mọi số giây (30/60) **lấy từ response**.
+  2. `POST /authenticate` `{username, password, **otp** (bắt buộc), rememberMe: true}`. **Mọi** thất bại (sai user/MK/OTP, OTP
+     hết hạn, đang khoá 5 lần/15 phút, vô hiệu hoá…) ⇒ HTTP 401 đúng 1 lỗi `error.login.fail` (`logInfo` = câu chung) — **không có trạng thái "bị khoá"** ở FE;
+     mở khoá bằng chờ 15 phút hoặc đặt lại mật khẩu qua email. 429 ⇒ `error.rateLimit.exceeded`.
+  - `SysUserDTO` thêm `zaloLinked: boolean`, `zaloLinkedAt` (ISO|null) và **trả lại `phoneNumber`** (của chính user); **không bao giờ
+    có chat id**. `StaffResDTO` cũng có `zaloLinked`/`zaloLinkedAt`.
+  - Tài khoản hồ sơ/Zalo (`[STAFF]`): `PUT /account/me` (`fullName, phoneNumber, dob, gender, description`; SĐT trùng ⇒
+    `EXISTED` + `PHONE_EXISTED`; field lạ ⇒ 400) · `POST /account/zalo/relink/send-otp` · `POST /account/zalo/relink`
+    `{currentPassword, otp?}` → `{linkCode, linkTtlSeconds, botLink}` (sai ⇒ `error.account.reauthFail`; chưa liên kết ⇒ bỏ `otp`) ·
+    `GET /account/zalo/status` (FE poll 3s) · *relink sai MK/OTP ⇒ HTTP **400** (không 401 để không bị đăng xuất); chưa liên kết ⇒ `relink/send-otp` không gửi gì, FE chỉ gọi `relink {currentPassword}`* · `[ADMIN] POST /staff/{id}/reset-zalo`.
+  - Đổi/đặt lại/quên mật khẩu ⇒ **mọi access + refresh token cũ (kể cả phiên đang đổi) trả 401**, `/refresh` cũng 401 ⇒ FE `logout()` về `/login`.
+- (Trước Phase 19, 1 bước:) `POST /authenticate` body `LoginReqDTO = {username, password, rememberMe}` — field là **`username`**,
   không phải email. **Luôn gửi `rememberMe: true`** (user chốt): backend **chỉ set cookie khi cờ này bật**,
   và FE không hiển thị checkbox "Ghi nhớ đăng nhập".
 - Cookie `refresh_token`: `path=/v1.0/api/refresh; HttpOnly; Max-Age=864000` (10 ngày),
@@ -185,15 +201,15 @@ SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
 
 | Nhóm | Role | Endpoint |
 |---|---|---|
-| Auth | `ANONYMOUS` | `POST /authenticate` · `/refresh` · `/activate-account?code=` · `/forgot-password` · `/reset-password` |
+| Auth | `ANONYMOUS` | `POST /authenticate/send-otp` *(P19)* · `POST /authenticate` *(cần `otp`)* · `/refresh` · `/activate-account?code=` · `/forgot-password` · `/reset-password` |
 | Đăng xuất | `STAFF` | `POST /logout` |
-| Tài khoản đang đăng nhập | `STAFF` | `GET /account/me` · `POST /account/change-password` · `POST /sys-user/update-avatar` |
+| Tài khoản đang đăng nhập | `STAFF` | `GET\|PUT /account/me` *(PUT: P19c)* · `POST /account/change-password` · `POST /sys-user/update-avatar` *(multipart `file`, ≤2MB, 5 lần/phút)* · `POST /account/zalo/relink/send-otp` · `POST /account/zalo/relink` · `GET /account/zalo/status` *(P19c)* |
 | Ảnh | `ANONYMOUS` | `GET /image?imageUrl=` |
 | Địa chỉ hành chính | `STAFF` | `GET /administrative-address/provinces` · `/wards?provinceCode=` |
 | Chi nhánh — đọc | `STAFF` | `POST /branch/search` · `GET /branch/{id}` |
 | Chi nhánh — sửa | `ADMIN` | `PUT /branch/{id}` |
 | Chi nhánh — tạo/xoá/bật-tắt | `SUPER_ADMIN` | `POST /branch` · `/branch/update-status` · `DELETE /branch/{id}` |
-| Nhân viên (toàn bộ) | `ADMIN` | `POST /staff` · `/staff/search` · `/staff/assign-role` · `/staff/update-status` · `/staff/{id}/reset-password` · `GET\|PUT\|DELETE /staff/{id}` |
+| Nhân viên (toàn bộ) | `ADMIN` | `POST /staff` · `/staff/search` · `/staff/assign-role` · `/staff/update-status` · `/staff/{id}/reset-password` · `/staff/{id}/reset-zalo` *(P19c — gỡ liên kết Zalo)* · `GET\|PUT\|DELETE /staff/{id}` |
 | Audit log | `ADMIN` | `POST /audit-log/search` · `GET /audit-log/{id}` |
 | Cấu hình hệ thống | `SUPER_ADMIN` | `GET /system-config` · `PUT /system-config` |
 
@@ -220,6 +236,11 @@ SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
 | `staffone` | `Admin@123` | `STAFF` — *Chi nhánh Trung tâm* |
 | `hkadmin` | `Admin@123` | `ADMIN` — *HN - Hoàn Kiếm* |
 
+- ⚠️ **Từ Phase 19 đăng nhập LUÔN cần OTP thật qua Zalo — không có cờ tắt ở bất kỳ môi trường nào.** Muốn đăng nhập tay
+  để test/đo API: backend local cần webhook Zalo chạy qua tunnel của PO (`35.1.eloria-backend/README.md`); **mỗi người test
+  liên kết Zalo của mình** (tài khoản chưa liên kết ⇒ modal QR ⇒ nhắn `/otp <mã>` cho bot); **1 Zalo dùng chung được cho nhiều
+  tài khoản test**. Skill `update-api-doc`: đăng nhập tay bằng OTP một lần rồi dùng access token cho cả phiên đo (đổi/reset
+  mật khẩu của chính tài khoản đo sẽ làm token chết — đừng làm giữa chừng).
 - **Không hardcode** vào code, không làm giá trị mặc định form đăng nhập, không đưa ra ngoài dev.
 - Test duyệt phiếu kho: một ADMIN tự tạo + tự duyệt được (bỏ chặn tự duyệt 2026-09-28); ADMIN chỉ
   thấy phiếu chi nhánh mình. Thay đổi menu/route theo role phải test đủ **cả 3 role**.

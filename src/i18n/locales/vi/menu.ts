@@ -47,6 +47,9 @@ export default {
         branchSelector: 'Chọn chi nhánh',
         languageSelector: 'Ngôn ngữ',
         account: 'Tài khoản',
+        accountProfile: 'Tài khoản của tôi',
+        accountChangePassword: 'Đổi mật khẩu',
+        accountRelinkZalo: 'Đổi Zalo nhận OTP',
         comingSoon: 'Màn hình này sẽ được dựng ở phase sau.',
     },
     role: {
