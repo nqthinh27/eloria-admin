@@ -46,9 +46,7 @@ RUN npm run build
 # ─────────────────────────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine AS serve
 
-# Conf MẶC ĐỊNH, chỉ để image chạy được ngay sau khi build. Cấu hình thật cho từng môi trường
-# thì bind-mount đè lên đúng đường dẫn này (xem khối `volumes` trong docker-compose.yml)
-# — không phải build lại image.
+# Conf nginx cho container: chỉ phát file tĩnh + SPA fallback, nghe HTTP cổng 80 (TLS/proxy do nginx host lo).
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # nginx:alpine tự chạy mọi script trong /docker-entrypoint.d/ lúc khởi động ⇒ config.js được
