@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
 
 import { postApi } from '@/api/cms'
+import { ApiError } from '@/lib/api-error'
+import { toastError } from '@/lib/toast'
 import { POST_STATUSES, type Post, type PostListItem, type PostStatus, type PostStatusPayload } from '@/types/cms'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -46,6 +48,8 @@ export function PostStatusDialog({ post: current, onOpenChange, onSubmit }: Post
     const [time, setTime] = useState('')
     const [touched, setTouched] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    /** Lỗi backend gắn vào ô thời điểm đăng (`error.post.scheduleInvalid`). */
+    const [serverScheduleError, setServerScheduleError] = useState<string | null>(null)
 
     useEffect(() => {
         if (!current) return
@@ -56,6 +60,7 @@ export function PostStatusDialog({ post: current, onOpenChange, onSubmit }: Post
         setDate('')
         setTime('')
         setTouched(false)
+        setServerScheduleError(null)
         const controller = new AbortController()
         postApi
             .getById(post.id, controller.signal)
@@ -84,6 +89,7 @@ export function PostStatusDialog({ post: current, onOpenChange, onSubmit }: Post
 
     const scheduledIso = target === 'SCHEDULED' ? toIso(date, time) : null
     const scheduleError = (() => {
+        if (target === 'SCHEDULED' && serverScheduleError) return serverScheduleError
         if (target !== 'SCHEDULED' || !touched) return null
         if (!date) return t('post:post.statusDialog.validation.dateRequired')
         if (!time) return t('post:post.statusDialog.validation.timeRequired')
@@ -103,11 +109,17 @@ export function PostStatusDialog({ post: current, onOpenChange, onSubmit }: Post
             publishedAt = iso
         }
         setSubmitting(true)
+        setServerScheduleError(null)
         try {
             await onSubmit({ id: post.id, postStatus: target, publishedAt })
             onOpenChange(false)
-        } catch {
-            // api-client đã toast lỗi (vd scheduleInvalid, statusTransitionInvalid); giữ dialog mở.
+        } catch (error) {
+            // scheduleInvalid ⇒ hiện dưới ô thời điểm đăng; lỗi chuyển trạng thái chỉ toast. Giữ dialog mở.
+            if (error instanceof ApiError && error.subKey === 'error.post.scheduleInvalid') {
+                setServerScheduleError(error.message)
+            } else if (error instanceof ApiError && !error.toasted) {
+                toastError(error)
+            }
         } finally {
             setSubmitting(false)
         }
@@ -142,7 +154,9 @@ export function PostStatusDialog({ post: current, onOpenChange, onSubmit }: Post
                         {detail && (
                             <>
                                 <div className="space-y-1.5">
-                                    <Label>{t('post:post.statusDialog.target')}</Label>
+                                    <Label>
+                                        {t('post:post.statusDialog.target')} <span className="text-destructive">*</span>
+                                    </Label>
                                     <Select
                                         value={target}
                                         onValueChange={(value) => {
@@ -169,7 +183,10 @@ export function PostStatusDialog({ post: current, onOpenChange, onSubmit }: Post
 
                                 {target === 'SCHEDULED' && (
                                     <div className="space-y-2">
-                                        <Label>{t('post:post.statusDialog.publishedAtLabel')}</Label>
+                                        <Label>
+                                            {t('post:post.statusDialog.publishedAtLabel')}{' '}
+                                            <span className="text-destructive">*</span>
+                                        </Label>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
                                                 <span className="text-muted-foreground text-xs">
@@ -177,7 +194,10 @@ export function PostStatusDialog({ post: current, onOpenChange, onSubmit }: Post
                                                 </span>
                                                 <DateInput
                                                     value={date}
-                                                    onChange={setDate}
+                                                    onChange={(value) => {
+                                                        setDate(value)
+                                                        setServerScheduleError(null)
+                                                    }}
                                                     aria-invalid={touched && !date}
                                                 />
                                             </div>

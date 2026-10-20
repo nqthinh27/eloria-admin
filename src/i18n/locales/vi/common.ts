@@ -53,6 +53,7 @@ export default {
         save: 'Lưu',
         submitting: 'Đang xử lý…',
         select: 'Chọn',
+        noSelection: '-Không chọn-',
         selected: 'Đã chọn',
         delete: 'Xoá',
         detail: 'Chi tiết',
@@ -98,6 +99,9 @@ export default {
         MALE: 'Nam',
         FEMALE: 'Nữ',
         OTHER: 'Khác',
+    },
+    validation: {
+        required: 'Vui lòng nhập thông tin bắt buộc.',
     },
     confirmDialog: {
         auditNotice: 'Hành động này sẽ được lưu vào nhật ký (audit log).',

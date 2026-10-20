@@ -82,8 +82,8 @@ export function CustomerDetailModal({ customer, onOpenChange, onSave }: Customer
             readOnly: true,
             formatValue: () => formatNumber(customer.membershipPoint ?? 0),
         },
-        { name: 'fullName', label: t('customer.form.fullName'), editable: canEdit, fullWidth: true },
-        { name: 'phoneNumber', label: t('customer.form.phoneNumber'), editable: false, type: 'tel' },
+        { name: 'fullName', label: t('customer.form.fullName'), editable: canEdit, required: true, fullWidth: true },
+        { name: 'phoneNumber', label: t('customer.form.phoneNumber'), editable: false, required: true, type: 'tel' },
         {
             name: 'email',
             label: t('customer.form.email'),
@@ -133,7 +133,7 @@ export function CustomerDetailModal({ customer, onOpenChange, onSave }: Customer
             fullName: submitted.fullName,
             email: submitted.email || undefined,
             dob: submitted.dob ? new Date(submitted.dob).toISOString() : undefined,
-            gender: (submitted.gender as typeof customer.gender) || undefined,
+            gender: (submitted.gender as typeof customer.gender) || null,
         })
     }
 

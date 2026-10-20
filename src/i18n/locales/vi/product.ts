@@ -231,7 +231,6 @@ export default {
             namePlaceholder: 'Nhập tên danh mục',
             parent: 'Danh mục cha',
             parentPlaceholder: 'Bỏ trống = danh mục gốc',
-            parentNone: 'Không có (danh mục gốc)',
             sortOrder: 'Thứ tự hiển thị',
             sortOrderPlaceholder: 'Nhập thứ tự',
             description: 'Mô tả danh mục',

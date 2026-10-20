@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Loader2, Pencil } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { setFormErrorFromApi } from '@/lib/form-error'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -15,7 +16,8 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { DateInput } from '@/components/date-input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ClearableSelect } from '@/components/clearable-select'
+import { SelectItem } from '@/components/ui/select'
 
 /**
  * Mô tả 1 field trong modal chi tiết — dùng chung cho MỌI entity trong hệ thống
@@ -45,6 +47,12 @@ export type DetailField<TValues extends FieldValues> = {
     fullWidth?: boolean
     /** `true` ⇒ field chỉ đọc hẳn, không thuộc form, luôn hiển thị qua `formatValue` (bắt buộc). */
     readOnly?: boolean
+    /**
+     * Field **bắt buộc** theo backend (`@NotNull`/`@NotBlank`/…): ở chế độ sửa nhãn có dấu `*`, và dropdown
+     * (`type: 'select'`) **không** có nút ✕ xoá. Bỏ trống/`false` ⇒ không bắt buộc ⇒ dropdown đang
+     * chọn có nút ✕ để về rỗng (`undefined`).
+     */
+    required?: boolean
 }
 
 type DetailModalProps<TValues extends FieldValues> = {
@@ -107,8 +115,10 @@ export function DetailModal<TValues extends FieldValues>({
             /* Modal chỉ đọc không truyền `onSave` — không bao giờ vào được nhánh này. */
             await onSave?.(submitted, form)
             setIsEditing(false)
-        } catch {
-            // api-client đã toast lỗi; giữ nguyên chế độ sửa để người dùng thử lại.
+        } catch (error) {
+            // Lỗi 400/409 gắn vào đúng ô (vd email trùng ⇒ dưới ô email), lỗi khác chỉ toast;
+            // giữ nguyên chế độ sửa để người dùng thử lại.
+            setFormErrorFromApi(form, error)
         }
     }
 
@@ -163,28 +173,42 @@ export function DetailModal<TValues extends FieldValues>({
                                             <FormField
                                                 control={form.control}
                                                 name={name}
+                                                rules={
+                                                    field.required && field.editable
+                                                        ? {
+                                                              validate: (v) =>
+                                                                  (typeof v === 'string' ? v.trim() !== '' : v != null) ||
+                                                                  t('validation.required'),
+                                                          }
+                                                        : undefined
+                                                }
                                                 render={({ field: rhfField }) => (
                                                     <FormItem>
-                                                        <FormLabel>{field.label}</FormLabel>
+                                                        <FormLabel>
+                                                            {field.label}
+                                                            {field.required && (
+                                                                <span className="text-destructive">*</span>
+                                                            )}
+                                                        </FormLabel>
                                                         <FormControl>
                                                             {field.type === 'select' ? (
-                                                                <Select
+                                                                <ClearableSelect
                                                                     value={rhfField.value ?? ''}
                                                                     onValueChange={rhfField.onChange}
+                                                                    onClear={
+                                                                        field.required
+                                                                            ? undefined
+                                                                            : () => rhfField.onChange(undefined)
+                                                                    }
                                                                     disabled={!field.editable}>
-                                                                    <SelectTrigger className="w-full">
-                                                                        <SelectValue />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {field.options?.map((opt) => (
-                                                                            <SelectItem
-                                                                                key={opt.value}
-                                                                                value={opt.value}>
-                                                                                {opt.label}
-                                                                            </SelectItem>
-                                                                        ))}
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                    {field.options?.map((opt) => (
+                                                                        <SelectItem
+                                                                            key={opt.value}
+                                                                            value={opt.value}>
+                                                                            {opt.label}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </ClearableSelect>
                                                             ) : field.type === 'date' ? (
                                                                 /*
                                                                  * Ngày phải hiện `dd/MM/yyyy`

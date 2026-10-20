@@ -39,10 +39,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { MoneyInput } from '@/components/money-input'
 import { DateInput } from '@/components/date-input'
+import { ClearableSelect } from '@/components/clearable-select'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-/** Radix Select không nhận `value=""` ⇒ dùng sentinel cho "toàn chuỗi". */
-const ALL_BRANCHES = '__all__'
 
 /**
  * Schema khớp ràng buộc backend (`khuyen-mai-p9.md`):
@@ -202,7 +200,7 @@ export function PromotionFormDialog({
             target: EPromotionTarget.ALL,
             targetId: '',
             channel: EOrderChannel.ONLINE,
-            branchId: ALL_BRANCHES,
+            branchId: undefined,
             minAmount: '',
             maxDiscount: '',
             usageLimit: '',
@@ -222,7 +220,7 @@ export function PromotionFormDialog({
             target: promotion?.target ?? EPromotionTarget.ALL,
             targetId: promotion?.targetId ?? '',
             channel: promotion?.channel ?? EOrderChannel.ONLINE,
-            branchId: promotion?.branchId ?? ALL_BRANCHES,
+            branchId: promotion?.branchId ?? undefined,
             minAmount: promotion?.minAmount != null ? String(promotion.minAmount) : '',
             maxDiscount: promotion?.maxDiscount != null ? String(promotion.maxDiscount) : '',
             usageLimit: promotion?.usageLimit != null ? String(promotion.usageLimit) : '',
@@ -247,10 +245,8 @@ export function PromotionFormDialog({
             target: values.target,
             targetId: values.target === EPromotionTarget.ALL ? null : (values.targetId ?? null),
             channel: values.channel,
-            branchId:
-                !canChooseBranch || values.branchId === ALL_BRANCHES
-                    ? null
-                    : (values.branchId ?? null),
+            // Không chọn (hoặc ADMIN, bị backend ép chi nhánh mình) ⇒ `null` = toàn chuỗi.
+            branchId: !canChooseBranch ? null : values.branchId || null,
             minAmount: parseOptionalNumber(values.minAmount),
             /* Giảm tối đa vô nghĩa với FIXED — không gửi để tránh dữ liệu rác. */
             maxDiscount:
@@ -271,7 +267,7 @@ export function PromotionFormDialog({
             }
             onOpenChange(false)
         } catch (error) {
-            setFormErrorFromApi(form, error, {}, 'name')
+            setFormErrorFromApi(form, error)
         }
     }
 
@@ -345,7 +341,9 @@ export function PromotionFormDialog({
                                     name="type"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{t('promotion.form.type')}</FormLabel>
+                                            <FormLabel>
+                                                {t('promotion.form.type')} <span className="text-destructive">*</span>
+                                            </FormLabel>
                                             <Select
                                                 value={field.value}
                                                 onValueChange={field.onChange}>
@@ -428,7 +426,9 @@ export function PromotionFormDialog({
                                     name="target"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{t('promotion.form.target')}</FormLabel>
+                                            <FormLabel>
+                                                {t('promotion.form.target')} <span className="text-destructive">*</span>
+                                            </FormLabel>
                                             <Select
                                                 value={field.value}
                                                 onValueChange={field.onChange}>
@@ -484,7 +484,9 @@ export function PromotionFormDialog({
                                     name="channel"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{t('promotion.form.channel')}</FormLabel>
+                                            <FormLabel>
+                                                {t('promotion.form.channel')} <span className="text-destructive">*</span>
+                                            </FormLabel>
                                             <Select
                                                 value={field.value}
                                                 onValueChange={field.onChange}>
@@ -513,18 +515,12 @@ export function PromotionFormDialog({
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>{t('promotion.form.branch')}</FormLabel>
-                                                <Select
-                                                    value={field.value}
-                                                    onValueChange={field.onChange}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="w-full">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value={ALL_BRANCHES}>
-                                                            {t('promotion.form.branchAll')}
-                                                        </SelectItem>
+                                                <FormControl>
+                                                    <ClearableSelect
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                        onClear={() => field.onChange(undefined)}
+                                                        placeholder={t('promotion.form.branchAll')}>
                                                         {branches.map((branch) => (
                                                             <SelectItem
                                                                 key={branch.id}
@@ -532,8 +528,8 @@ export function PromotionFormDialog({
                                                                 {branch.name}
                                                             </SelectItem>
                                                         ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                    </ClearableSelect>
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}

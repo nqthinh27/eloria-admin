@@ -834,7 +834,7 @@ export function OrderDetailDialog({
                     ) : (
                         <div className="space-y-1.5">
                             <Label htmlFor="order-pay-method">
-                                {t('order.pos.checkout.paymentMethod')}
+                                {t('order.pos.checkout.paymentMethod')} <span className="text-destructive">*</span>
                             </Label>
                             <Select
                                 value={payMethod}

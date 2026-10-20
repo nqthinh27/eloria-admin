@@ -52,6 +52,7 @@ export default {
         save: 'Save',
         submitting: 'Processing…',
         select: 'Select',
+        noSelection: '-None-',
         selected: 'Selected',
         delete: 'Delete',
         detail: 'Detail',
@@ -97,6 +98,9 @@ export default {
         MALE: 'Male',
         FEMALE: 'Female',
         OTHER: 'Other',
+    },
+    validation: {
+        required: 'This field is required.',
     },
     confirmDialog: {
         auditNotice: 'This action will be recorded in the audit log.',

@@ -100,7 +100,7 @@ export default function ForgotPassword() {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>{t('auth.forgot.email')}</FormLabel>
+                                <FormLabel>{t('auth.forgot.email')} <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                     <Input
                                         {...field}

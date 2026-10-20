@@ -228,7 +228,6 @@ export default {
             namePlaceholder: 'Enter category name',
             parent: 'Parent category',
             parentPlaceholder: 'Leave blank for a root category',
-            parentNone: 'None (root category)',
             sortOrder: 'Display order',
             sortOrderPlaceholder: 'Enter display order',
             description: 'Category description',

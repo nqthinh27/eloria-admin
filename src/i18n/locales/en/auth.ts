@@ -66,6 +66,7 @@ export default {
             currentPasswordRequired: 'Please enter your current password',
             newPasswordSame: 'The new password must differ from the current one',
             fullNameRequired: 'Please enter your full name',
+            phoneRequired: 'Please enter your phone number',
             phoneInvalid: 'Phone number must be 10 digits starting with 0',
             usernameRequired: 'Please enter your username',
             passwordRequired: 'Please enter your password',

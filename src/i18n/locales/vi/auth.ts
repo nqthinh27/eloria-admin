@@ -69,6 +69,7 @@ export default {
             currentPasswordRequired: 'Vui lòng nhập mật khẩu hiện tại',
             newPasswordSame: 'Mật khẩu mới phải khác mật khẩu hiện tại',
             fullNameRequired: 'Vui lòng nhập họ và tên',
+            phoneRequired: 'Vui lòng nhập số điện thoại',
             phoneInvalid: 'Số điện thoại gồm 10 chữ số, bắt đầu bằng 0',
             usernameRequired: 'Vui lòng nhập tên đăng nhập',
             passwordRequired: 'Vui lòng nhập mật khẩu',

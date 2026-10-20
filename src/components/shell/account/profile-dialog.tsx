@@ -6,9 +6,9 @@ import { Camera, Loader2 } from 'lucide-react'
 import { authApi } from '@/api/auth'
 import { branchApi } from '@/api/branch'
 import { useAuth } from '@/hooks/use-auth'
-import { ApiError } from '@/lib/api-error'
+import { setFormErrorFromApi } from '@/lib/form-error'
 import { formatDateTime } from '@/lib/format'
-import { toastError, toastSuccess, toastWarning } from '@/lib/toast'
+import { toastSuccess, toastWarning } from '@/lib/toast'
 import { PHONE_PATTERN } from '@/lib/validation'
 import { EGender, type SysUser } from '@/types/common'
 import { DetailModal, type DetailField } from '@/components/detail-modal'
@@ -147,10 +147,10 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             fullWidth: true,
             formatValue: () => <AvatarField user={user} />,
         },
-        { name: 'fullName', label: t('auth:auth.account.profile.fullName'), editable: true, fullWidth: true },
-        { name: 'username', label: t('auth:auth.account.profile.username'), editable: false },
-        { name: 'email', label: t('auth:auth.account.profile.email'), editable: false, type: 'email' },
-        { name: 'phoneNumber', label: t('auth:auth.account.profile.phoneNumber'), editable: true, type: 'tel' },
+        { name: 'fullName', label: t('auth:auth.account.profile.fullName'), editable: true, required: true, fullWidth: true },
+        { name: 'username', label: t('auth:auth.account.profile.username'), editable: false, required: true },
+        { name: 'email', label: t('auth:auth.account.profile.email'), editable: false, required: true, type: 'email' },
+        { name: 'phoneNumber', label: t('auth:auth.account.profile.phoneNumber'), editable: true, required: true, type: 'tel' },
         {
             name: 'role',
             label: t('auth:auth.account.profile.role'),
@@ -169,11 +169,11 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
             editable: true,
             type: 'select',
             options: [
-                { value: EGender.MALE, label: t('staff:gender.MALE') },
-                { value: EGender.FEMALE, label: t('staff:gender.FEMALE') },
-                { value: EGender.OTHER, label: t('staff:gender.OTHER') },
+                { value: EGender.MALE, label: t('common:gender.MALE') },
+                { value: EGender.FEMALE, label: t('common:gender.FEMALE') },
+                { value: EGender.OTHER, label: t('common:gender.OTHER') },
             ],
-            formatValue: (v) => (v ? t(`staff:gender.${String(v)}`) : '—'),
+            formatValue: (v) => (v ? t(`common:gender.${String(v)}`) : '—'),
         },
         { name: 'dob', label: t('auth:auth.account.profile.dob'), editable: true, type: 'date' },
         {
@@ -209,12 +209,14 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         // DetailModal không có schema ⇒ kiểm tối thiểu ở đây; lỗi báo tại ô và giữ chế độ sửa.
         const phone = submitted.phoneNumber.trim()
         const invalidName = submitted.fullName.trim() === ''
-        const invalidPhone = phone !== '' && !PHONE_PATTERN.test(phone)
+        // Backend `UpdateMyProfileReqDTO.phoneNumber` là @NotBlank + @Pattern ⇒ bắt buộc.
+        const invalidPhone = !PHONE_PATTERN.test(phone)
         if (invalidName) {
             form.setError('fullName', { type: 'validate', message: t('auth:auth.validation.fullNameRequired') })
         }
         if (invalidPhone) {
-            form.setError('phoneNumber', { type: 'validate', message: t('auth:auth.validation.phoneInvalid') })
+            form.setError('phoneNumber', { type: 'validate', message: phone === '' ? t('auth:auth.validation.phoneRequired') : t('auth:auth.validation.phoneInvalid'),
+            })
         }
         if (invalidName || invalidPhone) throw new Error('validation')
 
@@ -223,18 +225,14 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
                 fullName: submitted.fullName.trim(),
                 phoneNumber: phone || undefined,
                 dob: submitted.dob ? new Date(submitted.dob).toISOString() : undefined,
-                gender: (submitted.gender as EGender) || undefined,
-                description: submitted.description.trim() || undefined,
+                gender: (submitted.gender as EGender) || null,
+                description: submitted.description.trim(),
             })
             updateUser(updated)
             toastSuccess('auth.account.profile.updated', { ns: 'auth' })
         } catch (error) {
-            // SĐT trùng (`EXISTED` + `PHONE_EXISTED`) báo tại ô; lỗi khác toast. Ném lại để modal giữ chế độ sửa.
-            if (error instanceof ApiError && error.subKey?.toLowerCase().includes('phone')) {
-                form.setError('phoneNumber', { type: 'server', message: error.message })
-            } else {
-                toastError(error)
-            }
+            // SĐT trùng báo tại ô số điện thoại; lỗi khác chỉ toast. Ném lại để modal giữ chế độ sửa.
+            setFormErrorFromApi(form, error)
             throw error
         }
     }

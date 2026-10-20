@@ -124,7 +124,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
                             name="currentPassword"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('auth.account.changePassword.currentPassword')}</FormLabel>
+                                    <FormLabel>{t('auth.account.changePassword.currentPassword')} <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <div className="relative">
                                             <Input
@@ -145,7 +145,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
                             name="newPassword"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('auth.account.changePassword.newPassword')}</FormLabel>
+                                    <FormLabel>{t('auth.account.changePassword.newPassword')} <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input {...field} type={inputType} autoComplete="new-password" />
                                     </FormControl>
@@ -158,7 +158,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
                             name="confirmPassword"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('auth.account.changePassword.confirmPassword')}</FormLabel>
+                                    <FormLabel>{t('auth.account.changePassword.confirmPassword')} <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input {...field} type={inputType} autoComplete="new-password" />
                                     </FormControl>

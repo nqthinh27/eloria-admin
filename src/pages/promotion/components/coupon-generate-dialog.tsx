@@ -152,7 +152,7 @@ export function CouponGenerateDialog({
             const codes = await onGenerate(payload)
             setGenerated(codes)
         } catch (error) {
-            setFormErrorFromApi(form, error, {}, 'name')
+            setFormErrorFromApi(form, error)
         }
     }
 
@@ -286,7 +286,9 @@ export function CouponGenerateDialog({
                                         name="type"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>{t('promotion.form.type')}</FormLabel>
+                                                <FormLabel>
+                                                    {t('promotion.form.type')} <span className="text-destructive">*</span>
+                                                </FormLabel>
                                                 <Select
                                                     value={field.value}
                                                     onValueChange={field.onChange}>
@@ -357,7 +359,9 @@ export function CouponGenerateDialog({
                                         name="channel"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>{t('promotion.form.channel')}</FormLabel>
+                                                <FormLabel>
+                                                    {t('promotion.form.channel')} <span className="text-destructive">*</span>
+                                                </FormLabel>
                                                 <Select
                                                     value={field.value}
                                                     onValueChange={field.onChange}>

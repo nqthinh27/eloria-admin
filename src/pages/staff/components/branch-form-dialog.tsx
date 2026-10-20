@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { administrativeAddressApi } from '@/api/administrative-address'
 import type { AdministrativeAddress } from '@/types/administrative-address'
 import type { Branch, BranchPayload } from '@/types/branch'
+import { setFormErrorFromApi } from '@/lib/form-error'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -26,7 +27,8 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ClearableSelect } from '@/components/clearable-select'
+import { SelectItem } from '@/components/ui/select'
 
 const buildSchema = (t: (key: string) => string) =>
     z.object({
@@ -158,12 +160,17 @@ export function BranchFormDialog({
             closingTime: values.closingTime || undefined,
         }
 
-        if (isEdit) {
-            await onUpdate(branch.id, payload)
-        } else {
-            await onCreate(payload)
+        try {
+            if (isEdit) {
+                await onUpdate(branch.id, payload)
+            } else {
+                await onCreate(payload)
+            }
+            onOpenChange(false)
+        } catch (error) {
+            // Trùng tên ⇒ dưới ô tên; tỉnh/phường sai ⇒ dưới ô tương ứng; lỗi khác chỉ toast.
+            setFormErrorFromApi(form, error)
         }
-        onOpenChange(false)
     }
 
     const isSubmitting = form.formState.isSubmitting
@@ -258,27 +265,25 @@ export function BranchFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('staff.branch.form.province')}</FormLabel>
-                                        <Select
-                                            value={field.value}
-                                            onValueChange={(v) => {
-                                                field.onChange(v)
-                                                form.setValue('wardCode', undefined)
-                                            }}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue
-                                                        placeholder={t('staff.branch.form.provincePlaceholder')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={(v) => {
+                                                    field.onChange(v)
+                                                    form.setValue('wardCode', undefined)
+                                                }}
+                                                onClear={() => {
+                                                    field.onChange(undefined)
+                                                    form.setValue('wardCode', undefined)
+                                                }}
+                                                placeholder={t('staff.branch.form.provincePlaceholder')}>
                                                 {provinces.map((p) => (
                                                     <SelectItem key={p.id} value={p.id}>
                                                         {p.name}
                                                     </SelectItem>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -290,25 +295,20 @@ export function BranchFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('staff.branch.form.ward')}</FormLabel>
-                                        <Select
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                            disabled={!selectedProvince || wardsLoading}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue
-                                                        placeholder={t('staff.branch.form.wardPlaceholder')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={() => field.onChange(undefined)}
+                                                placeholder={t('staff.branch.form.wardPlaceholder')}
+                                                disabled={!selectedProvince || wardsLoading}>
                                                 {wards.map((w) => (
                                                     <SelectItem key={w.id} value={w.id}>
                                                         {w.name}
                                                     </SelectItem>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

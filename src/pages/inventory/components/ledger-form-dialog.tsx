@@ -4,6 +4,7 @@ import { Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { warehouseLedgerApi } from '@/api/inventory'
 import { toastSuccess } from '@/lib/toast'
+import { resolveApiFieldErrors, toastUnmappedApiError } from '@/lib/form-error'
 import { useSkuOptions } from '@/hooks/use-sku-options'
 import type { Branch } from '@/types/branch'
 import {
@@ -160,8 +161,14 @@ export function LedgerFormDialog({
             toastSuccess('inventory.toast.ledgerCreated', { ns: 'inventory' })
             await onCreated()
             onOpenChange(false)
-        } catch {
-            // api-client đã toast lỗi; giữ dialog mở để người dùng sửa lại.
+        } catch (error) {
+            // Thiếu/trùng chi nhánh đích ⇒ hiện dưới ô chi nhánh; lỗi khác chỉ toast. Giữ dialog mở.
+            const known = resolveApiFieldErrors(error).filter((e) => e.field === 'branchId' || e.field === 'toBranchId')
+            if (known.length > 0) {
+                setErrors(Object.fromEntries(known.map((e) => [e.field, e.message])))
+            } else {
+                toastUnmappedApiError(error)
+            }
         } finally {
             setSubmitting(false)
         }

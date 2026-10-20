@@ -97,7 +97,9 @@ export function OpenShiftCard({ onOpened }: { onOpened: (shift: WorkShift) => vo
                 >
                     {mustPickBranch && (
                         <div className="flex flex-col gap-1.5">
-                            <Label htmlFor="shift-branch">{t('order.shift.open.branch')}</Label>
+                            <Label htmlFor="shift-branch">
+                                {t('order.shift.open.branch')} <span className="text-destructive">*</span>
+                            </Label>
                             <Select value={branchId ?? undefined} onValueChange={setBranchId}>
                                 <SelectTrigger id="shift-branch" className="bg-card w-full">
                                     <Building2 className="text-muted-foreground size-4 shrink-0" />
@@ -119,7 +121,7 @@ export function OpenShiftCard({ onOpened }: { onOpened: (shift: WorkShift) => vo
 
                     <div className="flex flex-col gap-1.5">
                         <Label htmlFor="shift-opening-cash">
-                            {t('order.shift.open.openingCash')}
+                            {t('order.shift.open.openingCash')} <span className="text-destructive">*</span>
                         </Label>
                         <MoneyInput
                             id="shift-opening-cash"

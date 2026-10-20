@@ -17,12 +17,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { MoneyInput } from '@/components/money-input'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ClearableSelect } from '@/components/clearable-select'
+import { SelectItem } from '@/components/ui/select'
 import { SearchSelect } from '@/components/search-select'
 import { META_DESCRIPTION_MAX, META_TITLE_MAX, SeoFields } from '@/components/seo-fields'
-
-/** Radix Select không nhận `value=""` ⇒ dùng sentinel cho lựa chọn "để trống". */
-const NONE = '__none__'
 
 const buildSchema = (t: (key: string) => string, isEdit: boolean) =>
     z.object({
@@ -109,10 +107,10 @@ export function ProductFormDialog({
             name: '',
             price: '',
             costPrice: '',
-            brandId: NONE,
-            material: NONE,
-            gender: NONE,
-            sizeGroup: NONE,
+            brandId: undefined,
+            material: undefined,
+            gender: undefined,
+            sizeGroup: undefined,
             categoryIds: [],
             shortDescription: '',
             description: '',
@@ -128,10 +126,10 @@ export function ProductFormDialog({
             name: product?.name ?? '',
             price: product ? String(product.price) : '',
             costPrice: product?.costPrice != null ? String(product.costPrice) : '',
-            brandId: product?.brandId ?? NONE,
-            material: product?.material ?? NONE,
-            gender: product?.gender ?? NONE,
-            sizeGroup: product?.sizeGroup ?? NONE,
+            brandId: product?.brandId ?? undefined,
+            material: product?.material ?? undefined,
+            gender: product?.gender ?? undefined,
+            sizeGroup: product?.sizeGroup ?? undefined,
             categoryIds: product?.categories.map((c) => c.id) ?? [],
             shortDescription: product?.shortDescription ?? '',
             description: product?.description ?? '',
@@ -147,10 +145,10 @@ export function ProductFormDialog({
             // Bỏ trống ⇒ **không gửi field**: khi tạo là "chưa có giá vốn", khi sửa là
             // "giữ nguyên giá cũ" (backend partial-update, không xoá về null).
             costPrice: values.costPrice.trim() === '' ? undefined : Number(values.costPrice),
-            brandId: values.brandId === NONE ? undefined : values.brandId,
-            material: values.material === NONE ? undefined : (values.material as EMaterial),
-            gender: values.gender === NONE ? undefined : (values.gender as EGender),
-            sizeGroup: values.sizeGroup === NONE ? undefined : values.sizeGroup,
+            brandId: values.brandId || undefined,
+            material: (values.material || undefined) as EMaterial | undefined,
+            gender: (values.gender || undefined) as EGender | undefined,
+            sizeGroup: values.sizeGroup || undefined,
             categoryIds: values.categoryIds,
             shortDescription: values.shortDescription || undefined,
             description: values.description || undefined,
@@ -161,13 +159,20 @@ export function ProductFormDialog({
 
         try {
             if (isEdit) {
-                await onUpdate(product.id, common)
+                // Sửa: bỏ chọn enum ⇒ `null` (xoá); chuỗi rỗng ⇒ `""` (xoá) — backend bỏ qua `null` ở chuỗi.
+                await onUpdate(product.id, {
+                    ...common,
+                    gender: (values.gender || null) as EGender | null,
+                    material: (values.material || null) as EMaterial | null,
+                    shortDescription: values.shortDescription ?? '',
+                    description: values.description ?? '',
+                })
             } else {
                 await onCreate({ ...common, code: values.code! })
             }
             onOpenChange(false)
         } catch (error) {
-            setFormErrorFromApi(form, error, {}, isEdit ? 'name' : 'code')
+            setFormErrorFromApi(form, error)
         }
     }
 
@@ -299,25 +304,19 @@ export function ProductFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('product.form.brand')}</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue
-                                                        placeholder={t('product.form.brandPlaceholder')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value={NONE}>
-                                                    {t('product.form.brandPlaceholder')}
-                                                </SelectItem>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={() => field.onChange(undefined)}
+                                                placeholder={t('product.form.brandPlaceholder')}>
                                                 {brands.map((b) => (
                                                     <SelectItem key={b.id} value={b.id}>
                                                         {b.name}
                                                     </SelectItem>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -328,25 +327,19 @@ export function ProductFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('product.form.material')}</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue
-                                                        placeholder={t('product.form.materialPlaceholder')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value={NONE}>
-                                                    {t('product.form.materialPlaceholder')}
-                                                </SelectItem>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={() => field.onChange(undefined)}
+                                                placeholder={t('product.form.materialPlaceholder')}>
                                                 {Object.values(EMaterial).map((m) => (
                                                     <SelectItem key={m} value={m}>
                                                         {m}
                                                     </SelectItem>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -360,18 +353,12 @@ export function ProductFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('product.form.gender')}</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue
-                                                        placeholder={t('product.form.genderPlaceholder')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value={NONE}>
-                                                    {t('product.form.genderPlaceholder')}
-                                                </SelectItem>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={() => field.onChange(undefined)}
+                                                placeholder={t('product.form.genderPlaceholder')}>
                                                 <SelectItem value={EGender.MALE}>
                                                     {t('product.detail.genderMale')}
                                                 </SelectItem>
@@ -381,8 +368,8 @@ export function ProductFormDialog({
                                                 <SelectItem value={EGender.OTHER}>
                                                     {t('product.detail.genderOther')}
                                                 </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -393,25 +380,19 @@ export function ProductFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('product.form.sizeGroup')}</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue
-                                                        placeholder={t('product.form.sizeGroupPlaceholder')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value={NONE}>
-                                                    {t('product.form.sizeGroupPlaceholder')}
-                                                </SelectItem>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={() => field.onChange(undefined)}
+                                                placeholder={t('product.form.sizeGroupPlaceholder')}>
                                                 {sizeGroups.map((g) => (
                                                     <SelectItem key={g} value={g}>
                                                         {g}
                                                     </SelectItem>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <p className="text-muted-foreground text-xs">
                                             {t('product.form.sizeGroupHint')}
                                         </p>

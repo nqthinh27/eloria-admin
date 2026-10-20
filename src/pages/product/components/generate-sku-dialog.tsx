@@ -76,7 +76,7 @@ export function GenerateSkuDialog({
                 ) : (
                     <div className="space-y-4">
                         <div>
-                            <p className="mb-2 text-sm font-medium">{t('product.sku.colors')}</p>
+                            <p className="mb-2 text-sm font-medium">{t('product.sku.colors')} <span className="text-destructive">*</span></p>
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                                 {colors.map((c) => (
                                     <label
@@ -101,7 +101,7 @@ export function GenerateSkuDialog({
                         </div>
 
                         <div>
-                            <p className="mb-2 text-sm font-medium">{t('product.sku.sizes')}</p>
+                            <p className="mb-2 text-sm font-medium">{t('product.sku.sizes')} <span className="text-destructive">*</span></p>
                             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                                 {sizes.map((s) => (
                                     <label

@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { bannerApi } from '@/api/cms'
 import { toastSuccess, toastWarning } from '@/lib/toast'
 import type { Banner, BannerPayload } from '@/types/cms'
+import { setFormErrorFromApi } from '@/lib/form-error'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -160,8 +161,9 @@ export function BannerFormDialog({ open, onOpenChange, banner, onCreate, onUpdat
                 }
             }
             onOpenChange(false)
-        } catch {
-            // api-client đã toast lỗi (vd periodInvalid); giữ form mở để sửa lại.
+        } catch (error) {
+            // periodInvalid ⇒ lỗi hiện dưới ô "đến ngày"; giữ form mở để sửa lại.
+            setFormErrorFromApi(form, error)
         }
     }
 

@@ -73,13 +73,15 @@ export function ReturnRejectDialog({
                 </DialogHeader>
 
                 <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="return-reject-reason">{t('return.rejectDialog.reason')}</Label>
+                    <Label htmlFor="return-reject-reason">
+                        {t('return.rejectDialog.reason')} <span className="text-destructive">*</span>
+                    </Label>
                     <Textarea
                         id="return-reject-reason"
                         value={reason}
                         onChange={(event) => setReason(event.target.value)}
                         placeholder={t('return.rejectDialog.reasonPlaceholder')}
-                        maxLength={500}
+                        maxLength={400}
                         rows={3}
                         disabled={submitting}
                     />

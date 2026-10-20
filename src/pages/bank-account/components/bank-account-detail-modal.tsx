@@ -42,10 +42,10 @@ export function BankAccountDetailModal({
     }
 
     const fields: DetailField<BankAccountDetailValues>[] = [
-        { name: 'bankName', label: t('bankAccount.form.bankName'), editable: true },
-        { name: 'bankBin', label: t('bankAccount.form.bankBin'), editable: true },
-        { name: 'accountNumber', label: t('bankAccount.form.accountNumber'), editable: true },
-        { name: 'accountName', label: t('bankAccount.form.accountName'), editable: true },
+        { name: 'bankName', label: t('bankAccount.form.bankName'), editable: true, required: true },
+        { name: 'bankBin', label: t('bankAccount.form.bankBin'), editable: true, required: true },
+        { name: 'accountNumber', label: t('bankAccount.form.accountNumber'), editable: true, required: true },
+        { name: 'accountName', label: t('bankAccount.form.accountName'), editable: true, required: true },
         {
             label: t('bankAccount.list.column.isDefault'),
             readOnly: true,

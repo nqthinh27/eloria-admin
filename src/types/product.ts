@@ -112,7 +112,11 @@ export type CreateProductReq = {
 }
 
 /** `UpdateProductReqDTO` — giống create nhưng **không có `code`**. */
-export type UpdateProductReq = Omit<CreateProductReq, 'code'>
+export type UpdateProductReq = Omit<CreateProductReq, 'code' | 'gender' | 'material'> & {
+    /** Vắng = giữ nguyên · `null` = xoá · giá trị = ghi (backend `JsonNullable`). */
+    gender?: EGender | null
+    material?: EMaterial | null
+}
 
 /** `GenerateSkuReqDTO` — sinh ma trận SKU (màu × size). Idempotent: ô đã có SKU thì bỏ qua. */
 export type GenerateSkuReq = {

@@ -56,11 +56,12 @@ export function StaffDetailModal({ staff, onOpenChange, onSave }: StaffDetailMod
     }
 
     const fields: DetailField<StaffDetailValues>[] = [
-        { name: 'username', label: t('staff.form.username'), editable: false },
+        { name: 'username', label: t('staff.form.username'), editable: false, required: true },
         {
             name: 'role',
             label: t('staff.form.role'),
             editable: false,
+            required: true,
             type: 'select',
             options: [
                 { value: ERole.STAFF, label: 'STAFF' },
@@ -69,13 +70,15 @@ export function StaffDetailModal({ staff, onOpenChange, onSave }: StaffDetailMod
             ],
             formatValue: () => <Badge variant="outline">{staff.role}</Badge>,
         },
-        { name: 'fullName', label: t('staff.form.fullName'), editable: true, fullWidth: true },
-        { name: 'email', label: t('staff.form.email'), editable: true, type: 'email' },
-        { name: 'phoneNumber', label: t('staff.form.phoneNumber'), editable: true, type: 'tel' },
+        { name: 'fullName', label: t('staff.form.fullName'), editable: true, required: true, fullWidth: true },
+        { name: 'email', label: t('staff.form.email'), editable: true, required: true, type: 'email' },
+        { name: 'phoneNumber', label: t('staff.form.phoneNumber'), editable: true, required: true, type: 'tel' },
         {
             name: 'branchId',
             label: t('staff.form.branch'),
             editable: isSuperAdmin,
+            // Backend (StaffServiceImpl): chi nhánh bắt buộc với mọi role trừ SUPER_ADMIN.
+            required: staff.role !== ERole.SUPER_ADMIN,
             type: 'select',
             options: branches.map((b) => ({ value: b.id, label: b.name })),
             formatValue: () => staff.branchName ?? t('staff.list.noBranch'),
@@ -86,9 +89,9 @@ export function StaffDetailModal({ staff, onOpenChange, onSave }: StaffDetailMod
             editable: true,
             type: 'select',
             options: [
-                { value: EGender.MALE, label: t('gender.MALE') },
-                { value: EGender.FEMALE, label: t('gender.FEMALE') },
-                { value: EGender.OTHER, label: t('gender.OTHER') },
+                { value: EGender.MALE, label: t('common:gender.MALE') },
+                { value: EGender.FEMALE, label: t('common:gender.FEMALE') },
+                { value: EGender.OTHER, label: t('common:gender.OTHER') },
             ],
         },
         { name: 'dob', label: t('staff.form.dob'), editable: true, type: 'date' },
@@ -131,8 +134,8 @@ export function StaffDetailModal({ staff, onOpenChange, onSave }: StaffDetailMod
             phoneNumber: submitted.phoneNumber,
             branchId: isSuperAdmin ? submitted.branchId || undefined : undefined,
             dob: submitted.dob ? new Date(submitted.dob).toISOString() : undefined,
-            gender: (submitted.gender as typeof staff.gender) || undefined,
-            description: submitted.description || undefined,
+            gender: (submitted.gender as typeof staff.gender) || null,
+            description: submitted.description ?? '',
         })
     }
 

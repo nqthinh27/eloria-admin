@@ -409,6 +409,23 @@ Domain **không** có số đếm (vd Khuyến mại — BE21, xem `docs/backend
 - Đổi tab ⇒ coi như đổi filter: về trang 1, giữ nguyên các filter/search khác (mục 5.1 về giữ ngữ
   cảnh chỉ áp cho *sau khi ghi dữ liệu*, đổi tab vẫn theo quy ước đổi-filter-thường).
 
+### 5.9 Form: bắt buộc khớp backend · dropdown xoá được · lỗi đúng ô (chốt 2026-10-20)
+
+- **Dấu `*` + zod = đúng với backend, ưu tiên theo thứ tự DB → DTO → service**: cột `nullable = false` trong
+  `domain/*.java`, rồi DTO (`@NotNull`/`@NotBlank`/`@NotEmpty`/`@Pattern`/`@Size`) **và** logic bắt buộc trong service, vd chi nhánh bắt buộc với mọi role trừ SUPER_ADMIN). Làm form mới
+  ⇒ đối chiếu DTO + service trước; FE chặt hơn backend chỉ khi có lý do nghiệp vụ **ghi rõ trong code**.
+- **Dropdown KHÔNG bắt buộc** (nhãn không `*`) có mục **"-Không chọn-"** (nghiêng, mờ) ở đầu danh sách, đại diện
+  cho null/"" — **không** thêm icon ✕ vào ô. Dùng [`ClearableSelect`](src/components/clearable-select.tsx)
+  (truyền `onClear`) hoặc `SearchSelect` chọn 1 (`onClear`); trong `DetailModal` field `type: 'select'` tự có mục
+  này trừ khi `required: true`. **Đừng** tự thêm mục giả/sentinel ở caller; placeholder nói nghĩa của trạng thái
+  rỗng ("Bỏ trống = danh mục gốc"). Ngoại lệ: mục là lựa chọn có nghĩa ở **bộ lọc** ("Tất cả …").
+- **Lỗi backend gắn đúng ô gây lỗi**: `catch` của form gọi `setFormErrorFromApi(form, error)` (form
+  tự quản state dùng `resolveApiFieldErrors`) — [`src/lib/form-error.ts`](src/lib/form-error.ts) map
+  theo `subKey` (`error.email.existed` → `email`, `*.codeExisted` → `code`…). **Không có ô mặc định**:
+  không xác định được ô ⇒ chỉ toast. Không để `catch {}` rỗng trong form.
+- **Xoá giá trị khi sửa (backend `StringMapper` + `JsonNullable`, 2026-10-20)**: chuỗi tuỳ chọn gửi `""` = xoá (về `NULL`), vắng/`null` = giữ nguyên; enum tuỳ chọn ở `UpdateStaff/Customer/MyProfile/Product` gửi `null` = xoá, vắng = giữ nguyên. Ngày (`dob`) chưa xoá được.
+- **Nhãn giới tính** nằm ở namespace `common` ⇒ `t('common:gender.MALE')`, không phải `staff:`/`gender.MALE`.
+
 ---
 
 ## 6. Thiết kế nguồn — folder `design/`

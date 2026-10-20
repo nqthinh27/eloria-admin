@@ -27,7 +27,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { DateInput } from '@/components/date-input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ClearableSelect } from '@/components/clearable-select'
+import { SelectItem } from '@/components/ui/select'
 
 /** Chờ gõ xong SĐT rồi mới tra trùng, tránh gọi API mỗi lần gõ 1 ký tự. */
 const DUPLICATE_CHECK_DEBOUNCE_MS = 400
@@ -174,7 +175,7 @@ export function CustomerFormDialog({
                     fullName: values.fullName,
                     email: values.email || undefined,
                     dob,
-                    gender: values.gender,
+                    gender: values.gender ?? null,
                 })
             } else {
                 await onCreate({
@@ -196,12 +197,7 @@ export function CustomerFormDialog({
              * `error.branch.required` không còn phát sinh từ Phase 3b (backend bỏ validate bắt buộc
              * chi nhánh), nhưng vẫn map để dữ liệu/log cũ hiển thị đúng chỗ nếu gặp lại.
              */
-            setFormErrorFromApi(
-                form,
-                error,
-                { 'error.phone.existed': 'phoneNumber', 'error.branch.required': 'branchId' },
-                'fullName',
-            )
+            setFormErrorFromApi(form, error)
         }
     }
 
@@ -333,15 +329,12 @@ export function CustomerFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('customer.form.gender')}</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue
-                                                        placeholder={t('customer.form.genderPlaceholder')}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={() => field.onChange(undefined)}
+                                                placeholder={t('customer.form.genderPlaceholder')}>
                                                 <SelectItem value={EGender.MALE}>
                                                     {t('customer.detail.genderMale')}
                                                 </SelectItem>
@@ -351,8 +344,8 @@ export function CustomerFormDialog({
                                                 <SelectItem value={EGender.OTHER}>
                                                     {t('customer.detail.genderOther')}
                                                 </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -371,25 +364,20 @@ export function CustomerFormDialog({
                                  */
                                 <FormItem>
                                     <FormLabel>{t('customer.form.branch')}</FormLabel>
-                                    <Select
-                                        value={field.value}
-                                        onValueChange={field.onChange}
-                                        disabled={isEdit}>
-                                        <FormControl>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue
-                                                    placeholder={t('customer.form.branchPlaceholder')}
-                                                />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
+                                    <FormControl>
+                                        <ClearableSelect
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            onClear={() => field.onChange(undefined)}
+                                            placeholder={t('customer.form.branchPlaceholder')}
+                                            disabled={isEdit}>
                                             {branches.map((branch) => (
                                                 <SelectItem key={branch.id} value={branch.id}>
                                                     {branch.name}
                                                 </SelectItem>
                                             ))}
-                                        </SelectContent>
-                                    </Select>
+                                        </ClearableSelect>
+                                    </FormControl>
                                     <FormDescription>
                                         {t('customer.form.branchHint')}
                                     </FormDescription>

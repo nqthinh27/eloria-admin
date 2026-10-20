@@ -89,7 +89,7 @@ export function PromotionStatusDialog({
                 ) : (
                     <div className="space-y-3">
                         <Label htmlFor="promotion-next-status">
-                            {t('promotion.list.column.status')}
+                            {t('promotion.list.column.status')} <span className="text-destructive">*</span>
                         </Label>
                         <Select
                             value={nextStatus}

@@ -24,9 +24,6 @@ import { HoverSwapPreview } from '@/components/image/hover-swap-preview'
 import { ImageUploadField } from '@/components/image/image-upload-field'
 import { categoryApi } from '@/api/product'
 
-/** Giá trị `Select` cho "không có danh mục cha" — Radix Select không nhận `value=""`. */
-const NO_PARENT = '__none__'
-
 /** 5 ô cover theo đúng thứ tự chạy slideshow. */
 const COVER_SLOTS = ['cover1', 'cover2', 'cover3', 'cover4', 'cover5'] as const satisfies CategoryImageSlot[]
 
@@ -88,7 +85,7 @@ type CategoryFormDialogProps = {
 const EMPTY_VALUES: CategoryFormValues = {
     code: '',
     name: '',
-    parentId: NO_PARENT,
+    parentId: undefined,
     sortOrder: '',
     description: '',
     isDefault: false,
@@ -155,7 +152,7 @@ export function CategoryFormDialog({
         form.reset({
             code: category?.code ?? '',
             name: category?.name ?? '',
-            parentId: category?.parentId ?? NO_PARENT,
+            parentId: category?.parentId ?? undefined,
             sortOrder: category?.sortOrder != null ? String(category.sortOrder) : '',
             description: category?.description ?? '',
             isDefault: category?.isDefault === true,
@@ -168,8 +165,8 @@ export function CategoryFormDialog({
         const payload: CategoryPayload = {
             code: values.code,
             name: values.name,
-            // Luôn gửi cha hiện tại; "Không có" mới là chủ ý chuyển về gốc.
-            parentId: values.parentId === NO_PARENT ? undefined : values.parentId,
+            // Luôn gửi cha hiện tại; bấm ✕ xoá cha (rỗng) mới là chủ ý chuyển về gốc.
+            parentId: values.parentId || undefined,
             sortOrder: values.sortOrder ? Number(values.sortOrder) : undefined,
             // `""` ⇒ xoá mô tả (backend chuẩn hoá về `null` — BE32). Ảnh không nằm trong payload (P13.3).
             description: values.description,
@@ -200,7 +197,7 @@ export function CategoryFormDialog({
             }
             onOpenChange(false)
         } catch (error) {
-            setFormErrorFromApi(form, error, {}, 'code')
+            setFormErrorFromApi(form, error)
         }
     }
 
@@ -391,15 +388,13 @@ export function CategoryFormDialog({
                                     <SearchSelect
                                         value={field.value}
                                         onChange={field.onChange}
+                                        onClear={() => field.onChange(undefined)}
                                         placeholder={t('category.form.parentPlaceholder')}
-                                        options={[
-                                            { value: NO_PARENT, label: t('category.form.parentNone') },
-                                            ...parentOptions.map((option) => ({
-                                                value: option.id,
-                                                label: option.name,
-                                                hint: option.code,
-                                            })),
-                                        ]}
+                                        options={parentOptions.map((option) => ({
+                                            value: option.id,
+                                            label: option.name,
+                                            hint: option.code,
+                                        }))}
                                     />
                                     <FormMessage />
                                 </FormItem>

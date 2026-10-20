@@ -12,6 +12,7 @@ import type { PagedSearchLoader } from '@/hooks/use-paged-search'
 import { EntityStatus } from '@/types/common'
 import { POST_TYPES, type Post, type PostListItem, type PostPayload, type PostType } from '@/types/cms'
 import type { Product } from '@/types/product'
+import { setFormErrorFromApi } from '@/lib/form-error'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -231,8 +232,9 @@ export function PostFormDialog({ open, onOpenChange, post, onCreate, onUpdate, o
                 }
             }
             onOpenChange(false)
-        } catch {
-            // api-client đã toast lỗi (vd slug trùng, sản phẩm không hợp lệ); giữ form mở để sửa lại.
+        } catch (error) {
+            // slug trùng ⇒ dưới ô slug; sản phẩm không hợp lệ ⇒ dưới ô sản phẩm; giữ form mở để sửa lại.
+            setFormErrorFromApi(form, error)
         }
     }
 
@@ -306,7 +308,9 @@ export function PostFormDialog({ open, onOpenChange, post, onCreate, onUpdate, o
                                 name="type"
                                 render={({ field }) => (
                                     <FormItem className="content-start">
-                                        <FormLabel>{t('post:post.form.type')}</FormLabel>
+                                        <FormLabel>
+                                            {t('post:post.form.type')} <span className="text-destructive">*</span>
+                                        </FormLabel>
                                         <Select
                                             value={field.value}
                                             onValueChange={(value) => field.onChange(value as PostType)}>

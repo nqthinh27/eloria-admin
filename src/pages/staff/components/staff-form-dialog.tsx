@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { Loader2 } from 'lucide-react'
@@ -31,13 +31,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { DateInput } from '@/components/date-input'
 import { Textarea } from '@/components/ui/textarea'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { ClearableSelect } from '@/components/clearable-select'
+import { SelectItem } from '@/components/ui/select'
 
 const buildSchema = (t: (key: string) => string, isEdit: boolean) =>
     z.object({
@@ -59,6 +54,15 @@ const buildSchema = (t: (key: string) => string, isEdit: boolean) =>
         dob: z.string().optional(),
         gender: z.nativeEnum(EGender).optional(),
         description: z.string().optional(),
+    }).superRefine((values, ctx) => {
+        // Backend (StaffServiceImpl.create): chi nhánh bắt buộc với mọi role trừ SUPER_ADMIN.
+        if (values.role !== ERole.SUPER_ADMIN && !values.branchId) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['branchId'],
+                message: t('staff.form.validation.branchRequired'),
+            })
+        }
     })
 
 type StaffFormValues = z.infer<ReturnType<typeof buildSchema>>
@@ -136,8 +140,9 @@ export function StaffFormDialog({
                     phoneNumber: values.phoneNumber,
                     branchId: isSuperAdmin ? values.branchId : undefined,
                     dob,
-                    gender: values.gender,
-                    description: values.description || undefined,
+                    // Sửa: bỏ chọn ⇒ `null` (xoá), mô tả rỗng ⇒ `""` (xoá) — backend bỏ qua `null` ở chuỗi.
+                    gender: values.gender ?? null,
+                    description: values.description ?? '',
                 })
             } else {
                 await onCreate({
@@ -155,11 +160,13 @@ export function StaffFormDialog({
             }
             onOpenChange(false)
         } catch (error) {
-            setFormErrorFromApi(form, error, {}, isEdit ? 'fullName' : 'username')
+            setFormErrorFromApi(form, error)
         }
     }
 
     const isSubmitting = form.formState.isSubmitting
+    const watchedRole = useWatch({ control: form.control, name: 'role' })
+    const branchRequired = watchedRole !== ERole.SUPER_ADMIN
 
     return (
         <Dialog open={open} onOpenChange={(next) => !isSubmitting && onOpenChange(next)}>
@@ -272,13 +279,11 @@ export function StaffFormDialog({
                                             <FormLabel>
                                                 {t('staff.form.role')} <span className="text-destructive">*</span>
                                             </FormLabel>
-                                            <Select value={field.value} onValueChange={field.onChange}>
-                                                <FormControl>
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder={t('staff.form.rolePlaceholder')} />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
+                                            <FormControl>
+                                                <ClearableSelect
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                    placeholder={t('staff.form.rolePlaceholder')}>
                                                     <SelectItem value={ERole.STAFF}>STAFF</SelectItem>
                                                     <SelectItem value={ERole.ADMIN}>ADMIN</SelectItem>
                                                     {isSuperAdmin && (
@@ -286,8 +291,8 @@ export function StaffFormDialog({
                                                             SUPER_ADMIN
                                                         </SelectItem>
                                                     )}
-                                                </SelectContent>
-                                            </Select>
+                                                </ClearableSelect>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -299,24 +304,26 @@ export function StaffFormDialog({
                                 name="branchId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{t('staff.form.branch')}</FormLabel>
-                                        <Select
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                            disabled={!isSuperAdmin}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder={t('staff.form.branchPlaceholder')} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
+                                        <FormLabel>
+                                            {t('staff.form.branch')}{' '}
+                                            {branchRequired && <span className="text-destructive">*</span>}
+                                        </FormLabel>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={
+                                                    branchRequired ? undefined : () => field.onChange(undefined)
+                                                }
+                                                placeholder={t('staff.form.branchPlaceholder')}
+                                                disabled={!isSuperAdmin}>
                                                 {branches.map((branch) => (
                                                     <SelectItem key={branch.id} value={branch.id}>
                                                         {branch.name}
                                                     </SelectItem>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -343,18 +350,17 @@ export function StaffFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t('staff.form.gender')}</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="w-full">
-                                                    <SelectValue placeholder={t('staff.form.genderPlaceholder')} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value={EGender.MALE}>{t('gender.MALE')}</SelectItem>
-                                                <SelectItem value={EGender.FEMALE}>{t('gender.FEMALE')}</SelectItem>
-                                                <SelectItem value={EGender.OTHER}>{t('gender.OTHER')}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <ClearableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                onClear={() => field.onChange(undefined)}
+                                                placeholder={t('staff.form.genderPlaceholder')}>
+                                                <SelectItem value={EGender.MALE}>{t('common:gender.MALE')}</SelectItem>
+                                                <SelectItem value={EGender.FEMALE}>{t('common:gender.FEMALE')}</SelectItem>
+                                                <SelectItem value={EGender.OTHER}>{t('common:gender.OTHER')}</SelectItem>
+                                            </ClearableSelect>
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

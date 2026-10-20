@@ -223,7 +223,7 @@ export function ZaloRelinkDialog({ open, onOpenChange }: ZaloRelinkDialogProps) 
                                 name="currentPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{t('auth:auth.account.relink.currentPassword')}</FormLabel>
+                                        <FormLabel>{t('auth:auth.account.relink.currentPassword')} <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
                                             <Input {...field} type="password" autoComplete="current-password" />
                                         </FormControl>
@@ -238,7 +238,7 @@ export function ZaloRelinkDialog({ open, onOpenChange }: ZaloRelinkDialogProps) 
                                     name="otp"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{t('auth:auth.account.relink.otp')}</FormLabel>
+                                            <FormLabel>{t('auth:auth.account.relink.otp')} {needOtp && <span className="text-destructive">*</span>}</FormLabel>
                                             <div className="flex gap-2">
                                                 <FormControl>
                                                     <Input

@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { toastSuccess, toastWarning } from '@/lib/toast'
 import { normalizeCode } from '@/lib/validation'
 import type { Brand, BrandPayload } from '@/types/product'
+import { setFormErrorFromApi } from '@/lib/form-error'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
@@ -106,8 +107,9 @@ export function BrandFormDialog({ open, onOpenChange, brand, onCreate, onUpdate,
                 }
             }
             onOpenChange(false)
-        } catch {
-            // api-client đã toast lỗi (vd trùng mã); giữ form mở để sửa lại.
+        } catch (error) {
+            // Trùng mã ⇒ lỗi hiện dưới ô mã; giữ form mở để sửa lại.
+            setFormErrorFromApi(form, error)
         }
     }
 

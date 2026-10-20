@@ -84,7 +84,8 @@ export type UpdateCustomerReq = {
     fullName: string
     email?: string
     dob?: string
-    gender?: EGender
+    /** Vắng = giữ nguyên · `null` = xoá · giá trị = ghi (backend `JsonNullable`). */
+    gender?: EGender | null
 }
 
 /**

@@ -296,7 +296,9 @@ export function ReturnCreateDialog({
 
                     {source === 'ORDER' ? (
                         <section className="space-y-2">
-                            <Label htmlFor="return-order-keyword">{t('return.form.findOrder')}</Label>
+                            <Label htmlFor="return-order-keyword">
+                                {t('return.form.findOrder')} <span className="text-destructive">*</span>
+                            </Label>
                             {order ? (
                                 <div className="bg-muted/40 flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                                     <div className="min-w-0">
@@ -371,7 +373,9 @@ export function ReturnCreateDialog({
 
                     {/* ---- hàng khách trả về ---- */}
                     <section className="space-y-2">
-                        <Label>{t('return.form.returnLines')}</Label>
+                        <Label>
+                            {t('return.form.returnLines')} <span className="text-destructive">*</span>
+                        </Label>
 
                         {source === 'ORDER' && order && (
                             <div className="divide-y rounded-lg border">
@@ -435,7 +439,7 @@ export function ReturnCreateDialog({
                                                             htmlFor={`qty-${line.id}`}
                                                             className="text-xs"
                                                         >
-                                                            {t('return.form.quantity')}
+                                                            {t('return.form.quantity')} <span className="text-destructive">*</span>
                                                         </Label>
                                                         {/* Ô số lượng giữ `type="number"` — CONVENTIONS mục 5.5. */}
                                                         <Input
@@ -510,7 +514,9 @@ export function ReturnCreateDialog({
                     {/* ---- hàng giao mới (chỉ phiếu đổi) ---- */}
                     {mode === 'EXCHANGE' && (
                         <section className="space-y-2">
-                            <Label>{t('return.form.deliverLines')}</Label>
+                            <Label>
+                                {t('return.form.deliverLines')} <span className="text-destructive">*</span>
+                            </Label>
                             <div className="space-y-2">
                                 {deliverLines.map((line) => (
                                     <div key={line.key} className="flex items-end gap-2">
@@ -745,7 +751,9 @@ function ManualLines({
                     </div>
                     <div className="grid gap-2 sm:grid-cols-[6rem_1fr]">
                         <div className="flex flex-col gap-1">
-                            <Label className="text-xs">{t('return.form.quantity')}</Label>
+                            <Label className="text-xs">
+                                {t('return.form.quantity')} <span className="text-destructive">*</span>
+                            </Label>
                             <Input
                                 type="number"
                                 min={1}
@@ -757,7 +765,9 @@ function ManualLines({
                             />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <Label className="text-xs">{t('return.form.unitAmount')}</Label>
+                            <Label className="text-xs">
+                                {t('return.form.unitAmount')} <span className="text-destructive">*</span>
+                            </Label>
                             {/* Ô tiền ⇒ `MoneyInput` có hậu tố `đ` (CONVENTIONS mục 5.5). */}
                             <MoneyInput
                                 value={line.unitAmount}

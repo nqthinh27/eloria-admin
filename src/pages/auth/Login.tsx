@@ -182,7 +182,7 @@ export default function Login() {
                         name="username"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>{t('auth.login.username')}</FormLabel>
+                                <FormLabel>{t('auth.login.username')} <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                     <div className="relative">
                                         <User className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
@@ -206,7 +206,7 @@ export default function Login() {
                         render={({ field }) => (
                             <FormItem>
                                 <div className="flex items-center justify-between">
-                                    <FormLabel>{t('auth.login.password')}</FormLabel>
+                                    <FormLabel>{t('auth.login.password')} <span className="text-destructive">*</span></FormLabel>
                                     <Link
                                         to="/forgot-password"
                                         className="text-primary text-xs font-medium hover:underline">
@@ -235,7 +235,7 @@ export default function Login() {
                         name="otp"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>{t('auth.login.otp')}</FormLabel>
+                                <FormLabel>{t('auth.login.otp')} <span className="text-destructive">*</span></FormLabel>
                                 <div className="flex gap-2">
                                     <FormControl>
                                         <div className="relative flex-1">

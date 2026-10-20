@@ -45,6 +45,11 @@ type SingleProps = CommonProps & {
     multiple?: false
     value: string | undefined
     onChange: (value: string) => void
+    /**
+     * Có truyền ⇒ ô **không bắt buộc**: đầu danh sách có mục "-Không chọn-" (nghiêng, mờ) để về rỗng.
+     * Bỏ trống ⇒ ô bắt buộc (hoặc bộ lọc). Chỉ áp dụng chế độ chọn 1 (chọn nhiều bỏ chọn từng mục).
+     */
+    onClear?: () => void
 }
 
 type MultipleProps = CommonProps & {
@@ -179,6 +184,10 @@ export function SearchSelect({
         ? (rest as MultipleProps).value.length > 0
         : Boolean((rest as SingleProps).value)
 
+    const onClear = isMultiple ? undefined : (rest as SingleProps).onClear
+    /* Mục "-Không chọn-" ẩn khi đang gõ tìm kiếm — lúc đó là đang tìm một mục cụ thể. */
+    const showNone = Boolean(onClear) && !keyword.trim()
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -235,6 +244,20 @@ export function SearchSelect({
                     className="max-h-64 overflow-y-auto p-1"
                     role="listbox"
                     onScroll={serverMode ? server.onScroll : undefined}>
+                    {showNone && (
+                        <button
+                            type="button"
+                            role="option"
+                            aria-selected={!hasSelection}
+                            className="hover:bg-accent text-muted-foreground flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm italic"
+                            onClick={() => {
+                                onClear?.()
+                                setOpen(false)
+                            }}>
+                            <Check className={cn('size-4 shrink-0', hasSelection ? 'opacity-0' : 'opacity-100')} />
+                            {t('action.noSelection')}
+                        </button>
+                    )}
                     {serverMode && server.loading ? (
                         <p className="text-muted-foreground flex items-center justify-center gap-2 p-3 text-sm">
                             <Loader2 className="size-4 animate-spin" />

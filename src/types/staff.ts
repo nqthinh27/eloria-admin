@@ -58,7 +58,9 @@ export type UpdateStaffReq = {
     /** Chỉ SUPER_ADMIN được đổi sang chi nhánh khác. */
     branchId?: string
     dob?: string
-    gender?: EGender
+    /** Vắng = giữ nguyên · `null` = xoá · giá trị = ghi (backend `JsonNullable`). */
+    gender?: EGender | null
+    /** `""` = xoá (backend đổi về `null`); vắng/`null` = giữ nguyên. */
     description?: string
 }
 

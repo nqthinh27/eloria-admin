@@ -10,6 +10,7 @@ import type {
     CreateBankAccountReq,
     UpdateBankAccountReq,
 } from '@/types/bank-account'
+import { setFormErrorFromApi } from '@/lib/form-error'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -108,8 +109,9 @@ export function BankAccountFormDialog({
             if (isEdit) await onUpdate(account.id, base)
             else await onCreate({ ...base, isDefault: values.isDefault })
             onOpenChange(false)
-        } catch {
-            // api-client đã toast lỗi (vd trùng BIN + số TK); giữ form mở để sửa lại.
+        } catch (error) {
+            // Trùng BIN + số TK ⇒ lỗi hiện dưới ô số tài khoản; giữ form mở để sửa lại.
+            setFormErrorFromApi(form, error)
         }
     }
 

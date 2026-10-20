@@ -99,7 +99,7 @@ export function ConfirmBranchDialog({
                 </DialogHeader>
 
                 <div className="space-y-2">
-                    <p className="text-sm font-medium">{t('order.action.confirmBranch.label')}</p>
+                    <p className="text-sm font-medium">{t('order.action.confirmBranch.label')} <span className="text-destructive">*</span></p>
                     {branches === null ? (
                         <div className="space-y-2">
                             <Skeleton className="h-14 w-full" />

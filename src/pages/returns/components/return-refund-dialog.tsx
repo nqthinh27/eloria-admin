@@ -133,7 +133,7 @@ export function ReturnRefundDialog({
 
                     <div className="flex flex-col gap-1.5">
                         <Label htmlFor="return-refund-method">
-                            {t('return.refundDialog.method')}
+                            {t('return.refundDialog.method')} <span className="text-destructive">*</span>
                         </Label>
                         <Select
                             value={method}

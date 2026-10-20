@@ -136,7 +136,7 @@ export function ShiftCloseByIdDialog({
 
                         <div className="flex flex-col gap-1.5">
                             <Label htmlFor="close-by-id-cash">
-                                {t('order.shift.close.closingCash')}
+                                {t('order.shift.close.closingCash')} <span className="text-destructive">*</span>
                             </Label>
                             <MoneyInput
                                 id="close-by-id-cash"

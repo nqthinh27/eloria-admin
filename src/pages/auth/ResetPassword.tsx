@@ -119,7 +119,7 @@ export default function ResetPassword() {
                         name="newPassword"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>{t('auth.reset.newPassword')}</FormLabel>
+                                <FormLabel>{t('auth.reset.newPassword')} <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                     <Input
                                         {...field}
@@ -140,7 +140,7 @@ export default function ResetPassword() {
                         name="confirmPassword"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>{t('auth.reset.confirmPassword')}</FormLabel>
+                                <FormLabel>{t('auth.reset.confirmPassword')} <span className="text-destructive">*</span></FormLabel>
                                 <FormControl>
                                     <Input
                                         {...field}

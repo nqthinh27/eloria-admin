@@ -173,7 +173,7 @@ export function StockCountTab() {
                     {canChooseBranch && (
                         <div className="w-full max-w-xs space-y-2 text-left">
                             <Label htmlFor="stock-count-branch">
-                                {t('inventory.count.branch')}
+                                {t('inventory.count.branch')} <span className="text-destructive">*</span>
                             </Label>
                             <Select value={branchId} onValueChange={setBranchId}>
                                 <SelectTrigger id="stock-count-branch" className="w-full">
