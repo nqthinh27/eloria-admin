@@ -11,6 +11,7 @@ import type {
     Order,
     OrderNoteReq,
     OrderPaymentReq,
+    PointsPreview,
     OrderSearchReq,
 } from '@/types/order'
 
@@ -124,6 +125,18 @@ export const orderApi = {
      */
     cancel(id: string, payload?: CancelOrderReq) {
         return apiClient.post<Order>(`/order/${id}/cancel`, payload ?? {})
+    },
+
+    /**
+     * `[STAFF] GET /order/{id}/points-preview?pointsToRedeem=N` — tính thử trừ điểm, không ghi gì.
+     * Lỗi: đơn vãng lai `error.points.customerRequired` · đơn ONLINE `error.points.notForOnline` ·
+     * đơn đã thu/huỷ `error.order.alreadyPaid`.
+     */
+    pointsPreview(id: string, pointsToRedeem: number, signal?: AbortSignal) {
+        return apiClient.get<PointsPreview>(`/order/${id}/points-preview`, {
+            params: { pointsToRedeem },
+            signal,
+        })
     },
 
     /**

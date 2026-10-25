@@ -77,6 +77,11 @@ type DetailModalProps<TValues extends FieldValues> = {
      * text đơn giản nên **không cần** truyền prop này — chỉ ghi đè ở modal thật sự chật.
      */
     contentClassName?: string
+    /**
+     * Khối bổ sung hiển thị **dưới lưới field**, chỉ ở chế độ xem (vd bảng "Lịch sử điểm" ở CRM).
+     * Nút bên trong phải là `type="button"` vì khối nằm trong `<form>`.
+     */
+    extraSection?: ReactNode
 }
 
 /**
@@ -95,6 +100,7 @@ export function DetailModal<TValues extends FieldValues>({
     onSave,
     canEdit = true,
     contentClassName,
+    extraSection,
 }: DetailModalProps<TValues>) {
     const { t } = useTranslation('common')
     const [isEditing, setIsEditing] = useState(false)
@@ -248,6 +254,8 @@ export function DetailModal<TValues extends FieldValues>({
                                 )
                             })}
                         </div>
+
+                        {!isEditing && extraSection}
 
                         <DialogFooter>
                             {isEditing ? (

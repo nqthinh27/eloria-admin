@@ -8,6 +8,7 @@ import viAuth from './locales/vi/auth'
 import viMenu from './locales/vi/menu'
 import viStaff from './locales/vi/staff'
 import viCustomer from './locales/vi/customer'
+import viPoint from './locales/vi/point'
 import viProduct from './locales/vi/product'
 import viInventory from './locales/vi/inventory'
 import viOrder from './locales/vi/order'
@@ -26,6 +27,7 @@ import enAuth from './locales/en/auth'
 import enMenu from './locales/en/menu'
 import enStaff from './locales/en/staff'
 import enCustomer from './locales/en/customer'
+import enPoint from './locales/en/point'
 import enProduct from './locales/en/product'
 import enInventory from './locales/en/inventory'
 import enOrder from './locales/en/order'
@@ -55,6 +57,7 @@ const resources = {
         menu: viMenu,
         staff: viStaff,
         customer: viCustomer,
+        point: viPoint,
         product: viProduct,
         inventory: viInventory,
         order: viOrder,
@@ -75,6 +78,7 @@ const resources = {
         menu: enMenu,
         staff: enStaff,
         customer: enCustomer,
+        point: enPoint,
         product: enProduct,
         inventory: enInventory,
         order: enOrder,
@@ -114,6 +118,7 @@ i18n
             'menu',
             'staff',
             'customer',
+            'point',
             'product',
             'inventory',
             'order',

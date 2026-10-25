@@ -175,6 +175,7 @@ export default {
             alreadyClosed: 'Đơn đã hoàn tất hoặc đã huỷ, không thao tác được nữa.',
             /** Mô hình thu-1-lần (2026-08-15): đơn đã `PAID` thì không thu lại được. */
             alreadyPaid: 'Đơn đã thanh toán.',
+            pointsNotEditable: 'Đơn đã dùng điểm thưởng không sửa được — hãy huỷ rồi tạo đơn mới.',
             /**
              * ⚠️ **Backend KHÔNG còn phát ra key này** từ 2026-08-15 (mô hình thu 1 lần, backend tự
              * lấy đúng `totalAmount` nên không thể thu vượt). Giữ lại phòng dữ liệu/log cũ.
@@ -183,6 +184,12 @@ export default {
             /** S36 (2026-10-15): đơn online chưa gán chi nhánh phải chọn chi nhánh khi duyệt. */
             branchRequired: 'Chọn chi nhánh xuất hàng trước khi duyệt.',
             branchAlreadyAssigned: 'Đơn đã có chi nhánh xuất hàng — không đổi được khi duyệt.',
+        },
+        /** Điểm thưởng (backend Phase 16). */
+        points: {
+            customerRequired: 'Đơn vãng lai chưa gắn khách nên không dùng được điểm thưởng.',
+            notForOnline: 'Đơn online do khách tự dùng điểm lúc thanh toán — không trừ điểm ở bước thu tiền.',
+            insufficient: 'Số dư điểm vừa thay đổi, không đủ để trừ. Vui lòng thử lại.',
         },
         /** S35 (2026-10-15): đơn POS/OTHER bắt buộc gửi `method`; đơn ONLINE bỏ qua. */
         payment: {

@@ -14,6 +14,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PointsRedeemField } from './points-redeem-field'
 
 /**
  * Modal **xem trước phiếu** sau khi tạo đơn ở POS (user chốt 2026-08-29).
@@ -37,6 +38,8 @@ export function OrderReceiptDialog({
     loadingInvoice,
     paymentFailed,
     confirming,
+    pointsToRedeem,
+    onPointsChange,
     onConfirmPayment,
     onViewOrders,
     onNewOrder,
@@ -51,6 +54,9 @@ export function OrderReceiptDialog({
     /** Đơn đã tạo nhưng bước thu tiền lỗi ⇒ đổi tone cảnh báo. */
     paymentFailed: boolean
     confirming: boolean
+    /** Điểm thưởng nhân viên nhập để trừ lúc thu tiền (0 = không dùng). */
+    pointsToRedeem: number
+    onPointsChange: (points: number) => void
     /** Ghi nhận đã thu tiền. `null` ⇒ ẩn nút (đơn COD, hoặc đơn đã `PAID`). */
     onConfirmPayment: (() => void) | null
     onViewOrders: () => void
@@ -58,6 +64,7 @@ export function OrderReceiptDialog({
     onPrint: () => void
 }) {
     const { t } = useTranslation(['order', 'common'])
+    const { t: tp } = useTranslation('point')
 
     const paid = order?.paymentStatus === EPaymentStatus.PAID
     /** Chỉ in được khi đã thu tiền — chặn ở đây **và** ở dialog chi tiết đơn. */
@@ -175,6 +182,17 @@ export function OrderReceiptDialog({
                                         </dd>
                                     </div>
                                 )}
+                                {!!order?.pointsRedeemed && (
+                                    <div className="text-muted-foreground flex justify-between gap-2">
+                                        <dt>{tp('point.order.redeemed')}</dt>
+                                        <dd className="tabular-nums">
+                                            {tp('point.order.redeemedValue', {
+                                                points: order.pointsRedeemed,
+                                                money: formatVnd(order.pointsDiscount ?? 0),
+                                            })}
+                                        </dd>
+                                    </div>
+                                )}
                                 {!!invoice.shippingFee && (
                                     <div className="text-muted-foreground flex justify-between gap-2">
                                         <dt>{t('order.detail.shippingFee')}</dt>
@@ -198,6 +216,16 @@ export function OrderReceiptDialog({
                         </p>
                     )}
                 </div>
+
+                {/* Dùng điểm: chỉ khi còn phải thu — đã `PAID` thì điểm đã chốt (hiện ở dòng phiếu). */}
+                {order && !paid && onConfirmPayment && (
+                    <PointsRedeemField
+                        order={order}
+                        value={pointsToRedeem}
+                        onChange={onPointsChange}
+                        disabled={confirming}
+                    />
+                )}
 
                 <DialogFooter className="flex-col gap-2 sm:flex-col">
                     {/*

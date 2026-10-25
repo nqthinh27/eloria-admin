@@ -31,6 +31,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { ConfirmBranchDialog } from './confirm-branch-dialog'
 import { printInvoice } from './print-invoice'
+import { OrderPointsRows } from './order-points-rows'
 import { QrPaymentDialog } from './qr-payment-dialog'
 
 const STATUS_TONE: Record<EOrderStatus, StatusTone> = {
@@ -496,6 +497,8 @@ export function OrderDetailDialog({
                                             </dd>
                                         </div>
                                     )}
+                                    {/* Điểm thưởng (Phase 16): tiền đã nằm trong `discountAmount` ở trên. */}
+                                    <OrderPointsRows order={order} />
                                     {Boolean(order.shippingFee) && (
                                         <div className="flex justify-between">
                                             <dt className="text-muted-foreground">

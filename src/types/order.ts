@@ -233,6 +233,15 @@ export type Order = {
     promotionName: string | null
     /** Mã khách đã nhập; `null` khi KM là loại **tự động** (khách không nhập gì). */
     promotionCode: string | null
+
+    /*
+     * ---- Điểm thưởng (backend Phase 16) — có thể vắng ở bản backend cũ ----
+     * `discountAmount` ĐÃ gồm `pointsDiscount` (= KM + giảm tay + điểm).
+     */
+    /** Số điểm đã trừ cho đơn (`0`/vắng nếu không dùng). */
+    pointsRedeemed?: number | null
+    /** Tiền giảm do điểm. Hiển thị "Dùng điểm: −X" bằng field này. */
+    pointsDiscount?: number | null
 }
 
 /** `CartPreviewLineResDTO` — 1 dòng trong kết quả tính tiền giỏ. */
@@ -442,6 +451,25 @@ export type CartPreviewReq = {
  */
 export type OrderPaymentReq = {
     method: EPaymentMethod
+    /**
+     * Điểm thưởng khách dùng (Phase 16, tuỳ chọn, ≥ 0). Không gửi/`0` ⇒ thu như cũ. Có gửi ⇒ server
+     * **clamp** theo số dư + trần %, trừ điểm, giảm `totalAmount` rồi mới ghi dòng thu.
+     * Đơn vãng lai ⇒ `error.points.customerRequired`; đơn ONLINE ⇒ `error.points.notForOnline`.
+     */
+    pointsToRedeem?: number
+}
+
+/** `GET /order/{id}/points-preview` — tính thử, không ghi gì. Server là nguồn chân lý. */
+export type PointsPreview = {
+    balance: number
+    /** `min(số dư, trần % tiền hàng)` — dùng làm `max` của ô nhập. */
+    maxRedeemable: number
+    requested: number
+    /** Số điểm thực sự bị trừ sau clamp. */
+    pointsRedeemed: number
+    pointsDiscount: number
+    /** Số phải thu sau khi trừ điểm. */
+    payableAmount: number
 }
 
 /** `CancelOrderReqDTO` — lý do được backend lưu vào `description` của đơn. */

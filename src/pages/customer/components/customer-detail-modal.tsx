@@ -8,6 +8,7 @@ import type { Customer, UpdateCustomerReq } from '@/types/customer'
 import { formatDate, formatNumber } from '@/lib/format'
 import { StatusBadge } from '@/components/status-badge'
 import { DetailModal, type DetailField } from '@/components/detail-modal'
+import { PointHistory } from './point-history'
 
 type CustomerDetailValues = {
     fullName: string
@@ -146,6 +147,8 @@ export function CustomerDetailModal({ customer, onOpenChange, onSave }: Customer
             values={values}
             onSave={handleSave}
             canEdit={canEdit}
+            contentClassName="sm:max-w-3xl"
+            extraSection={<PointHistory customerId={customer.id} />}
         />
     )
 }

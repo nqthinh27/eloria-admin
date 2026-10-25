@@ -156,6 +156,7 @@ export default {
             alreadyClosed: 'This order is already completed or cancelled.',
             /** Single-payment model (2026-08-15): a PAID order cannot be charged again. */
             alreadyPaid: 'This order has already been paid.',
+            pointsNotEditable: 'Orders that used loyalty points cannot be edited — cancel and create a new one.',
             /**
              * ⚠️ The backend no longer emits this key as of 2026-08-15 (single-payment model —
              * the server always charges exactly `totalAmount`). Kept for old data/logs.
@@ -164,6 +165,12 @@ export default {
             branchRequired: 'Choose a fulfilment branch before confirming.',
             branchAlreadyAssigned:
                 'This order already has a fulfilment branch — it cannot be changed when confirming.',
+        },
+        /** Loyalty points (backend Phase 16). */
+        points: {
+            customerRequired: 'Walk-in orders have no customer, so points cannot be redeemed.',
+            notForOnline: 'Online orders redeem points at checkout — not when confirming payment.',
+            insufficient: 'The points balance just changed and is no longer enough. Please try again.',
         },
         payment: {
             methodRequired: 'A payment method is required.',

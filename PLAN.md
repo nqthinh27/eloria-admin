@@ -3241,6 +3241,8 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ## Phase 21 — Cấu hình Storefront & Điểm thưởng *(Voucher công khai đã bỏ 2026-10-13)* ⏳ **CHỜ backend P13+P16** — **TÁCH ĐÔI (replan 2026-10-13): 21a → R3 (mua hàng) = chỉ mục ④ (phí ship thu thủ công — bỏ khỏi mục ① từ 2026-10-14); 21b → R4 (điểm) = mục ① phần `loyalty.*` + mục ③; mục ② `isPublic` ĐÃ GỠ**; ô `store.branch_id` của mục ① đã kéo lên **Phase 24**
 
+> ✅ **21b điểm thưởng (admin) — xong FE 2026-10-25** ([handoff](docs/handoff/phien-2026-10-25-phase-21b-diem-thuong.md)): POS dùng điểm (`pointsToRedeem`), CRM Lịch sử điểm, chi tiết đơn, chú thích luật điểm; coupon rà đủ. **Còn:** kiểm tay với backend thật (cần OTP Zalo) · QR/COD chưa dùng được điểm (chờ PO/BE) · `pointsEarned` ở OrderResDTO · cảnh báo màn Trả hàng · ô `loyalty.*` ở `/store-settings`.
+
 > ✅ **User chốt 2026-10-13: BỎ ví voucher** — mã giảm giá do admin **gửi riêng thủ công** cho khách,
 > khách gõ tay ở checkout; không quản lý phía người dùng. ⇒ **mục ② (`isPublic`) và DoD
 > `GET /store/public/vouchers` ĐÃ GỠ**; Promotion giữ nguyên như Phase 14.

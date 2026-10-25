@@ -123,6 +123,8 @@ function PosScreen() {
     const [loadingInvoice, setLoadingInvoice] = useState(false)
     /** Đang gọi `POST /order/{id}/payment`. */
     const [confirming, setConfirming] = useState(false)
+    /** Điểm thưởng dùng khi thu tiền (Phase 16) — 0 = không dùng. Reset mỗi đơn mới. */
+    const [pointsToRedeem, setPointsToRedeem] = useState(0)
     /** Dialog quét mã VietQR (chỉ với hình thức `QR`) chồng lên modal phiếu. */
     const [qrOpen, setQrOpen] = useState(false)
 
@@ -228,6 +230,7 @@ function PosScreen() {
      */
     const handleCreated = useCallback(
         (order: Order) => {
+            setPointsToRedeem(0)
             setCreated(order)
             setPaymentFailed(false)
             setCheckoutOpen(false)
@@ -327,7 +330,11 @@ function PosScreen() {
              */
             const paid = await orderApi.pay(
                 created.id,
-                { method: created.paymentMethod ?? EPaymentMethod.CASH },
+                {
+                    method: created.paymentMethod ?? EPaymentMethod.CASH,
+                    /* Chỉ gửi khi > 0; server clamp theo số dư + trần % và là nguồn chân lý. */
+                    pointsToRedeem: pointsToRedeem > 0 ? pointsToRedeem : undefined,
+                },
                 // Tự xử lý `alreadyPaid` (webhook về trước khi bấm tay) nên tắt toast mặc định.
                 { skipErrorToast: true },
             )
@@ -346,7 +353,7 @@ function PosScreen() {
         } finally {
             setConfirming(false)
         }
-    }, [created, syncPaidOrder])
+    }, [created, pointsToRedeem, syncPaidOrder])
 
     /**
      * Ghi nhận **đã thu tiền** từ modal phiếu.
@@ -532,6 +539,8 @@ function PosScreen() {
                 loadingInvoice={loadingInvoice}
                 paymentFailed={paymentFailed}
                 confirming={confirming}
+                pointsToRedeem={pointsToRedeem}
+                onPointsChange={setPointsToRedeem}
                 /*
                  * Ẩn nút thu tiền khi đã `PAID` (backend chặn thu lần 2 — `error.order.alreadyPaid`)
                  * và với đơn **COD** (thu khi giao, không thu tại quầy).

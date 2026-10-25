@@ -1,0 +1,55 @@
+export default {
+    point: {
+        /** Chú thích luật điểm cho nhân viên — số lấy từ `GET /points/rules`. */
+        rules: {
+            title: 'Luật điểm thưởng',
+            earn: '{{amount}} đơn hoàn thành = 1 điểm.',
+            redeem: '1 điểm = {{value}} giảm giá.',
+            maxPercent: 'Dùng tối đa {{percent}}% giá trị đơn (sau khuyến mại, không tính phí ship).',
+            noRefund:
+                'Đơn bị hoàn/trả thì điểm KHÔNG được hoàn lại (điểm đã trừ không trả, điểm đã tích không thu hồi). Đơn huỷ khi chưa hoàn tất thì điểm được trả lại.',
+        },
+        pos: {
+            title: 'Dùng điểm thưởng',
+            balance: 'Điểm hiện có: {{points}} (≈ {{money}})',
+            input: 'Số điểm muốn dùng',
+            max: 'Tối đa {{points}}',
+            useMax: 'Trừ tối đa',
+            clear: 'Bỏ',
+            guestDisabled: 'Đơn vãng lai chưa gắn khách nên không dùng được điểm.',
+            methodDisabled: 'Chọn tiền mặt hoặc thẻ để dùng điểm (thu QR/COD không trừ điểm ở bước này).',
+            noBalance: 'Khách chưa có điểm để dùng.',
+            discount: 'Giảm do điểm: −{{money}} ({{points}} điểm)',
+            payable: 'Số phải thu: {{money}}',
+            clamped: 'Server chỉ cho trừ {{points}} điểm.',
+            previewFailed: 'Không tính thử được số điểm — server sẽ quyết định khi thu tiền.',
+        },
+        history: {
+            tab: 'Lịch sử điểm',
+            infoTab: 'Thông tin',
+            balance: 'Số dư điểm',
+            filterAll: 'Tất cả',
+            type: { EARN: 'Tích điểm', REDEEM: 'Dùng điểm', REVERT: 'Hoàn điểm' },
+            column: {
+                date: 'THỜI GIAN',
+                type: 'LOẠI',
+                points: 'ĐIỂM',
+                balanceAfter: 'SỐ DƯ',
+                amount: 'GIÁ TRỊ',
+                order: 'ĐƠN HÀNG',
+            },
+            empty: 'Chưa có giao dịch điểm nào.',
+            total: '{{total}} giao dịch',
+            prev: 'Trước',
+            next: 'Sau',
+            page: 'Trang {{page}}/{{pages}}',
+        },
+        order: {
+            redeemed: 'Điểm đã trừ',
+            redeemedValue: '{{points}} điểm (−{{money}})',
+            earned: 'Điểm đã tích',
+            earnedValue: '+{{points}} điểm',
+            earnedUnknown: 'Chưa ghi nhận',
+        },
+    },
+}
