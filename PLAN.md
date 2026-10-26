@@ -279,7 +279,7 @@ radio, switch, calendar, pagination, alert, toast…) sẽ được thêm dần 
 | **18** | ✅ **Quản lý Tài khoản ngân hàng** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 11 | *(không mockup — pattern `04`/`07`)* |
 | **19** | ✅ **Quản lý Thương hiệu** — **chỉ SUPER_ADMIN** (**API thật**) | 5, 9 | *(không mockup — pattern `04`/`07`)* |
 | **20** | ✅ **CMS: Bài viết & Banner** — **xong FE 2026-10-13** (R2); mục 4 `customerNote` xong 2026-10-14; còn kiểm tay upload ảnh/RBAC | 5, 22 | *(không mockup — pattern `04`/`07`)* |
-| **21** | 🟡 **Cấu hình Storefront & Điểm thưởng** *(voucher công khai đã gỡ)* — **21a** (R3): mục 5 xong 2026-10-14, **mục ④ biên bản luồng đơn store chưa làm** · **21b** (R4, `loyalty.*` + CRM điểm): *chờ backend P16* (`store.branch_id` đã ở Phase 24) | 5, 8, 14 | *(không mockup)* |
+| **21** | 🟡 **Cấu hình Storefront & Điểm thưởng** *(voucher công khai đã gỡ)* — **21a** (R3): mục 5 xong 2026-10-14, **mục ④ ✅ xong 2026-10-26 (biên bản PASS)** · **21b** (R4, `loyalty.*` + CRM điểm): *chờ backend P16* (`store.branch_id` đã ở Phase 24) | 5, 8, 14 | *(không mockup)* |
 | **22** | ✅ **(2026-10-11 — xong FE + upload BE31/P13.3; unit test ghi nợ)** **Chuẩn ảnh CMS: gợi ý tỉ lệ + độ phân giải + xem trước theo khung client** | 5, 9, 19 | [`../35.3.eloria-client/docs/image-spec.md`](../35.3.eloria-client/docs/image-spec.md) |
 | **23** | ✅ **(2026-10-11 — xong FE + upload; đã đo storefront/INACTIVE/XOÁ/RBAC ADMIN)** **Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định** | 5, 9, 22 | *(không mockup — pattern `12`)* |
 | **24** | 🟡 **(R1 — 2026-10-11 xong FE; còn kiểm deploy 2 lần + ảnh thật)** **CMS catalog sẵn sàng release: cấu hình chi nhánh online · SEO SP/danh mục · "Xem trên web" · chống bản cũ** | 9, 22, 23 | *(không mockup)* |
@@ -3241,7 +3241,15 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ## Phase 21 — Cấu hình Storefront & Điểm thưởng *(Voucher công khai đã bỏ 2026-10-13)* ⏳ **CHỜ backend P13+P16** — **TÁCH ĐÔI (replan 2026-10-13): 21a → R3 (mua hàng) = chỉ mục ④ (phí ship thu thủ công — bỏ khỏi mục ① từ 2026-10-14); 21b → R4 (điểm) = mục ① phần `loyalty.*` + mục ③; mục ② `isPublic` ĐÃ GỠ**; ô `store.branch_id` của mục ① đã kéo lên **Phase 24**
 
-> ✅ **21b điểm thưởng (admin) — xong FE 2026-10-25** ([handoff](docs/handoff/phien-2026-10-25-phase-21b-diem-thuong.md)): POS dùng điểm (`pointsToRedeem`), CRM Lịch sử điểm, chi tiết đơn, chú thích luật điểm; coupon rà đủ. **Còn:** kiểm tay với backend thật (cần OTP Zalo) · QR/COD chưa dùng được điểm (chờ PO/BE) · `pointsEarned` ở OrderResDTO · cảnh báo màn Trả hàng · ô `loyalty.*` ở `/store-settings`.
+> ✅ **21b điểm thưởng (admin) — xong FE 2026-10-25** ([handoff](docs/handoff/phien-2026-10-25-phase-21b-diem-thuong.md)): POS dùng điểm (`pointsToRedeem`), CRM Lịch sử điểm, chi tiết đơn, chú thích luật điểm; coupon rà đủ. **Còn:** kiểm tay với backend thật (cần OTP Zalo) · QR/COD chưa dùng được điểm (chờ PO/BE) · `pointsEarned` ở OrderResDTO · cảnh báo màn Trả hàng.
+>
+> ✅ **2026-10-26 — Phase 21a mục ④ XONG, tất cả kịch bản PASS** ([biên bản](docs/handoff/phien-2026-10-26-phase-21a-bien-ban-luong-don-store.md)): COD/QR/dùng điểm/hủy đơn/RBAC (SUPER_ADMIN·ADMIN·STAFF) đo thật end-to-end trên storefront+admin thật; D4 (chặn thiếu tồn) chỉ xác nhận qua code, chưa đo UI.
+>
+> ✅ **2026-10-26 — `pointsEarned` + cảnh báo Trả hàng xong FE** ([handoff](docs/handoff/phien-2026-10-26-points-earned-tra-hang.md)): chi tiết đơn + hoá đơn POS đọc `pointsEarned`/`pointsEarnedEstimated` (bỏ cách tra 50 giao dịch EARN); dialog tạo phiếu trả hiện cảnh báo "không hoàn/thu hồi điểm" khi đơn gốc có điểm.
+>
+> ⛔ **2026-10-26 (PO): ô chi nhánh bán online `store.branch_id` (Phase 24 mục 1) đã GỠ khỏi `/store-settings`** — màn chỉ còn thẻ Điểm thưởng.
+>
+> ✅ **Ô `loyalty.*` ở `/store-settings` — xong FE 2026-10-26** ([handoff](docs/handoff/phien-2026-10-26-phase-21b-loyalty-config.md)): thẻ Điểm thưởng 3 ô + ví dụ động + Lưu riêng; chưa đo với backend thật (cần OTP Zalo).
 
 > ✅ **User chốt 2026-10-13: BỎ ví voucher** — mã giảm giá do admin **gửi riêng thủ công** cho khách,
 > khách gõ tay ở checkout; không quản lý phía người dùng. ⇒ **mục ② (`isPublic`) và DoD
@@ -3261,14 +3269,14 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ### Việc cần làm
 1. **Màn Cấu hình storefront** (`/store-settings`, SUPER_ADMIN — backend `system_config` P13):
-   chi nhánh bán online (`store.branch_id` — SearchSelect chi nhánh; đã làm ở Phase 24), tỷ lệ
-   tích điểm / quy đổi / trần % dùng điểm (`loyalty.*`) — **thuộc 21b**; ~~phí ship, ngưỡng freeship~~
-   **không làm** (thu thủ công, chốt 2026-10-14). Dùng `MoneyInput` cho ô tiền, cảnh báo trước khi đổi chi nhánh online (ảnh
+   ~~chi nhánh bán online (`store.branch_id`)~~ **đã GỠ 2026-10-26 theo PO** (backend P14.1 không còn dùng), tỷ lệ
+   tích điểm / quy đổi / trần % dùng điểm (`loyalty.*`) — **thuộc 21b, ✅ xong FE 2026-10-26**; ~~phí ship, ngưỡng freeship~~
+   **không làm** (thu thủ công, chốt 2026-10-14). Dùng `MoneyInput` cho ô tiền, ~~cảnh báo trước khi đổi chi nhánh online~~ (đã gỡ cùng ô chi nhánh) (ảnh
    hưởng tồn hiển thị trên web).
 2. ~~**Khuyến mại**: toggle `isPublic`~~ — **ĐÃ GỠ** (2026-10-13, bỏ ví voucher).
 3. **CRM**: tab/khối **Điểm thưởng** trong modal chi tiết khách — số dư + lịch sử `point_transaction`
    (EARN/REDEEM/REVERT, liên kết mã đơn).
-4. Màn Đơn hàng: bộ lọc kênh đã có sẵn tab ONLINE — kiểm tra lại luồng xử lý đơn từ store (xác
+4. ✅ **XONG 2026-10-26** ([biên bản](docs/handoff/phien-2026-10-26-phase-21a-bien-ban-luong-don-store.md)): đo thật end-to-end 5 đơn storefront (COD/QR/dùng điểm/hủy chưa gán/hủy đã gán), duyệt (chọn chi nhánh) → đóng gói → giao → thu tiền/QR → hoàn tất đều PASS; RBAC SUPER_ADMIN/ADMIN/STAFF PASS; customerNote + snapshot địa chỉ **PASS**. Còn mở: D4 (chặn thiếu tồn khi duyệt) chỉ xác nhận qua code, chưa đo UI thật. Màn Đơn hàng: bộ lọc kênh đã có sẵn tab ONLINE — kiểm tra lại luồng xử lý đơn từ store (xác
    nhận → đóng gói → giao → thu COD/đối soát QR) chạy trơn với đơn do khách tự đặt; đơn store có
    `customer_note` + địa chỉ giao (**snapshot** từ hồ sơ khách lúc đặt — khách đổi hồ sơ sau không
    làm đổi đơn cũ).
@@ -3437,7 +3445,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 - Storefront có URL chạy được (staging hoặc production) để làm nút "Xem trên web" và đối chiếu.
 
 ### Việc cần làm
-1. **Cấu hình chi nhánh bán online** (`/store-settings`, chỉ SUPER_ADMIN) — **chỉ ô `store.branch_id`**
+1. ⛔ **[ĐÃ GỠ 2026-10-26 theo PO — backend P14.1 không còn dùng `store.branch_id`; màn `/store-settings` giờ chỉ còn thẻ Điểm thưởng]** Cấu hình chi nhánh bán online (`/store-settings`, chỉ SUPER_ADMIN) — **chỉ ô `store.branch_id`**
    (SearchSelect chi nhánh) + dialog xác nhận khi đổi (*"tồn kho hiển thị trên web sẽ tính theo chi
    nhánh mới"*). PDP storefront báo còn/hết hàng theo chi nhánh này ⇒ R1 không thể thiếu. Phí ship,
    freeship, `loyalty.*` **để Phase 21 (R3)** — R1 không có checkout.
