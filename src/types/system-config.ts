@@ -20,8 +20,12 @@ export type SystemConfigUpdateItem = {
     value: string
 }
 
-/** Khoá cấu hình FE đang dùng. Các khoá còn lại (phí ship, freeship) thuộc Phase 21 (R3). */
+/** Khoá cấu hình FE đang dùng. Phí ship/freeship không làm (thu thủ công). */
 export const SYSTEM_CONFIG_KEY = {
-    /** UUID chi nhánh bán online — PDP storefront báo còn/hết hàng theo chi nhánh này. */
-    STORE_BRANCH_ID: 'store.branch_id',
+    /** Số tiền hàng để được 1 điểm — số nguyên dương (mặc định 50000). */
+    LOYALTY_EARN_AMOUNT_PER_POINT: 'loyalty.earn_amount_per_point',
+    /** Giá trị giảm (đ) của 1 điểm — số nguyên dương (mặc định 1000). */
+    LOYALTY_REDEEM_RATE: 'loyalty.redeem_rate',
+    /** Trần % tiền hàng sau khuyến mại được trừ bằng điểm — số nguyên 0..100 (mặc định 50). */
+    LOYALTY_MAX_REDEEM_PERCENT: 'loyalty.max_redeem_percent',
 } as const

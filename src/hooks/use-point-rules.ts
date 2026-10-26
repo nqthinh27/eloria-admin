@@ -12,6 +12,11 @@ const DEFAULT_RULES: PointRules = {
 
 let cached: PointRules | null = null
 
+/** Xoá cache để lần mount sau (vd quay lại POS) tải lại luật — gọi sau khi SUPER_ADMIN đổi `loyalty.*`. */
+export function resetPointRulesCache() {
+    cached = null
+}
+
 /** Luật điểm hiện hành từ backend (cache theo phiên tải trang). Luôn trả được giá trị để hiển thị. */
 export function usePointRules(): PointRules {
     const [rules, setRules] = useState<PointRules>(cached ?? DEFAULT_RULES)

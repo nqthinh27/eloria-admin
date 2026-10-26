@@ -60,6 +60,7 @@ export default {
         // Product domain (Phase 9) — keys taken from the backend source, not invented.
         systemConfig: {
             notExisted: 'Configuration key does not exist.',
+            valueInvalid: 'Invalid configuration value.',
         },
         category: {
             notExisted: 'Category does not exist.',

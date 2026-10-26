@@ -78,6 +78,7 @@ export default {
         // Domain sản phẩm (Phase 9) — key trích từ source backend, không tự bịa.
         systemConfig: {
             notExisted: 'Mục cấu hình không tồn tại.',
+            valueInvalid: 'Giá trị cấu hình không hợp lệ.',
         },
         category: {
             notExisted: 'Danh mục không tồn tại.',
