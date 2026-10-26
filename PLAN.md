@@ -1265,7 +1265,7 @@ thêm/sửa/xoá với SUPER_ADMIN (`hasRole(user, SUPER_ADMIN)`), đúng quyế
 | Card có tag danh mục ("Áo sơ mi +1") | `POST /product/search` trả `categories` **luôn rỗng** (chỉ `GET /product/{id}` populate) | Tag danh mục chỉ hiện trong modal chi tiết |
 | Cột **SỐ SẢN PHẨM · THƯƠNG HIỆU · BỘ SƯU TẬP** ở màn Danh mục | `CategoryResDTO` không có số đếm nào; không có API bộ sưu tập | Thay bằng THỨ TỰ · TRẠNG THÁI |
 | Nút **Import Excel / Export** | Không có API | **User đã chốt: dời sang các phase cuối** |
-| CRUD chất liệu / nhà cung cấp / bộ sưu tập mùa | `material` là **enum fix cứng** `COTTON\|LINEN\|SILK\|WOOL`; không có API 3 nhóm này | **User đã chốt: FE fix cứng enum giống BE**, không dựng CRUD |
+| CRUD chất liệu / nhà cung cấp / bộ sưu tập mùa | Không có API 3 nhóm này; `material` từ 2026-10-27 là **text nhập tay tự do** (trước là enum fix cứng `COTTON\|LINEN\|SILK\|WOOL`, đã bỏ) | **PO chốt 2026-10-27: ô nhập tự do, không gợi ý**, không dựng CRUD |
 
 **Về `status` của SKU — user chốt lại 2026-08-09:** `-1` là **trạng thái xoá mềm, rule chung toàn
 hệ thống**, và **không dùng chung API/phương thức với `status` 0/1**. Đã kiểm chứng trên source và

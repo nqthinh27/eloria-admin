@@ -8,7 +8,6 @@ import { z } from 'zod'
 import { setFormErrorFromApi } from '@/lib/form-error'
 import { normalizeCode } from '@/lib/validation'
 import { EGender } from '@/types/common'
-import { EMaterial } from '@/types/product'
 import type { Brand, Category, CreateProductReq, Product, UpdateProductReq } from '@/types/product'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -48,7 +47,10 @@ const buildSchema = (t: (key: string) => string, isEdit: boolean) =>
                 t('product.form.validation.costPriceMin'),
             ),
         brandId: z.string().optional(),
-        material: z.string().optional(),
+        material: z
+            .string()
+            .trim()
+            .max(255, t('product.form.validation.materialMaxLength')),
         gender: z.string().optional(),
         sizeGroup: z.string().optional(),
         categoryIds: z.array(z.string()),
@@ -82,8 +84,7 @@ type ProductFormDialogProps = {
  * không vẽ form ⇒ pattern form chuẩn, CONVENTIONS mục 6.2).
  *
  * `UpdateProductReqDTO` **không có `code`** ⇒ khi sửa, field mã hiển thị nhưng bị khoá.
- * `material` là **enum fix cứng** phía backend (COTTON|LINEN|SILK|WOOL), không có API danh mục
- * chất liệu — FE fix cứng đúng 4 giá trị (chốt cùng user 2026-08-09).
+ * `material` là **text nhập tay tự do** (PO 2026-10-27, trước là enum fix cứng COTTON|LINEN|SILK|WOOL).
  */
 export function ProductFormDialog({
     open,
@@ -108,7 +109,7 @@ export function ProductFormDialog({
             price: '',
             costPrice: '',
             brandId: undefined,
-            material: undefined,
+            material: '',
             gender: undefined,
             sizeGroup: undefined,
             categoryIds: [],
@@ -127,7 +128,7 @@ export function ProductFormDialog({
             price: product ? String(product.price) : '',
             costPrice: product?.costPrice != null ? String(product.costPrice) : '',
             brandId: product?.brandId ?? undefined,
-            material: product?.material ?? undefined,
+            material: product?.material ?? '',
             gender: product?.gender ?? undefined,
             sizeGroup: product?.sizeGroup ?? undefined,
             categoryIds: product?.categories.map((c) => c.id) ?? [],
@@ -146,7 +147,8 @@ export function ProductFormDialog({
             // "giữ nguyên giá cũ" (backend partial-update, không xoá về null).
             costPrice: values.costPrice.trim() === '' ? undefined : Number(values.costPrice),
             brandId: values.brandId || undefined,
-            material: (values.material || undefined) as EMaterial | undefined,
+            // Giống shortDescription/description: tạo mới bỏ trống ⇒ không gửi field; sửa thì xem nhánh dưới.
+            material: values.material || undefined,
             gender: (values.gender || undefined) as EGender | undefined,
             sizeGroup: values.sizeGroup || undefined,
             categoryIds: values.categoryIds,
@@ -159,11 +161,12 @@ export function ProductFormDialog({
 
         try {
             if (isEdit) {
-                // Sửa: bỏ chọn enum ⇒ `null` (xoá); chuỗi rỗng ⇒ `""` (xoá) — backend bỏ qua `null` ở chuỗi.
+                // Sửa: gender là enum tuỳ chọn ⇒ bỏ chọn gửi `null` (xoá). material/shortDescription/
+                // description giờ cùng là text thường ⇒ gửi `""` để xoá (backend StringMapper).
                 await onUpdate(product.id, {
                     ...common,
                     gender: (values.gender || null) as EGender | null,
-                    material: (values.material || null) as EMaterial | null,
+                    material: values.material ?? '',
                     shortDescription: values.shortDescription ?? '',
                     description: values.description ?? '',
                 })
@@ -328,17 +331,11 @@ export function ProductFormDialog({
                                     <FormItem>
                                         <FormLabel>{t('product.form.material')}</FormLabel>
                                         <FormControl>
-                                            <ClearableSelect
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                                onClear={() => field.onChange(undefined)}
-                                                placeholder={t('product.form.materialPlaceholder')}>
-                                                {Object.values(EMaterial).map((m) => (
-                                                    <SelectItem key={m} value={m}>
-                                                        {m}
-                                                    </SelectItem>
-                                                ))}
-                                            </ClearableSelect>
+                                            <Input
+                                                {...field}
+                                                maxLength={255}
+                                                placeholder={t('product.form.materialPlaceholder')}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

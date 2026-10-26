@@ -59,7 +59,7 @@ Response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus` (có `act
   `update-avatar` 5/60s; `product/{id}/images` POST/DELETE 100/60s theo tài khoản).
 - **Thương hiệu** (đã đo 2026-09-20, màn `/brands` — PLAN Phase 19): `BrandResDTO` `{id, code, name, address, logoUrl,
   description, status, createdDate, lastModifiedDate}`; create/update **cùng bộ field** (`code` ≤50 · `name` ≤150 ·
-  `address` ≤255 · `logoUrl` ≤256 · `description` ≤500; `code`+`name` bắt buộc). Backend chuẩn hoá `code` (bỏ
+  `address` ≤255 · `logoUrl` ≤256 · `description` ≤1000 (PO 2026-10-27, trước là 500); `code`+`name` bắt buộc). Backend chuẩn hoá `code` (bỏ
   khoảng trắng + IN HOA), trùng (không phân biệt hoa/thường) ⇒ `error.brand.codeExisted`; **`PUT` đổi được `code`**.
   `update-status`/`DELETE` trả `data: null`; xoá thương hiệu còn sản phẩm ⇒ `error.brand.hasProducts` (code 8).
   `keyword` khớp `code`/`name`. Sort 12/12 (`code`,`name`,`address`,`status`,`createdDate`,`description` × 2 chiều) đều 200.

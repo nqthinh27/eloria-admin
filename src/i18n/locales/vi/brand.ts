@@ -49,7 +49,7 @@ export default {
                 nameRequired: 'Vui lòng nhập tên thương hiệu',
                 nameMaxLength: 'Tên thương hiệu tối đa 150 ký tự',
                 addressMaxLength: 'Địa chỉ tối đa 255 ký tự',
-                descriptionMaxLength: 'Mô tả tối đa 500 ký tự',
+                descriptionMaxLength: 'Mô tả tối đa 1000 ký tự',
             },
         },
 

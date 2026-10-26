@@ -49,7 +49,7 @@ export default {
                 nameRequired: 'Please enter the brand name',
                 nameMaxLength: 'Brand name is at most 150 characters',
                 addressMaxLength: 'Address is at most 255 characters',
-                descriptionMaxLength: 'Description is at most 500 characters',
+                descriptionMaxLength: 'Description is at most 1000 characters',
             },
         },
 

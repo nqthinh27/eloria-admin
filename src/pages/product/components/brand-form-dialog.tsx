@@ -30,7 +30,7 @@ const buildSchema = (t: (key: string) => string) =>
             .min(1, t('brand.form.validation.nameRequired'))
             .max(150, t('brand.form.validation.nameMaxLength')),
         address: z.string().trim().max(255, t('brand.form.validation.addressMaxLength')),
-        description: z.string().trim().max(500, t('brand.form.validation.descriptionMaxLength')),
+        description: z.string().trim().max(1000, t('brand.form.validation.descriptionMaxLength')),
     })
 
 type BrandFormValues = z.infer<ReturnType<typeof buildSchema>>

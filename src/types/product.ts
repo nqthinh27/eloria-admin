@@ -9,18 +9,6 @@ import type { EGender, EntityStatus, SearchReq } from '@/types/common'
  * Xem PLAN Phase 9 phần "Lệch so với mockup".
  */
 
-/**
- * Chất liệu — **enum fix cứng phía backend**, không có API danh mục chất liệu.
- * FE fix cứng đúng 4 giá trị này (chốt cùng user 2026-08-09); thêm giá trị mới phải sửa backend trước.
- */
-export const EMaterial = {
-    COTTON: 'COTTON',
-    LINEN: 'LINEN',
-    SILK: 'SILK',
-    WOOL: 'WOOL',
-} as const
-export type EMaterial = (typeof EMaterial)[keyof typeof EMaterial]
-
 /** `CategoryRefResDTO` — dạng rút gọn của danh mục, nhúng trong `ProductResDTO.categories`. */
 export type CategoryRef = {
     id: string
@@ -56,7 +44,8 @@ export type Product = {
     status: EntityStatus
     brandId: string | null
     brandName: string | null
-    material: EMaterial | null
+    /** Nhập tay tự do (PO 2026-10-27, trước là enum cố định). */
+    material: string | null
     /** Metadata tự do dạng chuỗi JSON — client tự định nghĩa cấu trúc. */
     metadata: string | null
     /** Nhóm size dùng để dựng ma trận SKU, ví dụ `Áo`, `Quần`. */
@@ -96,7 +85,8 @@ export type CreateProductReq = {
     description?: string
     gender?: EGender
     brandId?: string
-    material?: EMaterial
+    /** Chất liệu — nhập tay tự do, tối đa 255 ký tự (PO 2026-10-27, trước là enum fix cứng). */
+    material?: string
     metadata?: string
     sizeGroup?: string
     /** Thay thế **toàn bộ** danh sách danh mục cũ. */
@@ -111,11 +101,14 @@ export type CreateProductReq = {
     metaDescription?: string
 }
 
-/** `UpdateProductReqDTO` — giống create nhưng **không có `code`**. */
-export type UpdateProductReq = Omit<CreateProductReq, 'code' | 'gender' | 'material'> & {
+/**
+ * `UpdateProductReqDTO` — giống create nhưng **không có `code`**.
+ * `material` giờ là text tự do: kế thừa thẳng từ `CreateProductReq` (vắng = giữ nguyên, `""` = xoá —
+ * cùng quy ước `metadata`/`sizeGroup`, khác hẳn `gender` vẫn là enum tuỳ chọn dùng `JsonNullable`).
+ */
+export type UpdateProductReq = Omit<CreateProductReq, 'code' | 'gender'> & {
     /** Vắng = giữ nguyên · `null` = xoá · giá trị = ghi (backend `JsonNullable`). */
     gender?: EGender | null
-    material?: EMaterial | null
 }
 
 /** `GenerateSkuReqDTO` — sinh ma trận SKU (màu × size). Idempotent: ô đã có SKU thì bỏ qua. */
@@ -258,7 +251,7 @@ export type Brand = {
     lastModifiedDate: string
 }
 
-/** `CreateBrandReqDTO` = `UpdateBrandReqDTO` (cùng bộ field). `code` tối đa 50, `name` 150, `address` 255, `description` 500. ⚠️ Không còn `logoUrl` (P13.3 — gửi ⇒ 400): logo qua `brandApi.uploadLogo`. */
+/** `CreateBrandReqDTO` = `UpdateBrandReqDTO` (cùng bộ field). `code` tối đa 50, `name` 150, `address` 255, `description` 1000 (PO 2026-10-27, trước là 500). ⚠️ Không còn `logoUrl` (P13.3 — gửi ⇒ 400): logo qua `brandApi.uploadLogo`. */
 export type BrandPayload = {
     code: string
     name: string
