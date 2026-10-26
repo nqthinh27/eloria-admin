@@ -44,12 +44,16 @@ export default {
             next: 'Sau',
             page: 'Trang {{page}}/{{pages}}',
         },
+        return: {
+            noPointsRefund:
+                'Đơn gốc này có điểm thưởng. Trả/đổi hàng KHÔNG hoàn điểm đã dùng và KHÔNG thu hồi điểm đã tích.',
+        },
         order: {
             redeemed: 'Điểm đã trừ',
             redeemedValue: '{{points}} điểm (−{{money}})',
             earned: 'Điểm đã tích',
             earnedValue: '+{{points}} điểm',
-            earnedUnknown: 'Chưa ghi nhận',
+            earnedEstimated: 'Điểm dự kiến tích',
         },
     },
 }

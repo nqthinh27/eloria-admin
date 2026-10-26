@@ -78,6 +78,7 @@ export function ReturnCreateDialog({
     onCreated: () => void
 }) {
     const { t } = useTranslation(['return', 'order', 'common'])
+    const { t: tp } = useTranslation('point')
 
     const [mode, setMode] = useState<Mode>('RETURN')
     const [source, setSource] = useState<Source>('ORDER')
@@ -299,6 +300,11 @@ export function ReturnCreateDialog({
                             <Label htmlFor="return-order-keyword">
                                 {t('return.form.findOrder')} <span className="text-destructive">*</span>
                             </Label>
+                            {order && (!!order.pointsRedeemed || !!order.pointsEarned) && (
+                                <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                                    {tp('point.return.noPointsRefund')}
+                                </p>
+                            )}
                             {order ? (
                                 <div className="bg-muted/40 flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
                                     <div className="min-w-0">

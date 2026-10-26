@@ -242,6 +242,14 @@ export type Order = {
     pointsRedeemed?: number | null
     /** Tiền giảm do điểm. Hiển thị "Dùng điểm: −X" bằng field này. */
     pointsDiscount?: number | null
+    /**
+     * Điểm tích của đơn — **chỉ có ở chi tiết đơn / response thao tác, không có ở `search`**.
+     * Có dòng EARN ⇒ số thật; COMPLETED có khách không phát sinh điểm ⇒ `0`; đang xử lý ⇒ ước tính
+     * (`pointsEarnedEstimated: true`); không khách / đơn huỷ ⇒ `null`.
+     */
+    pointsEarned?: number | null
+    /** `true` ⇒ `pointsEarned` là số dự kiến theo luật hiện hành, chưa ghi sổ. */
+    pointsEarnedEstimated?: boolean | null
 }
 
 /** `CartPreviewLineResDTO` — 1 dòng trong kết quả tính tiền giỏ. */

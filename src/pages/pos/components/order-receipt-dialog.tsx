@@ -193,6 +193,18 @@ export function OrderReceiptDialog({
                                         </dd>
                                     </div>
                                 )}
+                                {!!order?.pointsEarned && (
+                                    <div className="text-muted-foreground flex justify-between gap-2">
+                                        <dt>
+                                            {order.pointsEarnedEstimated
+                                                ? tp('point.order.earnedEstimated')
+                                                : tp('point.order.earned')}
+                                        </dt>
+                                        <dd className="tabular-nums">
+                                            {tp('point.order.earnedValue', { points: order.pointsEarned })}
+                                        </dd>
+                                    </div>
+                                )}
                                 {!!invoice.shippingFee && (
                                     <div className="text-muted-foreground flex justify-between gap-2">
                                         <dt>{t('order.detail.shippingFee')}</dt>

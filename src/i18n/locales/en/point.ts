@@ -43,12 +43,16 @@ export default {
             next: 'Next',
             page: 'Page {{page}}/{{pages}}',
         },
+        return: {
+            noPointsRefund:
+                'This order has loyalty points. Returns/exchanges do NOT give back redeemed points and do NOT revoke earned points.',
+        },
         order: {
             redeemed: 'Points redeemed',
             redeemedValue: '{{points}} points (−{{money}})',
             earned: 'Points earned',
             earnedValue: '+{{points}} points',
-            earnedUnknown: 'Not recorded',
+            earnedEstimated: 'Estimated points to earn',
         },
     },
 }
