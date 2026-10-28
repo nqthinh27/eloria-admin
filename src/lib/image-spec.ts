@@ -299,9 +299,10 @@ export function measureImageUrl(
  */
 export function resolveImageSrc(value: string): string {
     // Ảnh upload danh mục/thương hiệu (BE31) · bài viết/banner (P15) trả `/category/<file>` · `/brand/<file>`
-    // · `/post/<file>` · `/banner/<file>` — dạng đường dẫn gốc nhưng backend lưu, phải đi qua `/image`;
+    // · `/post/<file>` · `/banner/<file>`, sản phẩm `/product/<file>`, avatar `/avatar/<file>` (đủ các thư mục
+    // `FileService.FOLDER_*`) — dạng đường dẫn gốc nhưng backend lưu, phải đi qua `/image`;
     // chỉ `/media/**` (seed storefront) mới dùng nguyên văn.
-    if (/^\/(category|brand|post|banner)\//.test(value)) return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
+    if (/^\/(category|brand|post|banner|product|avatar)\//.test(value)) return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
     if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:') || value.startsWith('/')) return value
     return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
 }
