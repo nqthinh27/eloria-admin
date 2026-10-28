@@ -5,7 +5,7 @@ import { ImageIcon, MoreVertical, Package, Plus } from 'lucide-react'
 import { brandApi, categoryApi, colorApi, productApi, sizeApi } from '@/api/product'
 import { toastSuccess } from '@/lib/toast'
 import { formatVnd } from '@/lib/format'
-import { apiBaseUrl } from '@/config/app'
+import { apiImageUrl } from '@/lib/image-spec'
 import { useAuth } from '@/hooks/use-auth'
 import { hasRole } from '@/config/roles'
 import { EntityStatus, ERole } from '@/types/common'
@@ -41,10 +41,8 @@ const PAGE_SIZE = 12
 /** Trần số bản ghi khi nạp trọn danh mục nền (danh mục SP, thương hiệu, màu, size). */
 const MAX_REFS = 200
 
-/** Backend phục vụ ảnh qua `GET /image?imageUrl=` (`[ANONYMOUS]`). */
-function imageSrc(url: string) {
-    return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(url)}`
-}
+/** Backend phục vụ ảnh qua `GET /image?imageUrl=` (`[ANONYMOUS]`) — dựng bằng `apiImageUrl`. */
+const imageSrc = apiImageUrl
 
 /**
  * Màn "Sản phẩm" theo `11-san-pham.png` — **card grid**, không phải bảng. PLAN Phase 9.

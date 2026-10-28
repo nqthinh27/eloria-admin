@@ -536,6 +536,12 @@ src/
 
 ---
 
+### 7.1 Nối URL & đường dẫn ảnh (chốt 2026-10-29, chung 3 repo)
+
+- **Nối URL bằng `joinUrl(base, ...parts)`** (`src/lib/url-path.ts`), không nối chuỗi tay `${base}${path}`: tự bỏ `/` thừa ở chỗ nối, không đụng `//` của scheme. Base URL lấy từ env/config luôn được cắt `/` cuối ngay tại nơi khai (`apiBaseUrl`, `storefrontUrl` ở `src/config/app.ts`) ⇒ khai `.../` hay không đều như nhau.
+- **Đường dẫn ảnh backend có đúng một dạng chuẩn `/<thư mục>/<file>`** (vd `/product/abc.jpeg`) — 1 `/` đầu, không `//`, không `\`, không `/` cuối; backend sinh/đọc bằng `CustomStringUtil.normalizeImagePath`. Phía FE luôn qua `normalizeImagePath()` **trước khi** so mẫu/whitelist hay gửi lên backend ⇒ dữ liệu lệch (`product/x`, `//product//x`) vẫn hiện đúng, và không bao giờ nhầm `//product/...` thành URL protocol-relative.
+- URL ảnh backend dựng **chỉ** bằng `apiImageUrl(path)` / `resolveImageSrc(value)` (`src/lib/image-spec.ts`) — không tự viết `${apiBaseUrl}/image?imageUrl=...` ở từng màn. HTML thân bài lưu về dạng chuẩn qua `toStoredHtml` (`src/lib/cms-html.ts`).
+
 ## 8. Quy tắc chung cho Agent
 
 - Ưu tiên **đọc code hiện có** và tái sử dụng, không tạo pattern mới song song pattern đã có.

@@ -7,6 +7,7 @@ import axios, {
 } from 'axios'
 
 import { apiBaseUrl } from '@/config/app'
+import { joinUrl } from '@/lib/url-path'
 import { getCurrentLanguage } from '@/i18n'
 import {
     ApiError,
@@ -108,7 +109,7 @@ let refreshPromise: Promise<string> | null = null
 async function refreshAccessToken(): Promise<string> {
     // Gọi bằng axios trần: không qua interceptor của `http` để tránh đệ quy 401.
     const response = await axios.post<BaseResponse<{ accessToken: string }>>(
-        `${apiBaseUrl}${REFRESH_PATH}`,
+        joinUrl(apiBaseUrl, REFRESH_PATH),
         null,
         { withCredentials: true, timeout: 30_000 },
     )

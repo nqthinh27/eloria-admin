@@ -1,4 +1,5 @@
 import { resolveImageSrc } from '@/lib/image-spec'
+import { normalizeImagePath } from '@/lib/url-path'
 
 /**
  * Chuyển đổi `src` ảnh trong HTML thân bài giữa **dạng lưu** và **dạng hiển thị ở admin**.
@@ -10,7 +11,8 @@ import { resolveImageSrc } from '@/lib/image-spec'
  * - `toDisplayHtml`: dạng lưu → dạng hiển thị (nạp vào editor / khung xem trước).
  * - `toStoredHtml`: dạng hiển thị → dạng lưu (trước khi gửi API).
  */
-const STORED_IMG = /(<img\b[^>]*?\bsrc=")(\/post\/[^"]+)(")/gi
+// Nhận cả dạng lệch `/` (`post/x`, `//post/x`) của dữ liệu cũ; `toStoredHtml` luôn ghi lại dạng chuẩn `/post/x`.
+const STORED_IMG = /(<img\b[^>]*?\bsrc=")(\/*post\/[^"]+)(")/gi
 const DISPLAY_IMG = /(<img\b[^>]*?\bsrc=")[^"]*?\/image\?imageUrl=([^"&]+)(")/gi
 
 export function toDisplayHtml(html: string): string {
@@ -22,7 +24,7 @@ export function toDisplayHtml(html: string): string {
 export function toStoredHtml(html: string): string {
     return html.replace(DISPLAY_IMG, (_m, head: string, encoded: string, tail: string) => {
         try {
-            return `${head}${decodeURIComponent(encoded)}${tail}`
+            return `${head}${normalizeImagePath(decodeURIComponent(encoded))}${tail}`
         } catch {
             return `${head}${encoded}${tail}`
         }

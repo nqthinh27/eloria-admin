@@ -5,8 +5,7 @@ import { Barcode, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload } from 'lucid
 import { productApi, skuApi } from '@/api/product'
 import { toastSuccess, toastWarning } from '@/lib/toast'
 import { formatDate, formatVnd } from '@/lib/format'
-import { IMAGE_SPEC, inspectImageFile, issueKey } from '@/lib/image-spec'
-import { apiBaseUrl } from '@/config/app'
+import { apiImageUrl, IMAGE_SPEC, inspectImageFile, issueKey } from '@/lib/image-spec'
 import { EGender, EntityStatus } from '@/types/common'
 import type { Color, Product, Size, Sku } from '@/types/product'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -25,10 +24,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GenerateSkuDialog } from './generate-sku-dialog'
 import { SkuBarcodeDialog } from './sku-barcode-dialog'
 
-/** Backend phục vụ ảnh qua `GET /image?imageUrl=` (`[ANONYMOUS]`). */
-function imageSrc(url: string) {
-    return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(url)}`
-}
+/** Backend phục vụ ảnh qua `GET /image?imageUrl=` (`[ANONYMOUS]`) — dựng bằng `apiImageUrl`. */
+const imageSrc = apiImageUrl
 
 const MAX_IMAGES = 10
 /** Slot 2 là ảnh hiện khi rê chuột ở Trang chủ + trang danh sách; slot 1 là ảnh mặc định. */

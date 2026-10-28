@@ -1,4 +1,5 @@
 import { apiBaseUrl } from '@/config/app'
+import { joinUrl, normalizeImagePath } from '@/lib/url-path'
 
 /**
  * Hợp đồng khung ảnh — nửa **admin** của `35.3.eloria-client/docs/image-spec.md` (PLAN Phase 22).
@@ -301,8 +302,17 @@ export function resolveImageSrc(value: string): string {
     // Ảnh upload danh mục/thương hiệu (BE31) · bài viết/banner (P15) trả `/category/<file>` · `/brand/<file>`
     // · `/post/<file>` · `/banner/<file>`, sản phẩm `/product/<file>`, avatar `/avatar/<file>` (đủ các thư mục
     // `FileService.FOLDER_*`) — dạng đường dẫn gốc nhưng backend lưu, phải đi qua `/image`;
-    // chỉ `/media/**` (seed storefront) mới dùng nguyên văn.
-    if (/^\/(category|brand|post|banner|product|avatar)\//.test(value)) return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
+    // chỉ `/media/**` (seed storefront) mới dùng nguyên văn. So mẫu trên dạng đã chuẩn hoá ⇒ `product/x`,
+    // `//product//x` cũng nhận ra là ảnh backend (không nhầm `//product/...` thành URL protocol-relative).
+    if (/^\/(category|brand|post|banner|product|avatar)\//.test(normalizeImagePath(value))) return apiImageUrl(value)
     if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:') || value.startsWith('/')) return value
-    return `${apiBaseUrl}/image?imageUrl=${encodeURIComponent(value)}`
+    return apiImageUrl(value)
+}
+
+/**
+ * `GET /image?imageUrl=` (`[ANONYMOUS]`) cho một đường dẫn ảnh backend — **cách duy nhất** dựng URL ảnh
+ * ở admin. Đường dẫn được chuẩn hoá (`lib/url-path.ts`) trước khi gửi, base nối bằng `joinUrl`.
+ */
+export function apiImageUrl(path: string): string {
+    return `${joinUrl(apiBaseUrl, 'image')}?imageUrl=${encodeURIComponent(normalizeImagePath(path))}`
 }

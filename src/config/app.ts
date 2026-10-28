@@ -20,8 +20,11 @@ export const appConfig: AppConfigType = {
  */
 export const baseUrl = import.meta.env.VITE_BASE_URL ?? ""
 
-/** Base URL của API. Luôn same-origin, xem CONVENTIONS mục 2. */
-export const apiBaseUrl = runtimeEnv('VITE_API_BASE_URL') ?? "/v1.0/api"
+/**
+ * Base URL của API. Luôn same-origin, xem CONVENTIONS mục 2. Bỏ `/` cuối để khai `/v1.0/api/` hay
+ * `/v1.0/api` đều như nhau; nối path bằng `joinUrl` (`lib/url-path.ts`), không nối chuỗi tay.
+ */
+export const apiBaseUrl = (runtimeEnv('VITE_API_BASE_URL')?.trim() || "/v1.0/api").replace(/\/+$/, '')
 
 /** Bật mock cho các module backend chưa có API (PLAN Phase 6). */
 export const useMock = runtimeEnv('VITE_USE_MOCK') === "true"
