@@ -42,8 +42,10 @@ export type ImageSpec = {
 const KB = 1024
 const MB = 1024 * KB
 
-/** Trần cứng của backend (`max-file-size`, mọi luồng ảnh) — dùng chung cho mọi spec, không đặt ngân sách riêng. */
+/** Trần backend cho mọi luồng ảnh trừ ảnh sản phẩm (`FileServiceImpl`: 2MB). */
 const MAX_BYTES = 2 * MB
+/** Trần ảnh sản phẩm (2026-10-29): `max-file-size` 15MB + kiểm riêng ở `FileServiceImpl`. */
+export const PRODUCT_MAX_BYTES = 15 * MB
 
 export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
     PRODUCT: {
@@ -51,7 +53,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '4:5',
         recommended: { w: 1600, h: 2000 },
         min: { w: 1000, h: 1250 },
-        maxBytes: MAX_BYTES,
+        maxBytes: PRODUCT_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },

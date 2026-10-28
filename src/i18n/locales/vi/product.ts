@@ -92,6 +92,7 @@ export default {
             genderFemale: 'Nữ',
             genderOther: 'Khác',
             editButton: 'Sửa sản phẩm',
+            deleteButton: 'Xoá sản phẩm',
         },
 
         /** Ma trận SKU — `POST /product/{id}/generate-sku`. */
@@ -139,14 +140,14 @@ export default {
             title: 'Ảnh sản phẩm',
             uploadButton: 'Tải ảnh lên',
             uploading: 'Đang tải lên…',
-            hint: 'Tối đa 10 ảnh (jpg, png, gif, webp; mỗi ảnh ≤ 2MB). Tải thêm sẽ nối vào ô trống kế tiếp; dùng nút trên ảnh để thay hoặc xoá.',
+            hint: 'Tối đa 10 ảnh (jpg, png, gif, webp; mỗi ảnh ≤ 15MB). Tải thêm sẽ nối vào ô trống kế tiếp; dùng nút trên ảnh để thay hoặc xoá.',
             replace: 'Thay ảnh này',
             delete: 'Xoá ảnh này',
             deleteTitle: 'Xoá ảnh sản phẩm?',
             deleteDescription: 'Ảnh sẽ bị xoá vĩnh viễn khỏi sản phẩm.',
             empty: 'Sản phẩm chưa có ảnh nào',
             tooMany: 'Chỉ được chọn tối đa 10 ảnh',
-            fileTooLarge: 'Mỗi ảnh tối đa 2MB. Vui lòng chọn lại ảnh nhỏ hơn.',
+            fileTooLarge: 'Mỗi ảnh tối đa 15MB. Vui lòng chọn lại ảnh nhỏ hơn.',
             hoverPreviewTitle: 'Xem trước ô sản phẩm',
             slot1: 'Ảnh {{slot}} · hiện mặc định ở Trang chủ và trang danh sách sản phẩm',
             slot2: 'Ảnh {{slot}} · hiện khi khách rê chuột vào sản phẩm ở Trang chủ và trang danh sách',
@@ -160,6 +161,14 @@ export default {
             skuStatusUpdated: 'Cập nhật trạng thái SKU thành công',
             imagesUploaded: 'Cập nhật ảnh sản phẩm thành công',
             imageDeleted: 'Đã xoá ảnh sản phẩm',
+            deleted: 'Đã xoá sản phẩm',
+        },
+
+        deleteConfirm: {
+            title: 'Xoá sản phẩm?',
+            description:
+                'Sản phẩm "{{name}}" cùng toàn bộ SKU sẽ bị ẩn khỏi trang quản trị và website bán hàng, không bán tiếp được. Đơn hàng cũ vẫn giữ nguyên thông tin sản phẩm.',
+            submit: 'Xoá sản phẩm',
         },
     },
 

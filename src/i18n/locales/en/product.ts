@@ -91,6 +91,7 @@ export default {
             genderFemale: 'Female',
             genderOther: 'Other',
             editButton: 'Edit product',
+            deleteButton: 'Delete product',
         },
 
         sku: {
@@ -136,14 +137,14 @@ export default {
             title: 'Product images',
             uploadButton: 'Upload images',
             uploading: 'Uploading…',
-            hint: 'Up to 10 images (jpg, png, gif, webp; 2MB each). New uploads fill the next empty slots; use the buttons on an image to replace or delete it.',
+            hint: 'Up to 10 images (jpg, png, gif, webp; 15MB each). New uploads fill the next empty slots; use the buttons on an image to replace or delete it.',
             replace: 'Replace this image',
             delete: 'Delete this image',
             deleteTitle: 'Delete this product image?',
             deleteDescription: 'The image will be permanently removed from the product.',
             empty: 'This product has no images yet',
             tooMany: 'You can select at most 10 images',
-            fileTooLarge: 'Each image must be 2MB or smaller. Please choose smaller images.',
+            fileTooLarge: 'Each image must be 15MB or smaller. Please choose smaller images.',
             hoverPreviewTitle: 'Product tile preview',
             slot1: 'Image {{slot}} · shown by default on the home page and product listing',
             slot2: 'Image {{slot}} · shown when a shopper hovers the product on the home page and listing',
@@ -157,6 +158,14 @@ export default {
             skuStatusUpdated: 'SKU status updated successfully',
             imagesUploaded: 'Product images updated successfully',
             imageDeleted: 'Product image deleted',
+            deleted: 'Product deleted',
+        },
+
+        deleteConfirm: {
+            title: 'Delete product?',
+            description:
+                'Product "{{name}}" and all its SKUs will be hidden from the admin and the storefront and can no longer be sold. Past orders keep their product information.',
+            submit: 'Delete product',
         },
     },
 

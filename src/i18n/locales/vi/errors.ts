@@ -225,8 +225,8 @@ export default {
         },
         file: {
             typeNotAllowed: 'Chỉ chấp nhận ảnh jpg, jpeg, png, gif hoặc webp (không nhận SVG hay file đổi đuôi).',
-            /** HTTP 413 — trần backend 2MB/file, 4MB/request. */
-            tooLarge: 'File vượt quá dung lượng cho phép (tối đa 2MB mỗi ảnh).',
+            /** HTTP 413/400 — trần backend: ảnh sản phẩm 15MB/file, ảnh khác 2MB/file; 16MB/request. */
+            tooLarge: 'File vượt quá dung lượng cho phép (ảnh sản phẩm tối đa 15MB, ảnh khác tối đa 2MB).',
         },
         rateLimit: {
             exceeded: 'Thao tác quá nhanh, vui lòng thử lại sau ít phút.',

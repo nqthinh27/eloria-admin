@@ -18,6 +18,7 @@ import type {
     Size,
     UpdateProductReq,
 } from '@/types/product'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PageHeader } from '@/components/page-header'
 import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
@@ -89,6 +90,7 @@ export default function ProductListPage() {
     const [formProduct, setFormProduct] = useState<Product | null | 'new'>(null)
     const [detailProduct, setDetailProduct] = useState<Product | null>(null)
     const [viewerProduct, setViewerProduct] = useState<Product | null>(null)
+    const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
 
     /** Hành động mặc định khi bấm card: xem ảnh lớn. SP chưa có ảnh ⇒ mở chi tiết thay vì viewer rỗng. */
     const openCard = (product: Product) => {
@@ -216,6 +218,16 @@ export default function ProductListPage() {
         toastSuccess('product.toast.updated', { ns: 'product' })
         setDetailProduct((current) => (current?.id === id ? updated : current))
         await reload()
+    }
+
+    const handleDelete = async () => {
+        if (!deleteProduct) return
+        await productApi.remove(deleteProduct.id)
+        toastSuccess('product.toast.deleted', { ns: 'product' })
+        setDetailProduct(null)
+        // Xoá card cuối của trang cuối ⇒ lùi một trang (đổi `page` đã tự kéo theo `load`).
+        if (data.length === 1 && page > 1) setPage(page - 1)
+        else await reload()
     }
 
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
@@ -453,8 +465,20 @@ export default function ProductListPage() {
                         setDetailProduct(null)
                         setFormProduct(p)
                     }}
+                    onDelete={setDeleteProduct}
                     /* Ghi từ modal chi tiết (sinh SKU, đổi ảnh) ⇒ nạp lại ngầm, giữ nguyên trang. */
                     onChanged={reload}
+                />
+
+                <ConfirmDialog
+                    open={deleteProduct !== null}
+                    onOpenChange={(open) => !open && setDeleteProduct(null)}
+                    title={t('product.deleteConfirm.title')}
+                    description={t('product.deleteConfirm.description', { name: deleteProduct?.name })}
+                    variant="destructive"
+                    confirmLabel={t('product.deleteConfirm.submit')}
+                    auditLogged
+                    onConfirm={handleDelete}
                 />
             </div>
         </>

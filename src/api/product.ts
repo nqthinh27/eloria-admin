@@ -64,16 +64,25 @@ export const productApi = {
      * BREAKING so với bản "thay toàn bộ"): mỗi field `image1..image10` khớp `image_link1..10`.
      * Chỉ gửi slot muốn thêm/thay — slot ghi đè thì backend tự xoá ảnh cũ, slot không gửi giữ nguyên.
      * Cần ≥ 1 slot, không thì 400. Gộp nhiều slot vào **một** request (rate limit 100/60s).
+     * Một lô tới ~16MB ⇒ timeout riêng 180s (mặc định 30s không đủ khi mạng upload chậm).
      */
     uploadImages(id: string, slots: { slot: number; file: File }[]) {
         const form = new FormData()
         slots.forEach(({ slot, file }) => form.append(`image${slot}`, file))
-        return apiClient.post<Product>(`/product/${id}/images`, form)
+        return apiClient.post<Product>(`/product/${id}/images`, form, { timeout: 180_000 })
     },
 
     /** `[SUPER_ADMIN] DELETE /product/{id}/images/{slot}` — slot 1–10; slot trống ⇒ 404 `error.image.notAvailable`. */
     deleteImage(id: string, slot: number) {
         return apiClient.delete<null>(`/product/${id}/images/${slot}`)
+    },
+
+    /**
+     * `[SUPER_ADMIN] DELETE /product/{id}` — xoá mềm (backend set `status = -1`, SKU con xoá mềm theo).
+     * Sản phẩm biến khỏi `/product/search` và storefront; đơn hàng cũ vẫn đọc được tên/giá.
+     */
+    remove(id: string) {
+        return apiClient.delete<null>(`/product/${id}`)
     },
 }
 
