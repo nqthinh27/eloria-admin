@@ -219,6 +219,42 @@ html {
 }
 
 /*
+ * ⚠️ Thanh cuộn LUÔN HIỆN trong mọi dropdown (Select · Popover/SearchSelect · DropdownMenu) — sửa
+ * 2026-10-29 vì trên macOS không thấy thanh cuộn nên không biết danh sách còn mục bên dưới.
+ *
+ * Nguyên nhân: `scrollbar-color` ở `html` được KẾ THỪA xuống mọi phần tử, mà Chrome/Edge ≥121 hễ
+ * `scrollbar-width`/`scrollbar-color` khác `auto` là bỏ qua `::-webkit-scrollbar` ⇒ macOS dùng
+ * thanh cuộn overlay của hệ điều hành, chỉ hiện khi đang cuộn. Trả hai thuộc tính về `auto` trong
+ * panel dropdown để khối `::-webkit-scrollbar` ở trên có hiệu lực — thanh cuộn tự vẽ thì luôn hiện
+ * (Chrome/Edge/Safari). Firefox trên macOS vẫn là overlay, không ép được bằng CSS.
+ *
+ * Radix Select tự chèn style ẩn thanh cuộn của viewport (chỉ để nút mũi tên lên/xuống) — selector
+ * `[data-slot=select-content] [data-radix-select-viewport]` có độ ưu tiên cao hơn nên ghi đè được.
+ */
+[data-slot="select-content"],
+[data-slot="select-content"] *,
+[data-slot="popover-content"],
+[data-slot="popover-content"] *,
+[data-slot="dropdown-menu-content"],
+[data-slot="dropdown-menu-content"] *,
+[data-slot="dropdown-menu-sub-content"],
+[data-slot="dropdown-menu-sub-content"] * {
+  scrollbar-width: auto;
+  scrollbar-color: auto;
+}
+[data-slot="select-content"] [data-radix-select-viewport] {
+  scrollbar-width: auto;
+}
+[data-slot="select-content"] [data-radix-select-viewport]::-webkit-scrollbar {
+  display: block;
+}
+/* Nền panel là `--popover` (trắng) — thumb màu `--border` gần như chìm, dùng màu đậm hơn. */
+:is([data-slot="select-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"]) ::-webkit-scrollbar-thumb,
+:is([data-slot="select-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"])::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklab, var(--muted-foreground) 45%, transparent);
+}
+
+/*
  * Kiểu hiển thị nội dung bài viết (CMS Phase 20) — dùng cho vùng soạn thảo + khung xem trước.
  * Chỉ định nghĩa đúng bộ thẻ whitelist của backend (h2–h4 · p · ul/ol · a · strong/em ·
  * blockquote · img · hr) để WYSIWYG không lệch với thẻ mà storefront render.
