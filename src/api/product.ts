@@ -1,4 +1,4 @@
-import { apiClient, search, type ApiRequestOptions } from '@/lib/api-client'
+import { UPLOAD_TIMEOUT_MS, apiClient, search, type ApiRequestOptions } from '@/lib/api-client'
 import type {
     BaseListRes,
     BaseListResStatus,
@@ -64,12 +64,13 @@ export const productApi = {
      * BREAKING so với bản "thay toàn bộ"): mỗi field `image1..image10` khớp `image_link1..10`.
      * Chỉ gửi slot muốn thêm/thay — slot ghi đè thì backend tự xoá ảnh cũ, slot không gửi giữ nguyên.
      * Cần ≥ 1 slot, không thì 400. Gộp nhiều slot vào **một** request (rate limit 100/60s).
-     * Một lô tới ~16MB ⇒ timeout riêng 180s (mặc định 30s không đủ khi mạng upload chậm).
+     * Một lô tới ~160MB (2026-10-29) ⇒ timeout riêng `UPLOAD_TIMEOUT_MS` (mặc định 30s không đủ khi mạng
+     * upload chậm).
      */
     uploadImages(id: string, slots: { slot: number; file: File }[]) {
         const form = new FormData()
         slots.forEach(({ slot, file }) => form.append(`image${slot}`, file))
-        return apiClient.post<Product>(`/product/${id}/images`, form, { timeout: 180_000 })
+        return apiClient.post<Product>(`/product/${id}/images`, form, { timeout: UPLOAD_TIMEOUT_MS })
     },
 
     /** `[SUPER_ADMIN] DELETE /product/{id}/images/{slot}` — slot 1–10; slot trống ⇒ 404 `error.image.notAvailable`. */
@@ -155,12 +156,14 @@ export const categoryApi = {
 
     /**
      * `[SUPER_ADMIN] POST /category/{id}/images` (BE31) — multipart theo slot: `image1` · `image2` ·
-     * `cover1..cover5`. Chỉ gửi slot muốn thay (≥ 1); trần 2 MB/file. Trả `Category` đầy đủ.
+     * `cover1..cover5`. Chỉ gửi slot muốn thay (≥ 1); trần 15 MB/file (2026-10-29). Trả `Category` đầy đủ.
+     * Form danh mục gửi **mỗi slot một request** ⇒ một request ≤ 15MB; kể cả gộp đủ 7 slot cũng chỉ
+     * ~105MB, dưới trần 160MB/request.
      */
     uploadImages(id: string, slots: Partial<Record<CategoryImageSlot, File>>) {
         const form = new FormData()
         Object.entries(slots).forEach(([slot, file]) => file && form.append(slot, file))
-        return apiClient.post<Category>(`/category/${id}/images`, form)
+        return apiClient.post<Category>(`/category/${id}/images`, form, { timeout: UPLOAD_TIMEOUT_MS })
     },
 
     /** `[SUPER_ADMIN] DELETE /category/{id}/images/{slot}` — slot trống ⇒ `error.image.notAvailable`. */

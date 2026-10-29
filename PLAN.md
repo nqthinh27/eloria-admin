@@ -3059,6 +3059,8 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 > **Cập nhật 2026-10-11 ([handoff](docs/handoff/phien-2026-10-11-phase-22-23-upload-anh.md)):** backend P13.2/P13.3 giao upload và **bỏ hẳn nhập link** ⇒ `ImageLinkField` đã xoá, thay bằng `ImageUploadField` (chỉ upload). Trần dung lượng **mọi spec = 2 MB** (theo backend, user chốt 2026-10-11); dưới kích thước tối thiểu / lệch tỉ lệ / khác định dạng khuyến nghị **chỉ cảnh báo** — chỉ sai định dạng và > 2 MB bị chặn (user chốt 2026-10-11). Báo cáo 2026-10-10 bên dưới đã lỗi thời phần "ô nhập link".
 
+> **Cập nhật 2026-10-29:** trần dung lượng không còn "mọi spec = 2 MB" — `PRODUCT` · `CATEGORY_TILE` · `HOME_HERO` · `BANNER_WIDE` · `POST_COVER` (và ảnh nội dung bài viết) lên **15 MB/ảnh**; `LOGO_SQUARE` (logo thương hiệu), `OG_IMAGE` và avatar giữ **2 MB**. Trần request backend **160 MB** ⇒ lô ảnh sản phẩm ≤ 160 MB − 100 KB (thay ~3,9 MB/~16 MB); upload ảnh dùng timeout 10 phút (`UPLOAD_TIMEOUT_MS`). Các con số 2 MB / 3,9 MB bên dưới là lịch sử. Chi tiết: `docs/backend/san-pham.md` mục dung lượng.
+
 > **Báo cáo 2026-10-10:** [handoff](docs/handoff/phien-2026-10-10-phase-22-23-anh-danh-muc.md). Đã có `src/lib/image-spec.ts` + 5 component ở `src/components/image/`; gắn vào Sản phẩm (kiểm file trước khi gửi) và Thương hiệu. **Lệch PLAN có chủ đích:** `ImageLinkField` (ô nhập link) thay `ImageUploadField` vì backend không có upload cho danh mục/thương hiệu (BE31); Nhân viên không có ô ảnh nên bỏ; chưa có unit test `IMAGE_SPEC` (repo chưa có test runner).
 
 > **Vì sao có phase này.** Admin upload ảnh mà không biết client sẽ render trong khung nào ⇒ ảnh bị
@@ -3174,7 +3176,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 >    (Phase 23). Spec cố định `HOME_HERO` 21:10 · 2520×1200. Giữ cảnh báo "không còn banner ACTIVE".
 > 3. **Ảnh theo luật backend P13.3**: cover bài / ảnh banner / **ảnh chèn trong thân bài** đều **chỉ
 >    upload** (không ô nhập link) qua `<ImageUploadField>`; backend phải có endpoint tương ứng (D7 —
->    chưa có trong DoD P15). Trần **2 MB**, chỉ chặn sai định dạng + quá nặng (cùng luật Phase 22).
+>    chưa có trong DoD P15). Trần **2 MB** *(cập nhật 2026-10-29: **15 MB** cho banner, ảnh bìa và ảnh nội dung bài viết)*, chỉ chặn sai định dạng + quá nặng (cùng luật Phase 22).
 > 4. ~~**Trang tĩnh được bảo vệ (D4)**~~ **BỊ THAY THẾ bởi P15.1 (xem khung trên)** — nội dung gốc: ở form Bài viết, khi
 >    `type = PAGE` và slug nằm trong **danh sách bảo vệ do backend định nghĩa** (R2 chỉ có
 >    `gioi-thieu` — mục "Về chúng tôi" trên nav) ⇒ **slug + loại chỉ đọc, ẩn nút Xoá/Gỡ xuất bản**,
@@ -3302,7 +3304,7 @@ Xem trước QR theo TK (backend không có endpoint) · lịch sử đổi TK m
 
 ## Phase 23 — Ảnh danh mục cho web bán hàng: tile hover · cover slideshow · danh mục mặc định ✅ **XONG FE + UPLOAD + ĐO STOREFRONT 2026-10-11**
 
-> **Cập nhật 2026-10-11 ([handoff](docs/handoff/phien-2026-10-11-phase-22-23-upload-anh.md)):** 7 ô ảnh chỉ upload — thêm mới: chọn file chờ, tạo xong mới upload từng slot; sửa: upload/gỡ **ngay** (`DELETE …/images/{slot}`), nạp lại danh sách một lần khi đóng dialog, có dòng báo "không phụ thuộc Lưu/Huỷ". 409 tranh chấp mặc định dùng `error.category.defaultConflict` (BE33). Cột ảnh đọc `imageLink1` (backend đã bỏ `imageUrl`). Đã kiểm UI thật luồng thêm/sửa/gỡ/chặn > 2 MB. **Đóng 2026-10-11 ([handoff Phase 24](docs/handoff/phien-2026-10-11-phase-24-release-r1.md)):** đã đo song song storefront (cây danh mục, default, INACTIVE, XOÁ), race 409 do backend đã đo, RBAC ADMIN ⇒ 403 mọi API ghi. STAFF chưa đo (tài khoản dev bị vô hiệu hoá).
+> **Cập nhật 2026-10-11 ([handoff](docs/handoff/phien-2026-10-11-phase-22-23-upload-anh.md)):** 7 ô ảnh chỉ upload — thêm mới: chọn file chờ, tạo xong mới upload từng slot; sửa: upload/gỡ **ngay** (`DELETE …/images/{slot}`), nạp lại danh sách một lần khi đóng dialog, có dòng báo "không phụ thuộc Lưu/Huỷ". 409 tranh chấp mặc định dùng `error.category.defaultConflict` (BE33). Cột ảnh đọc `imageLink1` (backend đã bỏ `imageUrl`). Đã kiểm UI thật luồng thêm/sửa/gỡ/chặn > 2 MB. *(Cập nhật 2026-10-29: trần ảnh danh mục lên 15 MB/ảnh, chưa kiểm UI lại với backend mới.)* **Đóng 2026-10-11 ([handoff Phase 24](docs/handoff/phien-2026-10-11-phase-24-release-r1.md)):** đã đo song song storefront (cây danh mục, default, INACTIVE, XOÁ), race 409 do backend đã đo, RBAC ADMIN ⇒ 403 mọi API ghi. STAFF chưa đo (tài khoản dev bị vô hiệu hoá).
 
 > **Báo cáo 2026-10-10:** [handoff](docs/handoff/phien-2026-10-10-phase-22-23-anh-danh-muc.md). Form 8 ô + mô tả + công tắc, badge/lọc/banner, popup 3 đường về 0 mặc định, toast A→B, xử lý 409, xem trước hover/slideshow, detail modal — đo thật bất biến 0/1 và các luồng ①② trên UI. **Còn:** chụp so với storefront, kiểm đường INACTIVE/XOÁ/race, upload thật (BE31).
 

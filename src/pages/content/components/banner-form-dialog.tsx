@@ -203,7 +203,7 @@ export function BannerFormDialog({ open, onOpenChange, banner, onCreate, onUpdat
                                     mediaDirtyRef.current = true
                                     toastSuccess('field.uploaded', { ns: 'image' })
                                 } catch {
-                                    // api-client đã toast lỗi (quá 2MB, sai định dạng…).
+                                    // api-client đã toast lỗi (quá 15MB, sai định dạng…).
                                 } finally {
                                     setImageBusy(false)
                                 }

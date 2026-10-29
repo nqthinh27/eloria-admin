@@ -67,6 +67,12 @@ function serializeParams(params: Record<string, unknown>): string {
     return search.toString()
 }
 
+/**
+ * Timeout cho request **upload ảnh** (2026-10-29): một request tới 160MB (lô ảnh sản phẩm), ảnh lẻ tới
+ * 15MB — mặc định 30s không đủ. 10 phút ≈ 160MB ở ~2Mbps upload; truyền qua `{ timeout: UPLOAD_TIMEOUT_MS }`.
+ */
+export const UPLOAD_TIMEOUT_MS = 600_000
+
 export const http: AxiosInstance = axios.create({
     baseURL: apiBaseUrl,
     // Bắt buộc để cookie `refresh_token` được gửi kèm. Chỉ hoạt động khi same-origin,

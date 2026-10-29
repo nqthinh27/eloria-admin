@@ -33,13 +33,15 @@ const HOVER_SLOT = 2
 /** Chỉ nhận đúng định dạng backend cho phép (2026-09-25) — **không còn SVG**. */
 const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp'
 /*
- * Trần dung lượng của backend (`spring.servlet.multipart`): **15MB/file**, **16MB/request** (2026-10-29).
+ * Trần dung lượng của backend (`spring.servlet.multipart`): **15MB/file**, **160MB/request** (2026-10-29 —
+ * 10 ảnh × 15MB + dự phòng).
  * Vượt ⇒ `413 error.file.tooLarge` — nhưng server/nginx có thể cắt kết nối trước khi kịp trả JSON
  * (trình duyệt chỉ thấy lỗi mạng) ⇒ FE chặn file quá cỡ từ trước (`inspectImageFile`, trần file =
- * `IMAGE_SPEC.PRODUCT.maxBytes`) và **chia lô** request theo trần tổng: ảnh lớn đi một mình, ảnh nhỏ gom lô.
+ * `IMAGE_SPEC.PRODUCT.maxBytes`) và **chia lô** request theo trần tổng — với trần 160MB, 10 ảnh × 15MB vừa
+ * một lô; giữ chia lô làm lưới an toàn nếu trần backend bị hạ.
  */
-/** Chừa ~100KB cho phần bao multipart (boundary, header từng field) dưới trần 16MB. */
-const MAX_REQUEST_BYTES = 16 * 1024 * 1024 - 100 * 1024
+/** Chừa ~100KB cho phần bao multipart (boundary, header từng field) dưới trần 160MB. */
+const MAX_REQUEST_BYTES = 160 * 1024 * 1024 - 100 * 1024
 
 /** Gom các slot thành lô mà tổng dung lượng mỗi lô không vượt `MAX_REQUEST_BYTES`. */
 function chunkBySize<T extends { file: File }>(items: T[]): T[][] {

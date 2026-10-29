@@ -54,6 +54,12 @@ Response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus` (có `act
   `error.category.defaultConflict` (BE33). Đoạn "chuỗi link — không có endpoint upload" ở dòng Danh mục P13.1 bên trên **đã lỗi thời**.
 - Dung lượng (`spring.servlet.multipart`): **2MB/file · 4MB/request**, vượt ⇒ HTTP 413 `error.file.tooLarge`
   ⇒ FE chặn file > 2MB và chia lô request ≤ ~3.9MB (`product-detail-modal.tsx#chunkBySize`).
+  **Cập nhật 2026-10-29 (hợp đồng user chốt, backend đang sửa cho khớp — chưa đo lại):** ảnh sản phẩm · banner ·
+  danh mục (`image1/2`, `cover1..5`) · ảnh bìa + ảnh nội dung bài viết **15MB/file**; logo thương hiệu + avatar giữ
+  **2MB/file**; trần body **160MB/request** (10 × 15MB + dự phòng). FE: trần file ở `src/lib/image-spec.ts`
+  (`LARGE_IMAGE_MAX_BYTES` / `SMALL_IMAGE_MAX_BYTES`), lô ảnh sản phẩm ≤ 160MB − 100KB (`chunkBySize`), mọi
+  endpoint upload ảnh dùng `UPLOAD_TIMEOUT_MS` = 10 phút (`src/lib/api-client.ts`). Danh mục upload mỗi slot một
+  request (≤ 15MB).
 - Upload ảnh kiểm **nội dung thật**: chỉ jpg/jpeg/png/gif/webp (**không SVG**), sai ⇒
   `error.file.typeNotAllowed`. Rate limit ⇒ HTTP 429 `error.rateLimit.exceeded` (`GET /image` 120/60s theo IP;
   `update-avatar` 5/60s; `product/{id}/images` POST/DELETE 100/60s theo tài khoản).

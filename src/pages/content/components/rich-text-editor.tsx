@@ -27,13 +27,14 @@ import { postApi } from '@/api/cms'
 import { cn } from '@/lib/utils'
 import { toastWarning } from '@/lib/toast'
 import { isAllowedHref, toDisplayHtml, toStoredHtml } from '@/lib/cms-html'
-import { resolveImageSrc } from '@/lib/image-spec'
+import { LARGE_IMAGE_MAX_BYTES, resolveImageSrc } from '@/lib/image-spec'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+/** Ảnh trong nội dung bài viết: 15MB/ảnh (2026-10-29). */
+const MAX_IMAGE_BYTES = LARGE_IMAGE_MAX_BYTES
 const ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'
 
 type RichTextEditorProps = {
@@ -338,7 +339,7 @@ function ImageDialog({
             onInserted({ src: resolveImageSrc(url), alt: alt.trim(), ...size })
             onOpenChange(false)
         } catch {
-            // api-client đã toast lỗi (quá 2MB, sai định dạng…); giữ dialog mở để thử lại.
+            // api-client đã toast lỗi (quá 15MB, sai định dạng…); giữ dialog mở để thử lại.
         } finally {
             setUploading(false)
         }

@@ -203,7 +203,7 @@ SUPER_ADMIN  >  ADMIN  >  STAFF  >  CUSTOMER  >  ANONYMOUS
 |---|---|---|
 | Auth | `ANONYMOUS` | `POST /authenticate/send-otp` *(P19)* · `POST /authenticate` *(cần `otp`)* · `/refresh` · `/activate-account?code=` · `/forgot-password` · `/reset-password` |
 | Đăng xuất | `STAFF` | `POST /logout` |
-| Tài khoản đang đăng nhập | `STAFF` | `GET\|PUT /account/me` *(PUT: P19c)* · `POST /account/change-password` · `POST /sys-user/update-avatar` *(multipart `file`, ≤2MB, 5 lần/phút)* · `POST /account/zalo/relink/send-otp` · `POST /account/zalo/relink` · `GET /account/zalo/status` *(P19c)* |
+| Tài khoản đang đăng nhập | `STAFF` | `GET\|PUT /account/me` *(PUT: P19c)* · `POST /account/change-password` · `POST /sys-user/update-avatar` *(multipart `file`, ≤2MB — vẫn 2MB sau đợt nâng trần 2026-10-29, 5 lần/phút)* · `POST /account/zalo/relink/send-otp` · `POST /account/zalo/relink` · `GET /account/zalo/status` *(P19c)* |
 | Ảnh | `ANONYMOUS` | `GET /image?imageUrl=` |
 | Địa chỉ hành chính | `STAFF` | `GET /administrative-address/provinces` · `/wards?provinceCode=` |
 | Chi nhánh — đọc | `STAFF` | `POST /branch/search` · `GET /branch/{id}` |

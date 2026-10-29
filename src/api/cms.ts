@@ -1,4 +1,4 @@
-import { apiClient, search } from '@/lib/api-client'
+import { UPLOAD_TIMEOUT_MS, apiClient, search } from '@/lib/api-client'
 import type { BaseListRes, BaseListResStatus, EntityStatus, SearchPagination } from '@/types/common'
 import type {
     Banner,
@@ -49,11 +49,11 @@ export const postApi = {
         return apiClient.delete<null>(`/post/${id}`)
     },
 
-    /** `[SUPER_ADMIN] POST /post/{id}/cover` — multipart field `cover`, ≤ 2 MB. */
+    /** `[SUPER_ADMIN] POST /post/{id}/cover` — multipart field `cover`, ≤ 15 MB (2026-10-29). */
     uploadCover(id: string, file: File) {
         const form = new FormData()
         form.append('cover', file)
-        return apiClient.post<Post>(`/post/${id}/cover`, form)
+        return apiClient.post<Post>(`/post/${id}/cover`, form, { timeout: UPLOAD_TIMEOUT_MS })
     },
 
     /** `[SUPER_ADMIN] DELETE /post/{id}/cover`. */
@@ -62,13 +62,13 @@ export const postApi = {
     },
 
     /**
-     * `[SUPER_ADMIN] POST /post/content-image` — ảnh chèn trong thân bài, multipart field `image`.
+     * `[SUPER_ADMIN] POST /post/content-image` — ảnh chèn trong thân bài, multipart field `image`, ≤ 15 MB.
      * Trả `{ url: "/post/<file>" }` — **dán nguyên `url`** vào `<img src>`.
      */
     uploadContentImage(file: File) {
         const form = new FormData()
         form.append('image', file)
-        return apiClient.post<{ url: string }>('/post/content-image', form)
+        return apiClient.post<{ url: string }>('/post/content-image', form, { timeout: UPLOAD_TIMEOUT_MS })
     },
 }
 
@@ -103,10 +103,10 @@ export const bannerApi = {
         return apiClient.delete<null>(`/banner/${id}`)
     },
 
-    /** `[SUPER_ADMIN] POST /banner/{id}/image` — multipart field `image`; ảnh cũ tự xoá file. */
+    /** `[SUPER_ADMIN] POST /banner/{id}/image` — multipart field `image` (≤ 15 MB); ảnh cũ tự xoá file. */
     uploadImage(id: string, file: File) {
         const form = new FormData()
         form.append('image', file)
-        return apiClient.post<Banner>(`/banner/${id}/image`, form)
+        return apiClient.post<Banner>(`/banner/${id}/image`, form, { timeout: UPLOAD_TIMEOUT_MS })
     },
 }

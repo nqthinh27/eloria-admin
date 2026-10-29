@@ -44,7 +44,7 @@ type ImageUploadFieldProps = {
 
 /**
  * Ô ảnh **chỉ upload file** (backend P13.3 bỏ hẳn nhập link): chọn file → kiểm tra theo `IMAGE_SPEC`
- * (`inspectImageFile`: định dạng · ≤ 2MB · kích thước tối thiểu · tỉ lệ) → báo cha. File sai ⇒ chặn,
+ * (`inspectImageFile`: định dạng · ≤ `spec.maxBytes` · kích thước tối thiểu · tỉ lệ) → báo cha. File sai ⇒ chặn,
  * không request nào bay đi. Phần hint/khung xem trước/danh sách vấn đề dùng chung với ô ảnh sản phẩm.
  */
 export function ImageUploadField({

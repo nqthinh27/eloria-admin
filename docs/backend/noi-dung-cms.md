@@ -16,7 +16,7 @@
   Slug `^[a-z0-9]+(-[a-z0-9]+)*$` ≤150; title ≤255; excerpt ≤500; metaTitle ≤255; metaDescription ≤500 (FE giới hạn 150/300 theo `SeoFields`).
 - `POST /post/update-status` `{id, postStatus, publishedAt?}`; `SCHEDULED` bắt buộc `publishedAt` tương lai. Bài hiện ở web ngay khi tới `publishedAt`; **cron đầu mỗi giờ** mới đổi nhãn SCHEDULED → PUBLISHED (trễ tới 1 giờ). FE coi `SCHEDULED && publishedAt <= now` là "Đã đến giờ — đang xuất bản", không báo lệch.
 - `DELETE /post/{id}` xoá hẳn + file.
-- Ảnh: `POST|DELETE /post/{id}/cover` (field `cover`), `POST /post/content-image` (field `image`) trả `{url:"/post/<file>"}`; ≤2 MB, jpg/jpeg/png/gif/webp.
+- Ảnh: `POST|DELETE /post/{id}/cover` (field `cover`), `POST /post/content-image` (field `image`) trả `{url:"/post/<file>"}`; ≤2 MB, jpg/jpeg/png/gif/webp. **Cập nhật 2026-10-29:** trần lên **15 MB/ảnh** (cả ảnh bìa, ảnh nội dung và ảnh banner), timeout upload FE 10 phút — xem `san-pham.md` mục dung lượng.
 - Hiển thị: `coverUrl` tương đối ⇒ `GET /image?imageUrl=` (`resolveImageSrc`).
 - Sanitize khi lưu: h2–h4, p, ul/ol/li, a, strong/em, blockquote, img, hr, br; `img src` chỉ `/post/<file>`; `href` chỉ http(s)/mailto/tel//path/#anchor.
 - Lỗi: `error.post.{slugExisted,notExisted,scheduleInvalid,productInvalid,statusTransitionInvalid}` · `error.file.typeNotAllowed`.

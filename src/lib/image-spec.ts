@@ -43,10 +43,13 @@ export type ImageSpec = {
 const KB = 1024
 const MB = 1024 * KB
 
-/** Trần backend cho mọi luồng ảnh trừ ảnh sản phẩm (`FileServiceImpl`: 2MB). */
-const MAX_BYTES = 2 * MB
-/** Trần ảnh sản phẩm (2026-10-29): `max-file-size` 15MB + kiểm riêng ở `FileServiceImpl`. */
-export const PRODUCT_MAX_BYTES = 15 * MB
+/**
+ * Trần ảnh lớn (2026-10-29): ảnh sản phẩm · banner · danh mục (`image1/2`, `cover1..5`) · ảnh bìa và
+ * ảnh nội dung bài viết — `max-file-size` 15MB + kiểm riêng ở `FileServiceImpl`.
+ */
+export const LARGE_IMAGE_MAX_BYTES = 15 * MB
+/** Trần ảnh nhỏ (giữ nguyên 2MB): logo thương hiệu, avatar; OG image chưa có luồng upload nên theo trần này. */
+export const SMALL_IMAGE_MAX_BYTES = 2 * MB
 
 export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
     PRODUCT: {
@@ -54,7 +57,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '4:5',
         recommended: { w: 1600, h: 2000 },
         min: { w: 1000, h: 1250 },
-        maxBytes: PRODUCT_MAX_BYTES,
+        maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },
@@ -63,7 +66,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '4:5',
         recommended: { w: 800, h: 1000 },
         min: { w: 480, h: 600 },
-        maxBytes: MAX_BYTES,
+        maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },
@@ -72,7 +75,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '21:10',
         recommended: { w: 2520, h: 1200 },
         min: { w: 1890, h: 900 },
-        maxBytes: MAX_BYTES,
+        maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
         safeZone: { w: 960, h: 1200 },
@@ -83,7 +86,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '9:2',
         recommended: { w: 2520, h: 560 },
         min: { w: 1800, h: 400 },
-        maxBytes: MAX_BYTES,
+        maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
         safeZone: { w: 1000, h: 560 },
@@ -94,7 +97,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '16:9',
         recommended: { w: 1920, h: 1080 },
         min: { w: 1280, h: 720 },
-        maxBytes: MAX_BYTES,
+        maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },
@@ -103,7 +106,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '1,91:1',
         recommended: { w: 1200, h: 630 },
         min: { w: 600, h: 315 },
-        maxBytes: MAX_BYTES,
+        maxBytes: SMALL_IMAGE_MAX_BYTES,
         formats: ['jpg', 'png'],
         fit: 'cover',
         safeZone: { w: 630, h: 630 },
@@ -113,7 +116,7 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '1:1',
         recommended: { w: 512, h: 512 },
         min: { w: 256, h: 256 },
-        maxBytes: MAX_BYTES,
+        maxBytes: SMALL_IMAGE_MAX_BYTES,
         formats: ['png'],
         fit: 'contain',
         // Logo nằm trong 448×448, chừa lề 6,25 % mỗi bên (§3).

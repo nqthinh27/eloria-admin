@@ -119,7 +119,7 @@ export default {
                 insert: 'Upload & insert',
                 uploading: 'Uploading…',
                 badType: 'Only jpg, png, webp, gif images are accepted.',
-                tooLarge: 'Image exceeds 2 MB.',
+                tooLarge: 'Image exceeds 15 MB.',
             },
             pasteBlocked: 'Images cannot be pasted directly — use the "Insert image" button to upload.',
         },

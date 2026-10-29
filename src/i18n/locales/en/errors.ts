@@ -203,8 +203,8 @@ export default {
         },
         file: {
             typeNotAllowed: 'Only jpg, jpeg, png, gif or webp images are accepted (no SVG or renamed files).',
-            /** HTTP 413/400 — backend limit: product images 15MB per file, other images 2MB; 16MB per request. */
-            tooLarge: 'The file exceeds the allowed size (product images max 15MB, other images max 2MB).',
+            /** HTTP 413/400 — backend limit (2026-10-29): product/banner/category/post images 15MB per file, logo & avatar 2MB; 160MB per request. */
+            tooLarge: 'The file exceeds the allowed size (brand logos and avatars max 2MB, other images max 15MB).',
         },
         rateLimit: {
             exceeded: 'Too many requests. Please try again in a few minutes.',

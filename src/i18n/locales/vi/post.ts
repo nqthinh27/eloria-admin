@@ -119,7 +119,7 @@ export default {
                 insert: 'Tải lên & chèn',
                 uploading: 'Đang tải lên…',
                 badType: 'Chỉ nhận ảnh jpg, png, webp, gif.',
-                tooLarge: 'Ảnh vượt quá 2 MB.',
+                tooLarge: 'Ảnh vượt quá 15 MB.',
             },
             pasteBlocked: 'Không dán được ảnh trực tiếp — hãy dùng nút "Chèn ảnh" để tải lên.',
         },
