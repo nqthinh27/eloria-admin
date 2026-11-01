@@ -24,7 +24,7 @@ export type ImageFormat = 'jpg' | 'png' | 'webp'
 export type ImageSpec = {
     /** Rộng ÷ cao của khung desktop — dùng thẳng cho `aspect-ratio`. */
     ratio: number
-    /** Nhãn hiển thị cho người nhập ("4:5") — số lẻ giữ nguyên dấu phẩy kiểu Việt. */
+    /** Nhãn hiển thị cho người nhập ("2:3") — số lẻ giữ nguyên dấu phẩy kiểu Việt. */
     ratioLabel: string
     recommended: ImageSize
     /** Nhỏ hơn mức này ⇒ **chặn** (ảnh vỡ khi phóng to). */
@@ -52,20 +52,21 @@ export const LARGE_IMAGE_MAX_BYTES = 15 * MB
 export const SMALL_IMAGE_MAX_BYTES = 2 * MB
 
 export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
+    // 2:3 từ 2026-10-31 (PO chốt thẻ sản phẩm/danh mục dọc 2:3 — IMG-4 của `image-spec.md`).
     PRODUCT: {
-        ratio: 4 / 5,
-        ratioLabel: '4:5',
-        recommended: { w: 1600, h: 2000 },
-        min: { w: 1000, h: 1250 },
+        ratio: 2 / 3,
+        ratioLabel: '2:3',
+        recommended: { w: 1600, h: 2400 },
+        min: { w: 1000, h: 1500 },
         maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
     },
     CATEGORY_TILE: {
-        ratio: 4 / 5,
-        ratioLabel: '4:5',
-        recommended: { w: 800, h: 1000 },
-        min: { w: 480, h: 600 },
+        ratio: 2 / 3,
+        ratioLabel: '2:3',
+        recommended: { w: 800, h: 1200 },
+        min: { w: 480, h: 720 },
         maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
@@ -78,8 +79,9 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
-        safeZone: { w: 960, h: 1200 },
-        mobile: { ratio: 4 / 5, ratioLabel: '4:5' },
+        // Mobile cao `100svh` (2026-10-31) — tính theo màn hẹp nhất 9:19,5 ⇒ còn ~22 % bề ngang (§3).
+        safeZone: { w: 560, h: 1200 },
+        mobile: { ratio: 9 / 19.5, ratioLabel: '9:19,5' },
     },
     BANNER_WIDE: {
         ratio: 9 / 2,
@@ -132,6 +134,58 @@ export const COVER_SLOT_COUNT = 5
 /** Định dạng backend nhận (`FileServiceImpl` kiểm nội dung thật — không SVG). */
 export const BACKEND_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const
 
+/**
+ * Video (handoff BE `fe-handoff-media-video.md`, 2026-10-31): **chỉ** ảnh sản phẩm · banner · danh mục
+ * (`image1/2`, `cover1..5`) nhận thêm mp4/webm/mov, trần 15MB như ảnh, lưu chung cột URL ảnh.
+ * Avatar · logo thương hiệu · bài viết vẫn chỉ ảnh.
+ */
+export const BACKEND_VIDEO_MIME = ['video/mp4', 'video/webm', 'video/quicktime'] as const
+
+/** `accept` của ô chỉ nhận ảnh. */
+export const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp'
+/** `accept` của ô nhận cả ảnh lẫn video (sản phẩm · banner · danh mục). */
+export const MEDIA_ACCEPT = `${IMAGE_ACCEPT},video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov`
+
+const VIDEO_EXT = /\.(mp4|webm|mov)$/i
+
+/**
+ * Backend không có field loại media — **quy tắc duy nhất**: đuôi `.mp4/.webm/.mov` là video. Đuôi được tìm,
+ * theo thứ tự, ở:
+ * 1. fragment đúng dạng `#.mp4` — dấu do `mediaPreviewSrc` gắn vào blob URL của file chờ gửi (blob không có đuôi);
+ * 2. phần đường dẫn, **đã bỏ `?query`/`#fragment`** (`/product/x.mp4`, `https://cdn/x.mp4?v=2`);
+ * 3. tham số `imageUrl` của URL `/image?imageUrl=%2Fproduct%2Fx.mp4` (`resolveImageSrc`/`apiImageUrl`).
+ */
+export function isVideoUrl(url: string | null | undefined): boolean {
+    if (!url) return false
+    const hashAt = url.indexOf('#')
+    if (hashAt >= 0 && /^\.(mp4|webm|mov)$/i.test(url.slice(hashAt + 1))) return true
+    const beforeHash = hashAt >= 0 ? url.slice(0, hashAt) : url
+    const queryAt = beforeHash.indexOf('?')
+    if (VIDEO_EXT.test(queryAt >= 0 ? beforeHash.slice(0, queryAt) : beforeHash)) return true
+    if (queryAt < 0) return false
+    const inner = new URLSearchParams(beforeHash.slice(queryAt + 1)).get('imageUrl')
+    return inner !== null && VIDEO_EXT.test(inner.split(/[?#]/)[0])
+}
+
+/**
+ * `src` xem trước cho file chờ gửi: blob URL (`URL.createObjectURL`) + `#.mp4`/`#.webm`/`#.mov` khi là
+ * video, để `isVideoUrl` — và mọi khung dùng nó (`MediaView`, lightbox, hover-swap, slideshow) — nhận
+ * đúng mà không phải truyền cờ riêng. `<video>` bỏ qua fragment lạ. **Thu hồi bằng blob URL gốc**, không
+ * bằng giá trị trả về.
+ */
+export function mediaPreviewSrc(objectUrl: string, file: File): string {
+    if (!isVideoFile(file)) return objectUrl
+    const ext =
+        VIDEO_EXT.exec(file.name)?.[1].toLowerCase() ??
+        (file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4')
+    return `${objectUrl}#.${ext}`
+}
+
+/** File chọn từ máy là video? Theo MIME, MIME trống (một số máy với `.mov`) thì theo đuôi tên file. */
+export function isVideoFile(file: File): boolean {
+    return file.type ? file.type.startsWith('video/') : VIDEO_EXT.test(file.name)
+}
+
 const MIME_TO_FORMAT: Record<string, ImageFormat | undefined> = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
@@ -141,7 +195,14 @@ const MIME_TO_FORMAT: Record<string, ImageFormat | undefined> = {
 /** Lệch tỉ lệ ≤ 2 % coi như đúng (§5). */
 const RATIO_TOLERANCE = 0.02
 
-export type ImageIssueCode = 'format' | 'formatSoft' | 'tooLarge' | 'belowMin' | 'ratio'
+export type ImageIssueCode =
+    | 'format'
+    | 'formatMedia'
+    | 'formatSoft'
+    | 'tooLarge'
+    | 'belowMin'
+    | 'ratio'
+    | 'videoUnplayable'
 
 export type ImageIssue = {
     code: ImageIssueCode
@@ -261,6 +322,102 @@ export async function inspectImageFile(file: File, spec: ImageSpec): Promise<Ima
     const { width, height } = bitmap
     bitmap.close()
     return evaluateImage(spec, { width, height, bytes: file.size, mime: file.type })
+}
+
+/**
+ * Kiểm file trước khi gửi — như `inspectImageFile`, thêm nhánh video khi ô cho phép (`allowVideo`).
+ *
+ * Video: chặn khi sai định dạng / quá `spec.maxBytes`; kích thước đọc từ `videoWidth/videoHeight` rồi
+ * chấm min + tỉ lệ **chỉ cảnh báo** như ảnh. Trình duyệt không đọc được video (thường `.mov` HEVC của
+ * iPhone trên Chrome) ⇒ **cảnh báo mềm** (`videoUnplayable`), vẫn cho lưu — backend không kiểm codec.
+ */
+export async function inspectMediaFile(
+    file: File,
+    spec: ImageSpec,
+    { allowVideo = false }: { allowVideo?: boolean } = {},
+): Promise<ImageInspection> {
+    if (!isVideoFile(file)) {
+        const result = await inspectImageFile(file, spec)
+        // Ô nhận cả video ⇒ thông báo sai định dạng phải nhắc cả video.
+        if (!allowVideo) return result
+        return { ...result, issues: result.issues.map((i) => (i.code === 'format' ? { ...i, code: 'formatMedia' } : i)) }
+    }
+    const blocked = (code: ImageIssueCode): ImageInspection => ({
+        status: 'blocked',
+        issues: [{ code, blocking: true, params: {} }],
+        width: 0,
+        height: 0,
+    })
+    if (!allowVideo) return blocked('format')
+    const knownMime = file.type ? (BACKEND_VIDEO_MIME as readonly string[]).includes(file.type) : true
+    if (!knownMime || !VIDEO_EXT.test(file.name)) return blocked('formatMedia')
+    // Quá cỡ ⇒ chặn luôn, khỏi giải mã cả file chỉ để đo.
+    if (file.size > spec.maxBytes) {
+        return {
+            status: 'blocked',
+            issues: [
+                {
+                    code: 'tooLarge',
+                    blocking: true,
+                    params: { size: formatBytes(file.size), max: formatBytes(spec.maxBytes) },
+                },
+            ],
+            width: 0,
+            height: 0,
+        }
+    }
+
+    const url = URL.createObjectURL(file)
+    const size = await measureVideoUrl(url)
+    URL.revokeObjectURL(url)
+    if (size) return evaluateImage(spec, { ...size, bytes: file.size })
+    // Không đọc được kích thước ⇒ bỏ phần kiểm kích thước/tỉ lệ, chỉ cảnh báo có thể không phát.
+    return {
+        status: 'warn',
+        issues: [{ code: 'videoUnplayable', blocking: false, params: {} }],
+        width: 0,
+        height: 0,
+    }
+}
+
+/** Đọc `videoWidth/videoHeight` (chỉ tải metadata). Không đọc được trong 10 giây ⇒ `null`. */
+export function measureVideoUrl(
+    src: string,
+    signal?: AbortSignal,
+): Promise<{ width: number; height: number } | null> {
+    // Đã huỷ trước khi gọi ⇒ không tải metadata (listener `abort` bên dưới chỉ bắt lần huỷ về sau).
+    if (signal?.aborted) return Promise.resolve(null)
+    return new Promise((resolve) => {
+        const video = document.createElement('video')
+        video.preload = 'metadata'
+        video.muted = true
+        const timer = window.setTimeout(() => done(null), 10_000)
+        function done(result: { width: number; height: number } | null) {
+            window.clearTimeout(timer)
+            video.onloadedmetadata = null
+            video.onerror = null
+            signal?.removeEventListener('abort', onAbort)
+            video.removeAttribute('src')
+            video.load()
+            resolve(result)
+        }
+        function onAbort() {
+            done(null)
+        }
+        video.onloadedmetadata = () =>
+            done(video.videoWidth > 0 ? { width: video.videoWidth, height: video.videoHeight } : null)
+        video.onerror = () => done(null)
+        signal?.addEventListener('abort', onAbort)
+        video.src = src
+    })
+}
+
+/** Đo theo link — tự chọn ảnh/video theo đuôi (`isVideoUrl`). */
+export function measureMediaUrl(
+    src: string,
+    signal?: AbortSignal,
+): Promise<{ width: number; height: number } | null> {
+    return isVideoUrl(src) ? measureVideoUrl(src, signal) : measureImageUrl(src, signal)
 }
 
 /**

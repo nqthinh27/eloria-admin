@@ -137,7 +137,7 @@ export default {
             title: 'Product images',
             uploadButton: 'Upload images',
             uploading: 'Uploading…',
-            hint: 'Up to 10 images (jpg, png, gif, webp; 15MB each). New uploads fill the next empty slots; use the buttons on an image to replace or delete it.',
+            hint: 'Up to 10 images/videos (jpg, png, gif, webp images · mp4, webm, mov videos; 15MB each). New uploads fill the next empty slots; use the buttons on an image to replace or delete it.',
             replace: 'Replace this image',
             delete: 'Delete this image',
             deleteTitle: 'Delete this product image?',

@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { COVER_ROTATE_MS, IMAGE_SPEC, resolveImageSrc } from '@/lib/image-spec'
 import { Button } from '@/components/ui/button'
 import { ImageLightbox } from './image-lightbox'
+import { MediaView } from './media-view'
 
 type CoverSlidesPreviewProps = {
     /** `coverLink1..5` theo đúng thứ tự ô — ô trống được bỏ qua như backend làm (`compactCoverLinks`). */
@@ -73,10 +74,10 @@ export function CoverSlidesPreview({ links, title, description, className }: Cov
                 ) : (
                     <>
                         {slides.map((link, i) => (
-                            <img
+                            <MediaView
                                 key={`${i}-${link}`}
                                 src={resolveImageSrc(link)}
-                                alt=""
+                                autoPlay={i === safeIndex}
                                 className={cn(
                                     'absolute inset-0 size-full object-cover transition-opacity duration-700',
                                     i === safeIndex ? 'opacity-100' : 'opacity-0',

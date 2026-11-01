@@ -11,12 +11,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
  *
  * Mọi con số lấy từ `IMAGE_SPEC` rồi nội suy — bản dịch không chứa số nào (PLAN Phase 22 mục 6).
  */
-export function ImageSpecHint({ spec, className }: { spec: ImageSpecKey; className?: string }) {
+export function ImageSpecHint({
+    spec,
+    allowVideo = false,
+    className,
+}: {
+    spec: ImageSpecKey
+    /** Ô nhận cả video ⇒ thêm dòng gợi ý định dạng video (MP4 H.264). */
+    allowVideo?: boolean
+    className?: string
+}) {
     const { t } = useTranslation('image')
     const s = IMAGE_SPEC[spec]
 
     return (
-        <p className={cn('text-muted-foreground text-xs leading-relaxed', className)}>
+        <div className={cn('text-muted-foreground space-y-0.5 text-xs leading-relaxed', className)}>
+        <p>
             {t('hint.line', {
                 ratio: s.ratioLabel,
                 rw: s.recommended.w,
@@ -50,5 +60,7 @@ export function ImageSpecHint({ spec, className }: { spec: ImageSpecKey; classNa
                 </PopoverContent>
             </Popover>
         </p>
+        {allowVideo && <p>{t('hint.video', { size: formatBytes(s.maxBytes) })}</p>}
+        </div>
     )
 }

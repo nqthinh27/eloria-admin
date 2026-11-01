@@ -6,10 +6,13 @@ import { cn } from '@/lib/utils'
 import { toastWarning } from '@/lib/toast'
 import {
     evaluateImage,
+    IMAGE_ACCEPT,
     IMAGE_SPEC,
-    inspectImageFile,
+    inspectMediaFile,
     issueKey,
-    measureImageUrl,
+    measureMediaUrl,
+    MEDIA_ACCEPT,
+    mediaPreviewSrc,
     resolveImageSrc,
     type ImageInspection,
     type ImageSpecKey,
@@ -40,12 +43,17 @@ type ImageUploadFieldProps = {
     /** Đang gọi API (upload/xoá) cho ô này. */
     busy?: boolean
     disabled?: boolean
+    /**
+     * Nhận thêm video mp4/webm/mov — **chỉ** sản phẩm · banner · danh mục (handoff BE 2026-10-31);
+     * avatar/thương hiệu/bài viết để mặc định `false` (backend trả 400 `error.file.typeNotAllowed`).
+     */
+    allowVideo?: boolean
 }
 
 /**
  * Ô ảnh **chỉ upload file** (backend P13.3 bỏ hẳn nhập link): chọn file → kiểm tra theo `IMAGE_SPEC`
  * (`inspectImageFile`: định dạng · ≤ `spec.maxBytes` · kích thước tối thiểu · tỉ lệ) → báo cha. File sai ⇒ chặn,
- * không request nào bay đi. Phần hint/khung xem trước/danh sách vấn đề dùng chung với ô ảnh sản phẩm.
+ * không request nào bay đi. `allowVideo` ⇒ nhận thêm video (`inspectMediaFile`), xem trước bằng `<video>`. Phần hint/khung xem trước/danh sách vấn đề dùng chung với ô ảnh sản phẩm.
  */
 export function ImageUploadField({
     spec,
@@ -58,6 +66,7 @@ export function ImageUploadField({
     onRemove,
     busy = false,
     disabled,
+    allowVideo = false,
 }: ImageUploadFieldProps) {
     const { t } = useTranslation('image')
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -76,7 +85,8 @@ export function ImageUploadField({
             return
         }
         const url = URL.createObjectURL(pendingFile)
-        setPendingUrl(url)
+        // Video ⇒ gắn `#.mp4`… để mọi khung xem trước nhận ra video; revoke vẫn bằng blob URL gốc.
+        setPendingUrl(mediaPreviewSrc(url, pendingFile))
         return () => URL.revokeObjectURL(url)
     }, [pendingFile])
 
@@ -94,7 +104,7 @@ export function ImageUploadField({
         }
         const controller = new AbortController()
         setMeasuring(true)
-        void measureImageUrl(resolveImageSrc(savedLink), controller.signal).then((size) => {
+        void measureMediaUrl(resolveImageSrc(savedLink), controller.signal).then((size) => {
             if (controller.signal.aborted) return
             setMeasuring(false)
             setInspection(size ? evaluateImage(IMAGE_SPEC[spec], size) : null)
@@ -104,7 +114,7 @@ export function ImageUploadField({
 
     const handlePick = async (file: File | undefined) => {
         if (!file) return
-        const result = await inspectImageFile(file, IMAGE_SPEC[spec])
+        const result = await inspectMediaFile(file, IMAGE_SPEC[spec], { allowVideo })
         if (result.status === 'blocked') {
             // Không ghi đè `inspection`: nó đang mô tả ảnh hiện có, còn file bị từ chối chỉ báo qua toast.
             for (const issue of result.issues.filter((i) => i.blocking)) {
@@ -151,7 +161,7 @@ export function ImageUploadField({
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            accept={allowVideo ? MEDIA_ACCEPT : IMAGE_ACCEPT}
                             className="hidden"
                             onChange={(event) => {
                                 const file = event.target.files?.[0]
@@ -219,16 +229,18 @@ export function ImageUploadField({
                     )}
                     {!measuring && inspection && (
                         <div className="space-y-1">
-                            <p className="text-muted-foreground text-xs">
-                                {t('field.size', { w: inspection.width, h: inspection.height })}
-                            </p>
+                            {inspection.width > 0 && (
+                                <p className="text-muted-foreground text-xs">
+                                    {t('field.size', { w: inspection.width, h: inspection.height })}
+                                </p>
+                            )}
                             <ImageIssueList issues={inspection.issues} />
                         </div>
                     )}
                 </div>
             </div>
 
-            <ImageSpecHint spec={spec} />
+            <ImageSpecHint spec={spec} allowVideo={allowVideo} />
         </div>
     )
 }

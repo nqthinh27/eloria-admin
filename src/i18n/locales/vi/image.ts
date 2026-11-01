@@ -6,6 +6,8 @@
 export default {
     hint: {
         line: 'Tỉ lệ {{ratio}} · khuyến nghị {{rw}} × {{rh}} px · tối thiểu {{mw}} × {{mh}} px · {{formats}} ≤ {{size}}',
+        /** Chỉ hiện ở ô nhận video (sản phẩm · banner · danh mục). */
+        video: 'Có thể tải video MP4 · WebM · MOV ≤ {{size}} (không tiếng, tự lặp). Nên xuất MP4 H.264 — MOV HEVC (mặc định iPhone) có thể không phát trên Chrome.',
         why: 'Vì sao?',
         whyTitle: 'Ảnh này hiện ở đâu trên web khách?',
     },
@@ -17,7 +19,7 @@ export default {
         CATEGORY_TILE:
             'Ô danh mục ở lưới "Shop by category" của Trang chủ là khung dọc {{ratio}}. Ảnh lệch tỉ lệ sẽ bị cắt để lấp đầy khung.',
         HOME_HERO:
-            'Ảnh hero chạy tràn ngang đầu Trang chủ (tỉ lệ {{ratio}}). Trên điện thoại khung đổi sang {{mobileRatio}} và chỉ còn thấy khoảng {{visible}} % bề ngang ảnh.',
+            'Ảnh hero chạy tràn ngang đầu Trang chủ (tỉ lệ {{ratio}}). Trên điện thoại khung cao trọn màn hình (màn hẹp nhất {{mobileRatio}}) nên chỉ còn thấy khoảng {{visible}} % bề ngang ảnh — chủ thể và chữ phải nằm giữa.',
         BANNER_WIDE:
             'Dải ảnh chạy tràn ngang (tỉ lệ {{ratio}}). Trên điện thoại khung đổi sang {{mobileRatio}} và chỉ còn thấy khoảng {{visible}} % bề ngang ảnh — chủ thể phải nằm giữa.',
         POST_COVER: 'Ảnh bìa bài viết hiển thị trong khung {{ratio}} ở trang bài viết và thẻ bài viết.',
@@ -29,8 +31,12 @@ export default {
 
     issue: {
         format: 'Định dạng không được hỗ trợ — chỉ nhận JPG, PNG, GIF hoặc WebP.',
+        formatMedia:
+            'Định dạng không được hỗ trợ — chỉ nhận ảnh JPG, PNG, GIF, WebP hoặc video MP4, WebM, MOV.',
+        videoUnplayable:
+            'Trình duyệt không đọc được video này (thường là MOV HEVC từ iPhone) — vẫn lưu được nhưng có thể không phát trên web khách. Nên xuất lại MP4 H.264.',
         formatSoft: 'Nên dùng {{formats}} cho ô này; định dạng hiện tại vẫn lưu được.',
-        tooLarge: 'Ảnh nặng {{size}}, vượt mức tối đa {{max}}.',
+        tooLarge: 'File nặng {{size}}, vượt mức tối đa {{max}}.',
         belowMin:
             'Ảnh {{w}} × {{h}} px nhỏ hơn mức tối thiểu {{minW}} × {{minH}} px — sẽ bị vỡ khi phóng to.',
         ratioSides:
@@ -55,7 +61,7 @@ export default {
         upload: 'Tải ảnh lên',
         uploading: 'Đang tải lên…',
         measuring: 'Đang kiểm tra ảnh…',
-        size: 'Kích thước ảnh: {{w}} × {{h}} px',
+        size: 'Kích thước: {{w}} × {{h}} px',
         previewButton: 'Xem đúng khung',
         previewTitle: 'Xem trước đúng khung trên web khách',
     },

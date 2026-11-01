@@ -35,6 +35,7 @@ import { SearchSelect } from '@/components/search-select'
 import { ProductFormDialog } from './components/product-form-dialog'
 import { ProductDetailModal } from './components/product-detail-modal'
 import { ImageLightbox } from '@/components/image/image-lightbox'
+import { MediaView } from '@/components/image/media-view'
 
 const ALL = 'ALL'
 const PAGE_SIZE = 12
@@ -349,7 +350,7 @@ export default function ProductListPage() {
                                 }}>
                                 <div className="bg-muted relative flex aspect-square items-center justify-center">
                                     {product.images[0] ? (
-                                        <img
+                                        <MediaView
                                             src={imageSrc(product.images[0])}
                                             alt={product.name}
                                             className="size-full object-cover"

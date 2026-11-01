@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 
 import { Dialog, DialogOverlay, DialogPortal, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { MediaView } from './media-view'
 
 type ImageLightboxProps = {
     /** `null` = đóng. */
@@ -57,9 +58,12 @@ export function ImageLightbox({ title, images, startIndex = 0, onOpenChange }: I
                     <DialogTitle className="sr-only">{title}</DialogTitle>
 
                     {count > 0 && (
-                        <img
+                        <MediaView
+                            key={images[index]}
                             src={images[index]}
                             alt={title ?? ''}
+                            autoPlay
+                            controls
                             className="max-h-[80vh] max-w-[80vw] rounded-md object-contain shadow-2xl"
                         />
                     )}

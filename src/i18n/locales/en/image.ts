@@ -5,6 +5,8 @@
 export default {
     hint: {
         line: 'Ratio {{ratio}} · recommended {{rw}} × {{rh}} px · minimum {{mw}} × {{mh}} px · {{formats}} ≤ {{size}}',
+        /** Only on slots that accept video (product · banner · category). */
+        video: 'Videos MP4 · WebM · MOV ≤ {{size}} are accepted (muted, looping). Export as MP4 H.264 — HEVC MOV (iPhone default) may not play in Chrome.',
         why: 'Why?',
         whyTitle: 'Where does this image appear on the storefront?',
     },
@@ -15,7 +17,7 @@ export default {
         CATEGORY_TILE:
             'The category tile in the home page "Shop by category" grid is a {{ratio}} portrait frame. Images with another ratio are cropped to fill the frame.',
         HOME_HERO:
-            'The hero image runs full width at the top of the home page ({{ratio}}). On phones the frame becomes {{mobileRatio}} and only about {{visible}} % of the image width stays visible.',
+            'The hero image runs full width at the top of the home page ({{ratio}}). On phones the frame fills the screen height (narrowest screen {{mobileRatio}}), so only about {{visible}} % of the image width stays visible — keep the subject and text centred.',
         BANNER_WIDE:
             'A full-width strip ({{ratio}}). On phones the frame becomes {{mobileRatio}} and only about {{visible}} % of the image width stays visible — keep the subject centred.',
         POST_COVER: 'The post cover is shown in a {{ratio}} frame on the post page and post cards.',
@@ -27,8 +29,12 @@ export default {
 
     issue: {
         format: 'Unsupported format — only JPG, PNG, GIF or WebP are accepted.',
+        formatMedia:
+            'Unsupported format — only JPG, PNG, GIF, WebP images or MP4, WebM, MOV videos are accepted.',
+        videoUnplayable:
+            'The browser cannot read this video (usually an iPhone HEVC MOV) — it can still be saved but may not play on the storefront. Re-export as MP4 H.264.',
         formatSoft: 'Prefer {{formats}} for this slot; the current format can still be saved.',
-        tooLarge: 'The image is {{size}}, above the {{max}} limit.',
+        tooLarge: 'The file is {{size}}, above the {{max}} limit.',
         belowMin:
             'The image is {{w}} × {{h}} px, below the {{minW}} × {{minH}} px minimum — it will look blurry when enlarged.',
         ratioSides:
@@ -52,7 +58,7 @@ export default {
         upload: 'Upload image',
         uploading: 'Uploading…',
         measuring: 'Checking the image…',
-        size: 'Image size: {{w}} × {{h}} px',
+        size: 'Size: {{w}} × {{h}} px',
         previewButton: 'Preview in frame',
         previewTitle: 'Preview in the real storefront frame',
     },

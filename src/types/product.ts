@@ -183,7 +183,7 @@ export type Category = {
     metaTitle: string | null
     /** SEO tuỳ chọn (tối đa 300). */
     metaDescription: string | null
-    /** Ảnh ô danh mục ở lưới "Shop by category" Trang chủ — tỉ lệ 4:5. */
+    /** Ảnh ô danh mục ở lưới "Shop by category" Trang chủ — tỉ lệ 2:3 (từ 2026-10-31). */
     imageLink1: string | null
     /** Ảnh hiện khi khách rê chuột lên ô danh mục; trống ⇒ giữ nguyên `imageLink1`. */
     imageLink2: string | null

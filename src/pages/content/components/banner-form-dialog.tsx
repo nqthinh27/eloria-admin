@@ -181,6 +181,7 @@ export function BannerFormDialog({ open, onOpenChange, banner, onCreate, onUpdat
                         {/* Chỉ upload file (P13.3): sửa ⇒ gửi/xoá không có endpoint xoá riêng ⇒ chỉ thay ảnh. */}
                         <ImageUploadField
                             spec="HOME_HERO"
+                            allowVideo
                             label={t('banner:banner.form.image')}
                             caption={
                                 <>

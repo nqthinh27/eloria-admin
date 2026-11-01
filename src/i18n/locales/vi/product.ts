@@ -140,7 +140,7 @@ export default {
             title: 'Ảnh sản phẩm',
             uploadButton: 'Tải ảnh lên',
             uploading: 'Đang tải lên…',
-            hint: 'Tối đa 10 ảnh (jpg, png, gif, webp; mỗi ảnh ≤ 15MB). Tải thêm sẽ nối vào ô trống kế tiếp; dùng nút trên ảnh để thay hoặc xoá.',
+            hint: 'Tối đa 10 ảnh/video (ảnh jpg, png, gif, webp · video mp4, webm, mov; mỗi file ≤ 15MB). Tải thêm sẽ nối vào ô trống kế tiếp; dùng nút trên ảnh để thay hoặc xoá.',
             replace: 'Thay ảnh này',
             delete: 'Xoá ảnh này',
             deleteTitle: 'Xoá ảnh sản phẩm?',

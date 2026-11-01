@@ -5,7 +5,7 @@ import { Barcode, ImageIcon, Loader2, Pencil, Plus, Trash2, Upload } from 'lucid
 import { productApi, skuApi } from '@/api/product'
 import { toastSuccess, toastWarning } from '@/lib/toast'
 import { formatDate, formatVnd } from '@/lib/format'
-import { apiImageUrl, IMAGE_SPEC, inspectImageFile, issueKey } from '@/lib/image-spec'
+import { apiImageUrl, IMAGE_SPEC, inspectMediaFile, issueKey, MEDIA_ACCEPT } from '@/lib/image-spec'
 import { EGender, EntityStatus } from '@/types/common'
 import type { Color, Product, Size, Sku } from '@/types/product'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -30,13 +30,11 @@ const imageSrc = apiImageUrl
 const MAX_IMAGES = 10
 /** Slot 2 là ảnh hiện khi rê chuột ở Trang chủ + trang danh sách; slot 1 là ảnh mặc định. */
 const HOVER_SLOT = 2
-/** Chỉ nhận đúng định dạng backend cho phép (2026-09-25) — **không còn SVG**. */
-const IMAGE_ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp'
 /*
  * Trần dung lượng của backend (`spring.servlet.multipart`): **15MB/file**, **160MB/request** (2026-10-29 —
  * 10 ảnh × 15MB + dự phòng).
  * Vượt ⇒ `413 error.file.tooLarge` — nhưng server/nginx có thể cắt kết nối trước khi kịp trả JSON
- * (trình duyệt chỉ thấy lỗi mạng) ⇒ FE chặn file quá cỡ từ trước (`inspectImageFile`, trần file =
+ * (trình duyệt chỉ thấy lỗi mạng) ⇒ FE chặn file quá cỡ từ trước (`inspectMediaFile`, trần file =
  * `IMAGE_SPEC.PRODUCT.maxBytes`) và **chia lô** request theo trần tổng — với trần 160MB, 10 ảnh × 15MB vừa
  * một lô; giữ chia lô làm lưới an toàn nếu trần backend bị hạ.
  */
@@ -345,12 +343,12 @@ export function ProductDetailModal({
             return
         }
         /*
-         * Kiểm từng file theo `IMAGE_SPEC.PRODUCT` **trước khi gửi** (sai định dạng / quá 15MB / dưới
-         * 1000×1250 ⇒ chặn, không request nào bay đi). Có file bị chặn ⇒ huỷ cả lượt: bỏ lặng lẽ file đó
+         * Kiểm từng file theo `IMAGE_SPEC.PRODUCT` **trước khi gửi** (sai định dạng / quá 15MB ⇒ chặn,
+         * không request nào bay đi; dưới tối thiểu chỉ cảnh báo). Nhận cả video mp4/webm/mov (2026-10-31). Có file bị chặn ⇒ huỷ cả lượt: bỏ lặng lẽ file đó
          * sẽ làm lệch slot người dùng mong đợi. Lệch tỉ lệ chỉ cảnh báo, vẫn lưu.
          */
         const inspections = await Promise.all(
-            slots.map(({ file }) => inspectImageFile(file, IMAGE_SPEC.PRODUCT)),
+            slots.map(({ file }) => inspectMediaFile(file, IMAGE_SPEC.PRODUCT, { allowVideo: true })),
         )
         let blocked = false
         inspections.forEach((inspection, i) => {
@@ -652,7 +650,7 @@ export function ProductDetailModal({
                         <div className="flex items-center justify-between gap-3">
                             <div className="space-y-1">
                                 <p className="text-muted-foreground text-xs">{t('product.images.hint')}</p>
-                                <ImageSpecHint spec="PRODUCT" />
+                                <ImageSpecHint spec="PRODUCT" allowVideo />
                             </div>
                             {canWrite && (
                                 <Button
@@ -678,7 +676,7 @@ export function ProductDetailModal({
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept={IMAGE_ACCEPT}
+                            accept={MEDIA_ACCEPT}
                             multiple
                             hidden
                             onChange={(e) => void handleUpload(e.target.files)}
@@ -707,7 +705,7 @@ export function ProductDetailModal({
                                             src={imageSrc(url)}
                                             alt={current.name}
                                             images={current.images.map(imageSrc)}
-                                            className="bg-muted aspect-[4/5] w-full rounded-md object-cover"
+                                            className="bg-muted aspect-[2/3] w-full rounded-md object-cover"
                                         />
                                         {canWrite && (
                                             <div className="absolute inset-x-1 bottom-1 flex justify-end gap-1">

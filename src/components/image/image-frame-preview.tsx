@@ -3,6 +3,7 @@ import { ImageIcon } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { IMAGE_SPEC, resolveImageSrc, type ImageSpecKey } from '@/lib/image-spec'
+import { MediaView } from './media-view'
 
 /** Chiều rộng mô phỏng (CSS px) của hai khung mà storefront dựng — chỉ để ghi nhãn. */
 const DESKTOP_PX = 768
@@ -41,9 +42,9 @@ function Frame({
                 className="bg-muted relative w-full overflow-hidden rounded-md border"
                 style={{ aspectRatio: String(ratio) }}>
                 {src ? (
-                    <img
+                    <MediaView
                         src={src}
-                        alt=""
+                        autoPlay
                         className={cn(
                             'absolute inset-0 size-full',
                             fit === 'cover' ? 'object-cover' : 'object-contain',

@@ -202,9 +202,11 @@ export default {
             notAvailable: 'The image does not exist or has already been removed.',
         },
         file: {
-            typeNotAllowed: 'Only jpg, jpeg, png, gif or webp images are accepted (no SVG or renamed files).',
-            /** HTTP 413/400 — backend limit (2026-10-29): product/banner/category/post images 15MB per file, logo & avatar 2MB; 160MB per request. */
-            tooLarge: 'The file exceeds the allowed size (brand logos and avatars max 2MB, other images max 15MB).',
+            /** HTTP 400 — videos (mp4/webm/mov) are only accepted for product · banner · category (2026-10-31). */
+            typeNotAllowed:
+                'File type not allowed: only jpg, jpeg, png, gif, webp images; product, banner and category also accept mp4, webm, mov videos (no SVG or renamed files).',
+            /** HTTP 413/400 — backend limit: product/banner/category images/videos and post images 15MB per file, logo & avatar 2MB; 160MB per request. */
+            tooLarge: 'The file exceeds the allowed size (brand logos and avatars max 2MB, other images/videos max 15MB).',
         },
         rateLimit: {
             exceeded: 'Too many requests. Please try again in a few minutes.',

@@ -63,6 +63,12 @@ Response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus` (có `act
 - Upload ảnh kiểm **nội dung thật**: chỉ jpg/jpeg/png/gif/webp (**không SVG**), sai ⇒
   `error.file.typeNotAllowed`. Rate limit ⇒ HTTP 429 `error.rateLimit.exceeded` (`GET /image` 120/60s theo IP;
   `update-avatar` 5/60s; `product/{id}/images` POST/DELETE 100/60s theo tài khoản).
+- **Video (backend 2026-10-31, handoff `35.1.eloria-backend/docs/api/fe-handoff-media-video.md` — FE chưa đo thật):**
+  `POST /product/{id}/images` · `POST /category/{id}/images` · `POST /banner/{id}/image` nhận thêm **mp4/webm/mov
+  ≤ 15MB**, lưu chung cột URL ảnh (`/<thư mục>/<uuid>.<đuôi>`). Không có field loại media — **đuôi `.mp4/.webm/.mov`
+  là video** (`isVideoUrl` ở `src/lib/image-spec.ts`). Avatar · logo thương hiệu · bài viết vẫn chỉ ảnh (video ⇒ 400
+  `error.file.typeNotAllowed`). Nội dung phải khớp đuôi (box `ftyp`/EBML), không kiểm codec — `.mov` HEVC có thể
+  không phát trên Chrome. `GET /image` trả MIME video + HTTP Range 206, rate limit 120/phút/IP dùng chung.
 - **Thương hiệu** (đã đo 2026-09-20, màn `/brands` — PLAN Phase 19): `BrandResDTO` `{id, code, name, address, logoUrl,
   description, status, createdDate, lastModifiedDate}`; create/update **cùng bộ field** (`code` ≤50 · `name` ≤150 ·
   `address` ≤255 · `logoUrl` ≤256 · `description` ≤1000 (PO 2026-10-27, trước là 500); `code`+`name` bắt buộc). Backend chuẩn hoá `code` (bỏ

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
 import { ImageLightbox } from './image-lightbox'
+import { MediaView } from './media-view'
 
 type ClickableImageProps = {
     src: string
@@ -13,8 +14,8 @@ type ClickableImageProps = {
     images?: string[]
     /** Tên hiển thị trong lightbox (sr-only). Bỏ trống ⇒ dùng `alt`. */
     title?: string
-    /** Chuyển thẳng cho `<img>` — dùng khi màn tự xử lý ảnh lỗi (vd logo thương hiệu). */
-    onError?: ReactEventHandler<HTMLImageElement>
+    /** Chuyển thẳng cho `<img>`/`<video>` — dùng khi màn tự xử lý ảnh lỗi (vd logo thương hiệu). */
+    onError?: ReactEventHandler<HTMLImageElement | HTMLVideoElement>
 }
 
 /**
@@ -39,7 +40,7 @@ export function ClickableImage({ src, alt, className, images, title, onError }: 
                 title={t('viewer.openHint')}
                 aria-label={t('viewer.openHint')}
                 onClick={() => setOpen(true)}>
-                <img src={src} alt={alt} className={cn(className)} onError={onError} />
+                <MediaView src={src} alt={alt} className={cn(className)} onError={onError} />
             </button>
             <ImageLightbox
                 title={open ? (title ?? alt) : null}

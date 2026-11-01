@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 import { toastSuccess, toastWarning } from '@/lib/toast'
 import { setFormErrorFromApi } from '@/lib/form-error'
-import { COVER_ROTATE_MS } from '@/lib/image-spec'
+import { COVER_ROTATE_MS, mediaPreviewSrc } from '@/lib/image-spec'
 import { normalizeCode } from '@/lib/validation'
 import type { Category, CategoryImageSlot, CategoryPayload } from '@/types/product'
 import { Button } from '@/components/ui/button'
@@ -223,11 +223,14 @@ export function CategoryFormDialog({
     const [stagedUrls, setStagedUrls] = useState<Partial<Record<CategoryImageSlot, string>>>({})
     useEffect(() => {
         // Tạo + thu hồi trong cùng effect (an toàn với StrictMode chạy effect hai lần ở dev).
-        const urls = Object.fromEntries(
-            Object.entries(staged).map(([slot, file]) => [slot, URL.createObjectURL(file)]),
-        ) as Partial<Record<CategoryImageSlot, string>>
-        setStagedUrls(urls)
-        return () => Object.values(urls).forEach((url) => URL.revokeObjectURL(url))
+        // Video ⇒ `mediaPreviewSrc` gắn `#.mp4`… để hover-swap/slideshow/lightbox nhận ra; revoke bằng URL gốc.
+        const entries = Object.entries(staged).map(([slot, file]) => ({ slot, file, url: URL.createObjectURL(file) }))
+        setStagedUrls(
+            Object.fromEntries(entries.map(({ slot, file, url }) => [slot, mediaPreviewSrc(url, file)])) as Partial<
+                Record<CategoryImageSlot, string>
+            >,
+        )
+        return () => entries.forEach(({ url }) => URL.revokeObjectURL(url))
     }, [staged])
     const linkOf = (slot: CategoryImageSlot) => stagedUrls[slot] ?? saved?.[SLOT_FIELD[slot]] ?? ''
     const coverLinks = COVER_SLOTS.map(linkOf)
@@ -280,6 +283,7 @@ export function CategoryFormDialog({
     ) => (
         <ImageUploadField
             spec={spec}
+            allowVideo
             label={label}
             caption={caption}
             previewNote={previewNote}

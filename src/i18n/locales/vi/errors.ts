@@ -224,9 +224,11 @@ export default {
             notAvailable: 'Ảnh không tồn tại hoặc đã được gỡ trước đó.',
         },
         file: {
-            typeNotAllowed: 'Chỉ chấp nhận ảnh jpg, jpeg, png, gif hoặc webp (không nhận SVG hay file đổi đuôi).',
-            /** HTTP 413/400 — trần backend (2026-10-29): ảnh sản phẩm/banner/danh mục/bài viết 15MB/file, logo & avatar 2MB/file; 160MB/request. */
-            tooLarge: 'File vượt quá dung lượng cho phép (logo thương hiệu và ảnh đại diện tối đa 2MB, các ảnh khác tối đa 15MB).',
+            /** HTTP 400 — video (mp4/webm/mov) chỉ nhận ở ảnh sản phẩm · banner · danh mục (2026-10-31). */
+            typeNotAllowed:
+                'Định dạng file không được phép: chỉ nhận ảnh jpg, jpeg, png, gif, webp; riêng sản phẩm, banner, danh mục nhận thêm video mp4, webm, mov (không nhận SVG hay file đổi đuôi).',
+            /** HTTP 413/400 — trần backend: ảnh/video sản phẩm/banner/danh mục, ảnh bài viết 15MB/file, logo & avatar 2MB/file; 160MB/request. */
+            tooLarge: 'File vượt quá dung lượng cho phép (logo thương hiệu và ảnh đại diện tối đa 2MB, các ảnh/video khác tối đa 15MB).',
         },
         rateLimit: {
             exceeded: 'Thao tác quá nhanh, vui lòng thử lại sau ít phút.',

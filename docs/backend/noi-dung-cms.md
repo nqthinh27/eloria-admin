@@ -22,6 +22,7 @@
 - Lỗi: `error.post.{slugExisted,notExisted,scheduleInvalid,productInvalid,statusTransitionInvalid}` · `error.file.typeNotAllowed`.
 
 ## Banner — `/banner`
+- Ảnh banner `POST /banner/{id}/image` nhận thêm **video mp4/webm/mov ≤ 15MB** từ 2026-10-31 (xem `san-pham.md` mục Video).
 - `POST /banner/search` `{keyword?, status?, position?}` + `activeTotal/inactiveTotal`. Sort chỉ nhận `title · position · sortOrder · status · effectiveFrom · effectiveTo · createdDate · lastModifiedDate` (giá trị khác bị bỏ qua). `title/subtitle/ctaLabel` không chứa `<` `>` (400) — FE validate trước.
 - `POST /banner`, `PUT /banner/{id}`: `{position?, title*, subtitle?, ctaLabel?, ctaUrl?, sortOrder?, effectiveFrom?, effectiveTo?}`.
   ⚠️ **`PUT` thay toàn bộ** — field bỏ trống ⇒ null (`sortOrder` ⇒ 0). ⚠️ `ctaUrl:""` ⇒ **400** (phải bỏ field). `ctaUrl` chỉ `http(s)://…` hoặc `/path`.
