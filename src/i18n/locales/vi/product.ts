@@ -154,7 +154,24 @@ export default {
             slotOther: 'Ảnh {{slot}} · chỉ hiện ở trang chi tiết sản phẩm',
         },
 
+        /** Khối "Ảnh đại diện theo màu" ở tab Ảnh — `GET/PUT /product/{id}/color-images`. */
+        colorImages: {
+            title: 'Ảnh đại diện theo màu',
+            hint: 'Chọn ảnh đại diện cho từng màu. Trên website, khi khách chọn màu thì thư viện ảnh chuyển tới ảnh này; các ảnh khác vẫn hiện đủ.',
+            noSku: 'Sản phẩm chưa có SKU nên chưa có màu nào để gắn ảnh. Hãy sinh SKU ở tab Bảng SKU trước.',
+            noImages: 'Sản phẩm chưa có ảnh nào. Hãy tải ảnh lên ở trên trước, rồi gắn ảnh cho từng màu.',
+            loadFailed: 'Không tải được ảnh đại diện theo màu.',
+            retry: 'Tải lại',
+            none: 'Chưa gắn',
+            choose: 'Chọn ảnh đại diện cho màu {{color}}',
+            optionLabel: 'Ảnh {{slot}}',
+            missingImage: 'Ảnh {{slot}} không còn',
+            save: 'Lưu ảnh theo màu',
+            saving: 'Đang lưu…',
+        },
+
         toast: {
+            colorImagesSaved: 'Đã lưu ảnh đại diện theo màu',
             created: 'Thêm sản phẩm thành công',
             updated: 'Cập nhật sản phẩm thành công',
             skuGenerated: 'Sinh ma trận SKU thành công',

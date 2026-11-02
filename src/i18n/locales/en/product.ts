@@ -151,7 +151,24 @@ export default {
             slotOther: 'Image {{slot}} · shown only on the product detail page',
         },
 
+        /** "Color thumbnails" block in the Images tab — `GET/PUT /product/{id}/color-images`. */
+        colorImages: {
+            title: 'Image per color',
+            hint: 'Pick a representative image for each color. On the website, choosing a color jumps the gallery to this image; all other images still show.',
+            noSku: 'This product has no SKUs yet, so there are no colors to assign. Generate SKUs in the SKU table tab first.',
+            noImages: 'This product has no images yet. Upload images above first, then assign one to each color.',
+            loadFailed: 'Could not load the image per color.',
+            retry: 'Reload',
+            none: 'Not set',
+            choose: 'Choose the image for color {{color}}',
+            optionLabel: 'Image {{slot}}',
+            missingImage: 'Image {{slot}} no longer exists',
+            save: 'Save image per color',
+            saving: 'Saving…',
+        },
+
         toast: {
+            colorImagesSaved: 'Image per color saved',
             created: 'Product added successfully',
             updated: 'Product updated successfully',
             skuGenerated: 'SKU matrix generated successfully',

@@ -51,6 +51,11 @@ export type Product = {
     /** Nhóm size dùng để dựng ma trận SKU, ví dụ `Áo`, `Quần`. */
     sizeGroup: string | null
     images: string[]
+    /**
+     * Ảnh đại diện theo màu (backend P13.5): mã màu → URL ảnh, `{}` nếu chưa gắn. Chỉ để đọc — ghi qua
+     * `productApi.updateColorImages`. Optional vì backend cũ chưa trả.
+     */
+    colorImages?: Record<string, string>
     categories: CategoryRef[]
     /** SEO tuỳ chọn (backend P13) — `null`/rỗng ⇒ storefront tự sinh từ tên/mô tả. Tối đa 150. */
     metaTitle: string | null
@@ -257,6 +262,22 @@ export type BrandPayload = {
     name: string
     address?: string
     description?: string
+}
+
+/**
+ * Một dòng của `GET/PUT /product/{id}/color-images` — màu có SKU chưa xoá của sản phẩm và ảnh đại diện
+ * đã gắn cho màu đó. `slot` là số slot ảnh (1–10) khớp `image_link1..10`; `null` = chưa gắn.
+ */
+export type ProductColorImage = {
+    colorCode: string
+    colorName: string
+    hexCode: string | null
+    slot: number | null
+}
+
+/** Body `PUT /product/{id}/color-images` — thay **toàn bộ** map mã màu → slot (màu không có trong map = chưa gắn). */
+export type ColorImageMapReq = {
+    map: Record<string, number>
 }
 
 /** `ColorResDTO`. */

@@ -41,6 +41,12 @@ Response: `product`/`brand`/`category`/`sku` dùng `BaseListResStatus` (có `act
   `error.image.notAvailable`. api-client bỏ header `Content-Type` khi body là `FormData`.
 - ⚠️ `images[]` của response là mảng URL **đã lọc slot rỗng** ⇒ FE suy slot = vị trí + 1, chỉ đúng khi không
   có lỗ hổng ⇒ FE **chỉ cho xoá ảnh cuối** cho tới khi backend trả `imagesBySlot` (xem handoff 2026-09-26).
+- **Ảnh đại diện theo màu (2026-11-02, theo hợp đồng PO duyệt — backend phiên `eloria-backend` đang làm, FE
+  **chưa đo API thật**)**: map mã màu → slot ảnh (1–10) lưu trên sản phẩm; storefront dùng để nhảy gallery khi chọn màu.
+  `GET /product/{id}/color-images` `[STAFF]` → `[{colorCode, colorName, hexCode, slot}]` (`slot` 1–10 hoặc `null`; mọi
+  màu có SKU chưa xoá). `PUT /product/{id}/color-images` `[SUPER_ADMIN]` body `{"map": {"NV": 1, "GR": 4}}` **thay toàn
+  bộ** map, trả cùng danh sách; sai ⇒ 400 `error.product.colorImageInvalid`. `DELETE /product/{id}/images/{slot}` tự gỡ
+  phần tử trỏ tới slot đó ⇒ FE nạp lại khối sau khi xoá ảnh. Đổi `code` màu ⇒ backend xoá key cũ khỏi map mọi sản phẩm.
 - **Danh mục — P13.1 (đo thật 2026-10-10, màn `/categories`)**: `CategoryResDTO`/`Create`/`Update` thêm `description` (≤500) · `imageLink1/2` · `coverLink1..5` (≤500, **chuỗi link — không có endpoint upload**, xem BE31) · `isDefault` (`Boolean`, JSON key `isDefault`); `CategorySearchReqDTO.isDefault` (`true` = chỉ mặc định, bỏ/`null` = không lọc). `imageUrl` deprecated (luôn trùng `imageLink1`, xoá ở P17). **Field nội dung: bỏ/`null` = giữ nguyên, `""` = xoá** — nhưng đo thật `imageLink1:""` → `null` còn `coverLink*`/`description:""` → **`""`**. ⚠️ **`parentId` là full-update**: PUT thiếu `parentId` ⇒ danh mục về gốc (`level=0`) — form phải luôn gửi cha hiện tại. Bật `isDefault` cho B khi A đang giữ ⇒ 1 request, server tự gỡ A; 0 danh mục mặc định là hợp lệ (web ẩn hẳn khối ngang cuối Trang chủ); 2 người cùng bật ⇒ HTTP 409 `error.dataIntegrity.violation`. Cờ default của danh mục INACTIVE vẫn còn (chỉ xoá mềm mới nhả).
 - **Ảnh danh mục & thương hiệu — P13.2/P13.3 (đo thật 2026-10-11, BREAKING)**: **chỉ upload, không nhận link**. Body
   create/update **không còn** `imageUrl` · `ogImage` · `imageLink1/2` · `coverLink1..5` (danh mục), `logoUrl` (thương hiệu),

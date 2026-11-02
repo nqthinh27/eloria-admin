@@ -120,6 +120,8 @@ export default {
         product: {
             notExisted: 'Sản phẩm không tồn tại.',
             codeExisted: 'Mã sản phẩm đã tồn tại.',
+            colorImageInvalid:
+                'Ảnh đại diện theo màu không hợp lệ (màu không còn SKU hoặc ảnh ở slot đó đã bị xoá). Vui lòng tải lại và chọn lại.',
         },
         sku: {
             notExisted: 'SKU không tồn tại.',

@@ -103,6 +103,8 @@ export default {
         product: {
             notExisted: 'Product does not exist.',
             codeExisted: 'Product code already exists.',
+            colorImageInvalid:
+                'Invalid color image (the color has no SKU or the image in that slot was removed). Please reload and choose again.',
         },
         sku: {
             notExisted: 'SKU does not exist.',

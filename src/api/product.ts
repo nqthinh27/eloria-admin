@@ -13,9 +13,11 @@ import type {
     CategoryPayload,
     CategorySearchReq,
     Color,
+    ColorImageMapReq,
     CreateProductReq,
     GenerateSkuReq,
     Product,
+    ProductColorImage,
     ProductSearchReq,
     Size,
     Sku,
@@ -76,6 +78,22 @@ export const productApi = {
     /** `[SUPER_ADMIN] DELETE /product/{id}/images/{slot}` — slot 1–10; slot trống ⇒ 404 `error.image.notAvailable`. */
     deleteImage(id: string, slot: number) {
         return apiClient.delete<null>(`/product/${id}/images/${slot}`)
+    },
+
+    /**
+     * `[STAFF] GET /product/{id}/color-images` — mọi màu có SKU chưa xoá của sản phẩm kèm slot ảnh đại diện
+     * (`slot` 1–10 hoặc `null`). Không phân trang nên đủ màu, khác bảng SKU.
+     */
+    getColorImages(id: string, signal?: AbortSignal) {
+        return apiClient.get<ProductColorImage[]>(`/product/${id}/color-images`, { signal })
+    },
+
+    /**
+     * `[SUPER_ADMIN] PUT /product/{id}/color-images` — **thay toàn bộ** map mã màu → slot, trả cùng danh sách
+     * như GET. Mã màu không có SKU hoặc slot trống / ngoài 1–10 ⇒ 400 `error.product.colorImageInvalid`.
+     */
+    updateColorImages(id: string, payload: ColorImageMapReq) {
+        return apiClient.put<ProductColorImage[]>(`/product/${id}/color-images`, payload)
     },
 
     /**

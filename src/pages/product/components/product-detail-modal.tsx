@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { GenerateSkuDialog } from './generate-sku-dialog'
+import { ProductColorImages } from './product-color-images'
 import { SkuBarcodeDialog } from './sku-barcode-dialog'
 
 /** Backend phục vụ ảnh qua `GET /image?imageUrl=` (`[ANONYMOUS]`) — dựng bằng `apiImageUrl`. */
@@ -133,6 +134,8 @@ export function ProductDetailModal({
     /** Slot (1–10) đang được **thay** ảnh; `null` = đang thêm ảnh mới vào các slot trống kế tiếp. */
     const replaceSlotRef = useRef<number | null>(null)
     const [deleteSlot, setDeleteSlot] = useState<number | null>(null)
+    /** Tăng sau khi xoá ảnh để khối "Ảnh đại diện theo màu" nạp lại map. */
+    const [colorImagesReload, setColorImagesReload] = useState(0)
 
     const productId = product?.id ?? null
 
@@ -393,6 +396,8 @@ export function ProductDetailModal({
         await productApi.deleteImage(product.id, deleteSlot)
         toastSuccess('product.toast.imageDeleted', { ns: 'product' })
         await loadDetail()
+        /* Backend tự gỡ phần tử trỏ tới slot vừa xoá khỏi map ảnh theo màu ⇒ nạp lại khối đó. */
+        setColorImagesReload((n) => n + 1)
         onChanged()
     }
 
@@ -753,6 +758,13 @@ export function ProductDetailModal({
                             </div>
                             </div>
                         )}
+
+                        <ProductColorImages
+                            productId={product.id}
+                            images={current.images}
+                            canWrite={canWrite}
+                            reloadToken={colorImagesReload}
+                        />
                     </TabsContent>
                 </Tabs>
 
