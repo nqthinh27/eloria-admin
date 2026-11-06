@@ -5,7 +5,7 @@ export default {
     loyalty: {
         title: 'Điểm thưởng',
         description: 'Luật tích điểm và dùng điểm áp dụng cho toàn bộ chuỗi (POS, web bán hàng).',
-        earn: { label: 'Số tiền hàng để được 1 điểm', hint: 'Số nguyên dương, mặc định 50.000đ.' },
+        earn: { label: 'Số tiền hàng để được 1 điểm', hint: 'Số nguyên dương, mặc định 100.000đ.' },
         redeem: { label: 'Giá trị giảm của 1 điểm', hint: 'Số nguyên dương, mặc định 1.000đ.' },
         maxPercent: {
             label: 'Trần % tiền hàng được trừ bằng điểm',

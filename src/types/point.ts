@@ -2,7 +2,7 @@ import type { BaseListRes } from '@/types/common'
 
 /** `GET /points/rules` `[STAFF]` — số lấy từ API, đừng hardcode (SUPER_ADMIN đổi qua `system-config`). */
 export type PointRules = {
-    /** Tiền hàng để được 1 điểm (mặc định 50.000đ). */
+    /** Tiền hàng để được 1 điểm (mặc định 100.000đ). */
     earnAmountPerPoint: number
     /** Giá trị giảm của 1 điểm (mặc định 1.000đ). */
     redeemValuePerPoint: number

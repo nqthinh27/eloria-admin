@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { MoneyInput } from '@/components/money-input'
 
 /** Giá trị mặc định PO chốt (Phase 16) — chỉ để điền khi server chưa trả khoá. */
-const DEFAULTS = { earn: '50000', redeem: '1000', percent: '50' }
+const DEFAULTS = { earn: '100000', redeem: '1000', percent: '50' }
 
 type Form = typeof DEFAULTS
 

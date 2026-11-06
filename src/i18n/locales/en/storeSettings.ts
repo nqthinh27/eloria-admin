@@ -5,7 +5,7 @@ export default {
     loyalty: {
         title: 'Loyalty points',
         description: 'Earning and redemption rules for the whole chain (POS, storefront).',
-        earn: { label: 'Goods amount per 1 point', hint: 'Positive integer, default 50,000đ.' },
+        earn: { label: 'Goods amount per 1 point', hint: 'Positive integer, default 100,000đ.' },
         redeem: { label: 'Discount value of 1 point', hint: 'Positive integer, default 1,000đ.' },
         maxPercent: {
             label: 'Max % of goods amount payable with points',

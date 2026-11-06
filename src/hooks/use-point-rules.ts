@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react'
 import { pointApi } from '@/api/point'
 import type { PointRules } from '@/types/point'
 
-/** Giá trị mặc định PO chốt (Phase 16) — chỉ dùng khi chưa tải được `GET /points/rules`. */
+/** Giá trị mặc định PO chốt (Phase 16, P16.1: 100.000đ = 1 điểm) — chỉ dùng khi chưa tải được `GET /points/rules`. */
 const DEFAULT_RULES: PointRules = {
-    earnAmountPerPoint: 50000,
+    earnAmountPerPoint: 100000,
     redeemValuePerPoint: 1000,
     maxRedeemPercent: 50,
 }
