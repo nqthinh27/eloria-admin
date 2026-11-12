@@ -23,6 +23,7 @@ export default {
         brands: 'Brands',
         posts: 'Posts',
         banners: 'Home banners',
+        aboutPage: 'About us',
         inventory: 'Inventory',
         promotions: 'Promotions',
     },

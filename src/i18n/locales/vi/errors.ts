@@ -104,6 +104,11 @@ export default {
             notExisted: 'Banner không tồn tại.',
             periodInvalid: 'Ngày bắt đầu hiệu lực phải trước ngày kết thúc.',
         },
+        // Trang Về chúng tôi (backend P15.2)
+        aboutPage: {
+            imageSlotInvalid: 'Vị trí ảnh không hợp lệ (1–5).',
+            imageOrderInvalid: 'Thứ tự ảnh không hợp lệ — hãy tải lại trang rồi thử lại.',
+        },
         // Thông báo / quả chuông (Phase 18b)
         notification: {
             notExisted: 'Thông báo này không còn nữa.',

@@ -31,6 +31,14 @@
 :root {
   --radius: 0.625rem;
 
+  /* Màu storefront (35.3.eloria-client/globals.css) — CHỈ dùng cho khung "Xem trước" (`.store-preview`). */
+  --store-navy: #0b1428;
+  --store-navy-fg: #ffffff;
+  --store-surface: #ffffff;
+  --store-surface-muted: #e9edf4;
+  --store-muted-fg: #5b6578;
+  --store-border: #d9dee8;
+
   /* Nền trang là slate-100; card mới là màu trắng. */
   --background: oklch(0.968 0.007 247.896);
   --foreground: oklch(0.208 0.042 265.755);
@@ -309,6 +317,401 @@ html {
 .cms-prose hr {
   border: 0;
   border-top: 1px solid var(--border);
+}
+/* P15.2 — định dạng mở rộng (class cố định, khớp whitelist backend + CSS storefront). */
+.cms-prose .align-center {
+  text-align: center;
+}
+.cms-prose .align-right {
+  text-align: right;
+}
+.cms-prose .align-justify {
+  text-align: justify;
+}
+.cms-prose img {
+  display: block;
+}
+.cms-prose img.img-sm {
+  max-width: 6rem;
+}
+.cms-prose img.img-md {
+  max-width: 50%;
+}
+.cms-prose img.align-center {
+  margin-inline: auto;
+}
+.cms-prose img.align-right {
+  margin-left: auto;
+}
+.cms-prose blockquote:has(> p.align-center) {
+  border-left: 0;
+  padding: 1rem;
+  background: var(--muted);
+  font-style: normal;
+}
+.cms-prose a.cms-button {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.5rem 1.5rem;
+  text-decoration: none;
+}
+.cms-prose table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.cms-prose td,
+.cms-prose th {
+  vertical-align: middle;
+  padding: 0.5rem 0.75rem;
+}
+.cms-prose td > * + *,
+.cms-prose th > * + * {
+  margin-top: 0.5em;
+}
+/* Bảng không viền: trong khung soạn thảo vẫn kẻ đứt nét mờ để người soạn thấy ô (web không hiện). */
+.cms-prose .ProseMirror table:not(.cms-table-bordered) :is(td, th) {
+  outline: 1px dashed color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  outline-offset: -1px;
+}
+.cms-prose table.cms-table-bordered :is(td, th) {
+  border: 1px solid var(--border);
+}
+.cms-prose th {
+  font-weight: 600;
+}
+.cms-prose .selectedCell {
+  background: color-mix(in oklab, var(--primary) 12%, transparent);
+}
+
+/*
+ * Khung "Xem trước" — MÔ PHỎNG storefront (`.prose-content` + `.about-strip` ở
+ * 35.3.eloria-client/src/app/globals.css). Đổi CSS bên storefront thì sửa theo ở đây. Dùng
+ * container query (không phải media query) để nút "Điện thoại" trong khung admin dựng đúng bố cục <640px.
+ */
+.store-preview {
+  container-type: inline-size;
+  background: var(--store-surface);
+  color: var(--store-navy);
+}
+.store-preview .sp-page {
+  padding: 2rem 1rem 3rem;
+}
+@container (min-width: 640px) {
+  .store-preview .sp-page {
+    padding-inline: 2rem;
+  }
+}
+
+/* Dải ảnh đầu trang "Về chúng tôi" — ≥640: hàng ngang to dần về giữa */
+@container (min-width: 640px) {
+  .store-preview .sp-strip {
+    --sp-w: min(28cqw, 26rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    overflow: hidden;
+    padding-block: 1rem;
+  }
+  .store-preview .sp-strip-item {
+    position: relative;
+    flex: none;
+    width: calc(var(--sp-w) * var(--scale, 1));
+  }
+  .store-preview .sp-strip-item:hover {
+    z-index: 1;
+  }
+  .store-preview .sp-strip-item:hover .sp-strip-img {
+    transform: scale(1.06);
+  }
+  .store-preview .sp-dots {
+    display: none;
+  }
+}
+/* <640: "xòe lá bài" — bản sao `.about-strip` mobile của storefront */
+@container (max-width: 639px) {
+  .store-preview .sp-strip {
+    --fan-w: 54cqw;
+    position: relative;
+    height: calc(var(--fan-w) * 4 / 3 + 3.5rem);
+    overflow: hidden;
+    touch-action: pan-y;
+    user-select: none;
+  }
+  .store-preview .sp-strip-item {
+    position: absolute;
+    top: 1.5rem;
+    left: calc(50% - var(--fan-w) / 2);
+    z-index: var(--z, 1);
+    width: var(--fan-w);
+    cursor: pointer;
+    transform-origin: 50% 135%;
+    transform: translateX(calc(var(--offset, 0) * 4%)) rotate(calc(var(--offset, 0) * 5deg))
+      scale(calc(1 - var(--abs, 0) * 0.06));
+    transition:
+      transform 0.45s cubic-bezier(0.22, 0.75, 0.2, 1),
+      opacity 0.3s ease;
+  }
+  .store-preview .sp-strip-item[data-far] {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .store-preview .sp-strip-card {
+    box-shadow: 0 10px 28px -12px color-mix(in oklab, var(--store-navy) 55%, transparent);
+  }
+  .store-preview .sp-strip-item:not([data-front]) .sp-strip-card {
+    filter: brightness(0.82);
+  }
+  .store-preview .sp-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+}
+.store-preview .sp-strip-card {
+  animation: sp-drop 0.8s cubic-bezier(0.22, 0.75, 0.2, 1) both;
+  animation-delay: calc(var(--order, 0) * 180ms);
+}
+.store-preview .sp-strip-img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--store-surface-muted);
+  transition: transform 0.35s ease;
+}
+.store-preview .sp-dot {
+  display: flex;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+}
+.store-preview .sp-dot::after {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--store-border);
+  transition: width 0.2s ease;
+}
+.store-preview .sp-dot.is-active::after {
+  width: 1.25rem;
+  background: var(--store-navy);
+}
+@keyframes sp-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-1.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .store-preview .sp-strip-card {
+    animation: none;
+  }
+  .store-preview .sp-strip-item {
+    transition: none;
+  }
+}
+
+.store-preview .sp-title {
+  margin-top: 2.5rem;
+  text-align: center;
+  font-family: inherit;
+  font-size: 2.25rem;
+  line-height: 1.15;
+}
+@container (min-width: 1024px) {
+  .store-preview .sp-title {
+    font-size: 3.75rem;
+  }
+}
+.store-preview .sp-subtitle {
+  margin-top: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--store-muted-fg);
+}
+.store-preview .sp-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--store-muted-fg);
+}
+.store-preview .sp-post-title {
+  margin-top: 0.75rem;
+  font-family: inherit;
+  font-size: 1.875rem;
+  line-height: 1.2;
+}
+@container (min-width: 1024px) {
+  .store-preview .sp-post-title {
+    font-size: 3rem;
+  }
+}
+.store-preview .sp-excerpt {
+  margin-top: 1rem;
+  font-size: 1.125rem;
+  color: var(--store-muted-fg);
+}
+.store-preview .sp-cover {
+  display: block;
+  width: 100%;
+  max-width: 64rem;
+  margin-top: 2rem;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--store-surface-muted);
+}
+.store-preview .sp-empty {
+  margin-top: 2.5rem;
+  color: var(--store-muted-fg);
+  font-size: 0.875rem;
+}
+
+/* Thân bài — bản sao `.prose-content` của storefront */
+.store-preview .sp-prose {
+  margin-top: 2.5rem;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+.store-preview .sp-prose > * + * {
+  margin-top: 1.25rem;
+}
+.store-preview .sp-prose :is(h2, h3, h4) {
+  font-family: inherit;
+  line-height: 1.25;
+  margin-top: 2.25rem;
+}
+.store-preview .sp-prose h2 {
+  font-size: 1.625rem;
+}
+.store-preview .sp-prose h3 {
+  font-size: 1.3125rem;
+}
+.store-preview .sp-prose h4 {
+  font-size: 1.125rem;
+}
+.store-preview .sp-prose ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.store-preview .sp-prose ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.store-preview .sp-prose a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.store-preview .sp-prose blockquote {
+  border-left: 2px solid var(--store-navy);
+  padding-left: 1.25rem;
+  font-family: inherit;
+  font-size: 1.1875rem;
+}
+.store-preview .sp-prose blockquote:has(> p.align-center) {
+  border-left: 0;
+  padding: 1.5rem 1.25rem;
+  background: var(--store-surface-muted);
+}
+.store-preview .sp-prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.store-preview .sp-prose hr {
+  border: 0;
+  border-top: 1px solid var(--store-border);
+  margin-block: 2rem;
+}
+.store-preview .sp-prose .align-center {
+  text-align: center;
+}
+.store-preview .sp-prose .align-right {
+  text-align: right;
+}
+.store-preview .sp-prose .align-justify {
+  text-align: justify;
+}
+.store-preview .sp-prose img.img-sm {
+  max-width: 6rem;
+}
+.store-preview .sp-prose img.img-md {
+  max-width: 50%;
+}
+.store-preview .sp-prose img.align-center {
+  margin-inline: auto;
+}
+.store-preview .sp-prose img.align-right {
+  margin-left: auto;
+}
+.store-preview .sp-prose a.cms-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  padding-inline: 1.75rem;
+  background: var(--store-navy);
+  color: var(--store-navy-fg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.store-preview .sp-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.store-preview .sp-prose :is(td, th) {
+  vertical-align: middle;
+  padding: 0.75rem 1rem;
+}
+.store-preview .sp-prose :is(td, th) > * + * {
+  margin-top: 0.75rem;
+}
+.store-preview .sp-prose :is(td, th) > :is(h2, h3, h4):first-child {
+  margin-top: 0;
+}
+.store-preview .sp-prose th {
+  font-weight: 600;
+}
+.store-preview .sp-prose table.cms-table-bordered :is(td, th) {
+  border: 1px solid var(--store-border);
+}
+@container (max-width: 639px) {
+  .store-preview .sp-prose table:not(.cms-table-bordered),
+  .store-preview .sp-prose table:not(.cms-table-bordered) :is(tbody, tr, td, th) {
+    display: block;
+    width: 100%;
+  }
+  .store-preview .sp-prose table:not(.cms-table-bordered) :is(td, th) {
+    padding-inline: 0;
+  }
+  .store-preview .sp-prose table:not(.cms-table-bordered) tr:has(> :nth-child(3)) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1rem;
+  }
+  .store-preview .sp-prose table:not(.cms-table-bordered) tr:has(> :nth-child(3)) > :is(td, th) {
+    width: auto;
+  }
+  .store-preview .sp-prose table.cms-table-bordered {
+    display: block;
+    overflow-x: auto;
+    table-layout: auto;
+  }
 }
 .cms-prose .ProseMirror {
   outline: none;

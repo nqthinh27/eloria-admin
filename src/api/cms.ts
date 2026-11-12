@@ -1,6 +1,8 @@
 import { UPLOAD_TIMEOUT_MS, apiClient, search } from '@/lib/api-client'
 import type { BaseListRes, BaseListResStatus, EntityStatus, SearchPagination } from '@/types/common'
 import type {
+    AboutPage,
+    AboutPagePayload,
     Banner,
     BannerPayload,
     BannerSearchReq,
@@ -69,6 +71,39 @@ export const postApi = {
         const form = new FormData()
         form.append('image', file)
         return apiClient.post<{ url: string }>('/post/content-image', form, { timeout: UPLOAD_TIMEOUT_MS })
+    },
+}
+
+/**
+ * Trang "Về chúng tôi" (backend P15.2) — **1 bản ghi duy nhất**, không search/tạo/xoá. `[SUPER_ADMIN]`.
+ * Ảnh trong nội dung dùng chung `postApi.uploadContentImage`.
+ */
+export const aboutPageApi = {
+    /** `GET /about-page` — luôn có dữ liệu (backend tự tạo nội dung mặc định nếu chưa có). */
+    get(signal?: AbortSignal) {
+        return apiClient.get<AboutPage>('/about-page', { signal })
+    },
+
+    /** `PUT /about-page` — thay toàn bộ field chữ; `content` không gửi = giữ nguyên. */
+    update(payload: AboutPagePayload) {
+        return apiClient.put<AboutPage>('/about-page', payload)
+    },
+
+    /** `POST /about-page/image/{slot}` — slot 1..5, multipart field `image` (≤ 15 MB, chỉ ảnh); ảnh cũ tự xoá file. */
+    uploadImage(slot: number, file: File) {
+        const form = new FormData()
+        form.append('image', file)
+        return apiClient.post<AboutPage>(`/about-page/image/${slot}`, form, { timeout: UPLOAD_TIMEOUT_MS })
+    },
+
+    /** `DELETE /about-page/image/{slot}` — gỡ ảnh + xoá file. */
+    deleteImage(slot: number) {
+        return apiClient.delete<AboutPage>(`/about-page/image/${slot}`)
+    },
+
+    /** `PUT /about-page/image-order` — `order` là hoán vị [1..5]: phần tử thứ i = slot cũ chuyển về vị trí i. */
+    updateImageOrder(order: number[]) {
+        return apiClient.put<AboutPage>('/about-page/image-order', { order })
     },
 }
 

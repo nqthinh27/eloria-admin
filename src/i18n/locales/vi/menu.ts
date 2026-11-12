@@ -23,6 +23,7 @@ export default {
         brands: 'Thương hiệu',
         posts: 'Bài viết',
         banners: 'Banner trang chủ',
+        aboutPage: 'Về chúng tôi',
         inventory: 'Kho hàng',
         promotions: 'Khuyến mại',
     },

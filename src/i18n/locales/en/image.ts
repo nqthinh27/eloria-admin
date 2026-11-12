@@ -21,6 +21,8 @@ export default {
         BANNER_WIDE:
             'A full-width strip ({{ratio}}). On phones the frame becomes {{mobileRatio}} and only about {{visible}} % of the image width stays visible — keep the subject centred.',
         POST_COVER: 'The post cover is shown in a {{ratio}} frame on the post page and post cards.',
+        ABOUT_STRIP:
+            'The "About us" header images sit in a row that grows towards the centre, all in the same {{ratio}} portrait frame. Images with another ratio are cropped to fill the frame.',
         OG_IMAGE:
             'Image shared to social networks ({{ratio}}). Some platforms crop it to a square, so keep the subject centred.',
         LOGO_SQUARE:

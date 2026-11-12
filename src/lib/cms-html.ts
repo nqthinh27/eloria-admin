@@ -31,6 +31,18 @@ export function toStoredHtml(html: string): string {
     })
 }
 
+/**
+ * HTML đang soạn (dạng lưu) → HTML cho khung "Xem trước": đổi `src` ảnh sang URL xem được ở admin và
+ * **bỏ đúng những gì backend sẽ bỏ khi lưu** mà editor vẫn sinh ra (`style`, `colgroup` của bảng) để
+ * khung xem trước khớp web. Chỉ chạy trong trình duyệt (`DOMParser`).
+ */
+export function toPreviewHtml(html: string): string {
+    const doc = new DOMParser().parseFromString(toDisplayHtml(html), 'text/html')
+    doc.querySelectorAll('script, style, colgroup').forEach((el) => el.remove())
+    doc.querySelectorAll('[style]').forEach((el) => el.removeAttribute('style'))
+    return doc.body.innerHTML
+}
+
 /** `href` hợp lệ theo whitelist backend: `http(s)://`, `mailto:`, `tel:`, `/path` (không `//`), `#anchor`. */
 export function isAllowedHref(value: string): boolean {
     return /^(https?:\/\/\S+|mailto:\S+|tel:\S+|\/(?!\/)\S*|#\S+)$/i.test(value)

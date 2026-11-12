@@ -30,6 +30,14 @@ export default {
         emptyFallback: 'Để trống ⇒ web tự sinh từ tên/mô tả.',
         counter: '{{length}}/{{max}} · khuyến nghị ≤ {{recommended}}',
     },
+    storePreview: {
+        button: 'Xem trước',
+        note: 'Mô phỏng giao diện web với nội dung đang soạn (chưa cần lưu). Bản chính xác: lưu rồi bấm "Xem trên web".',
+        device: 'Thiết bị xem trước',
+        desktop: 'Máy tính',
+        mobile: 'Điện thoại',
+        empty: 'Chưa có nội dung.',
+    },
     viewOnWeb: {
         button: 'Xem trên web',
         delay: 'Thay đổi hiện trên web sau tối đa 5–10 phút.',

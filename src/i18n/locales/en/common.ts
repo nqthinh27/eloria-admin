@@ -29,6 +29,14 @@ export default {
         emptyFallback: 'Left empty ⇒ the storefront generates it from the name/description.',
         counter: '{{length}}/{{max}} · recommended ≤ {{recommended}}',
     },
+    storePreview: {
+        button: 'Preview',
+        note: 'A simulation of the storefront with the content being edited (no need to save). For the exact page: save, then "View on web".',
+        device: 'Preview device',
+        desktop: 'Desktop',
+        mobile: 'Phone',
+        empty: 'No content yet.',
+    },
     viewOnWeb: {
         button: 'View on web',
         delay: 'Changes appear on the storefront within 5–10 minutes.',

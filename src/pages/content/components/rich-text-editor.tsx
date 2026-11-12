@@ -3,9 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
+import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table'
 import { Placeholder } from '@tiptap/extensions'
 import {
+    AlignCenter,
+    AlignJustify,
+    AlignLeft,
+    AlignRight,
     Bold,
+    ChevronDown,
     Heading2,
     Heading3,
     Heading4,
@@ -17,9 +23,12 @@ import {
     ListOrdered,
     Loader2,
     Minus,
+    MousePointerClick,
     Pilcrow,
     Quote,
     Redo2,
+    Scaling,
+    Table as TableIcon,
     Undo2,
 } from 'lucide-react'
 
@@ -30,8 +39,26 @@ import { isAllowedHref, toDisplayHtml, toStoredHtml } from '@/lib/cms-html'
 import { LARGE_IMAGE_MAX_BYTES, resolveImageSrc } from '@/lib/image-spec'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { CmsFormat, type ImageSize, type TextAlign } from './cms-extensions'
+
+/** Cỡ bảng chèn nhanh (hàng × cột) — 1×2 là bố cục "ảnh | chữ" hay dùng nhất. */
+const TABLE_PRESETS = [
+    { rows: 1, cols: 2 },
+    { rows: 1, cols: 3 },
+    { rows: 1, cols: 4 },
+    { rows: 2, cols: 2 },
+    { rows: 3, cols: 3 },
+] as const
 
 /** Ảnh trong nội dung bài viết: 15MB/ảnh (2026-10-29). */
 const MAX_IMAGE_BYTES = LARGE_IMAGE_MAX_BYTES
@@ -54,8 +81,12 @@ const emit = (editor: Editor) =>
 
 /**
  * Trình soạn thảo rich text (TipTap) — **cấu hình đúng bộ thẻ whitelist của backend**
- * (`RichTextSanitizer`): h2–h4 · p · ul/ol/li · a · strong/em · blockquote · img · hr · br.
- * Thẻ ngoài bộ (code, strike, underline, bảng…) tắt hẳn và không có nút ⇒ WYSIWYG không lệch.
+ * (`RichTextSanitizer`): h2–h4 · p · ul/ol/li · a · strong/em · blockquote · img · hr · br · bảng
+ * (table/tr/th/td — P15.2). Thẻ ngoài bộ (code, strike, underline…) tắt hẳn và không có nút ⇒ WYSIWYG không lệch.
+ * Dùng chung cho bài viết và trang "Về chúng tôi".
+ *
+ * Định dạng mở rộng P15.2 (`cms-extensions.ts`, chỉ ghi `class`): căn lề trái/giữa/phải/đều · cỡ ảnh ·
+ * liên kết dạng nút · bảng (mặc định **không viền** — để dàn ảnh cạnh chữ; bật viền khi là bảng dữ liệu).
  *
  * Ảnh: **chỉ qua nút "Chèn ảnh"** (upload `content-image`, `alt` bắt buộc, ghi `width`/`height`);
  * dán/kéo-thả file hoặc HTML chứa `<img>` bị chặn — backend vốn bỏ `src` ngoài và `data:`.
@@ -89,6 +120,12 @@ export function RichTextEditor({ value, onChange, disabled }: RichTextEditorProp
                 },
             }),
             Image.configure({ allowBase64: false }),
+            // Không cho kéo đổi độ rộng cột: độ rộng ghi bằng `style` mà backend xoá ⇒ web luôn chia đều cột.
+            Table.configure({ resizable: false }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            CmsFormat,
             Placeholder.configure({ placeholder: t('post.editor.placeholder') }),
         ],
         content: toDisplayHtml(value),
@@ -141,6 +178,12 @@ export function RichTextEditor({ value, onChange, disabled }: RichTextEditorProp
                       ol: ed.isActive('orderedList'),
                       quote: ed.isActive('blockquote'),
                       link: ed.isActive('link'),
+                      linkButton: ed.isActive('link', { button: true }),
+                      image: ed.isActive('image'),
+                      imageSize: ((ed.getAttributes('image').size as string | null) ?? 'full') as ImageSize,
+                      table: ed.isActive('table'),
+                      tableBordered: ed.isActive('table', { bordered: true }),
+                      align: (['center', 'right', 'justify'] as const).find((a) => ed.isActive({ textAlign: a })) ?? 'left',
                       canUndo: ed.can().undo(),
                       canRedo: ed.can().redo(),
                   }
@@ -166,6 +209,15 @@ export function RichTextEditor({ value, onChange, disabled }: RichTextEditorProp
         </Button>
     )
 
+    const alignTool = (align: TextAlign, label: string, icon: ReactNode) =>
+        tool(label, icon, () => editor.chain().focus().setTextAlign(align).run(), state.align === align)
+
+    const tableItem = (label: string, onSelect: () => void, off = false, key?: string) => (
+        <DropdownMenuItem key={key} disabled={off} onSelect={onSelect}>
+            {label}
+        </DropdownMenuItem>
+    )
+
     return (
         <div className={cn('rounded-md border', disabled && 'opacity-70')}>
             <div className="bg-muted/40 flex flex-wrap items-center gap-0.5 border-b p-1">
@@ -181,10 +233,97 @@ export function RichTextEditor({ value, onChange, disabled }: RichTextEditorProp
                 {tool(t('post.editor.orderedList'), <ListOrdered className="size-4" />, () => editor.chain().focus().toggleOrderedList().run(), state.ol)}
                 {tool(t('post.editor.blockquote'), <Quote className="size-4" />, () => editor.chain().focus().toggleBlockquote().run(), state.quote)}
                 <span className="bg-border mx-1 h-5 w-px" />
+                {alignTool('left', t('post.editor.alignLeft'), <AlignLeft className="size-4" />)}
+                {alignTool('center', t('post.editor.alignCenter'), <AlignCenter className="size-4" />)}
+                {alignTool('right', t('post.editor.alignRight'), <AlignRight className="size-4" />)}
+                {alignTool('justify', t('post.editor.alignJustify'), <AlignJustify className="size-4" />)}
+                <span className="bg-border mx-1 h-5 w-px" />
                 {tool(t('post.editor.link'), <Link2 className="size-4" />, () => setLinkOpen(true), state.link)}
                 {tool(t('post.editor.unlink'), <Link2Off className="size-4" />, () => editor.chain().focus().unsetLink().run(), false, !state.link)}
+                {tool(
+                    t('post.editor.linkButton'),
+                    <MousePointerClick className="size-4" />,
+                    () => editor.chain().focus().setLinkButton(!state.linkButton).run(),
+                    state.linkButton,
+                    !state.link,
+                )}
                 {tool(t('post.editor.image'), <ImageIcon className="size-4" />, () => setImageOpen(true))}
+                <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            type="button"
+                            variant={state.image && state.imageSize !== 'full' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-8 gap-0.5 px-1.5"
+                            title={t('post.editor.imageSize.menu')}
+                            aria-label={t('post.editor.imageSize.menu')}
+                            disabled={disabled || !state.image}
+                            onMouseDown={(event) => event.preventDefault()}>
+                            <Scaling className="size-4" />
+                            <ChevronDown className="size-3" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" onCloseAutoFocus={(event) => event.preventDefault()}>
+                        <DropdownMenuLabel>{t('post.editor.imageSize.menu')}</DropdownMenuLabel>
+                        {(['sm', 'md', 'full'] as const).map((size) => (
+                            <DropdownMenuItem key={size} onSelect={() => editor.chain().focus().setImageSize(size).run()}>
+                                <span className={cn(state.imageSize === size && 'font-semibold')}>{t(`post.editor.imageSize.${size}`)}</span>
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 {tool(t('post.editor.hr'), <Minus className="size-4" />, () => editor.chain().focus().setHorizontalRule().run())}
+                <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            type="button"
+                            variant={state.table ? 'secondary' : 'ghost'}
+                            size="sm"
+                            className="h-8 gap-0.5 px-1.5"
+                            title={t('post.editor.table.menu')}
+                            aria-label={t('post.editor.table.menu')}
+                            disabled={disabled}
+                            onMouseDown={(event) => event.preventDefault()}>
+                            <TableIcon className="size-4" />
+                            <ChevronDown className="size-3" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" onCloseAutoFocus={(event) => event.preventDefault()}>
+                        {state.table ? (
+                            <>
+                                <DropdownMenuLabel>{t('post.editor.table.menu')}</DropdownMenuLabel>
+                                {tableItem(t('post.editor.table.addRowAfter'), () => editor.chain().focus().addRowAfter().run())}
+                                {tableItem(t('post.editor.table.addColumnAfter'), () => editor.chain().focus().addColumnAfter().run())}
+                                {tableItem(t('post.editor.table.deleteRow'), () => editor.chain().focus().deleteRow().run())}
+                                {tableItem(t('post.editor.table.deleteColumn'), () => editor.chain().focus().deleteColumn().run())}
+                                {tableItem(t('post.editor.table.mergeCells'), () => editor.chain().focus().mergeCells().run(), !editor.can().mergeCells())}
+                                {tableItem(t('post.editor.table.splitCell'), () => editor.chain().focus().splitCell().run(), !editor.can().splitCell())}
+                                <DropdownMenuSeparator />
+                                {tableItem(
+                                    state.tableBordered ? t('post.editor.table.hideBorder') : t('post.editor.table.showBorder'),
+                                    () => editor.chain().focus().setTableBordered(!state.tableBordered).run(),
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem variant="destructive" onSelect={() => editor.chain().focus().deleteTable().run()}>
+                                    {t('post.editor.table.deleteTable')}
+                                </DropdownMenuItem>
+                            </>
+                        ) : (
+                            <>
+                                <DropdownMenuLabel>{t('post.editor.table.insert')}</DropdownMenuLabel>
+                                {TABLE_PRESETS.map(({ rows, cols }) =>
+                                    tableItem(
+                                        t('post.editor.table.insertSize', { rows, cols }),
+                                        () => editor.chain().focus().insertTable({ rows, cols, withHeaderRow: false }).run(),
+                                        false,
+                                        `${rows}x${cols}`,
+                                    ),
+                                )}
+                                <p className="text-muted-foreground max-w-60 px-2 py-1.5 text-xs">{t('post.editor.table.hint')}</p>
+                            </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <span className="bg-border mx-1 h-5 w-px" />
                 {tool(t('post.editor.undo'), <Undo2 className="size-4" />, () => editor.chain().focus().undo().run(), false, !state.canUndo)}
                 {tool(t('post.editor.redo'), <Redo2 className="size-4" />, () => editor.chain().focus().redo().run(), false, !state.canRedo)}

@@ -16,6 +16,7 @@ export type ImageSpecKey =
     | 'HOME_HERO'
     | 'BANNER_WIDE'
     | 'POST_COVER'
+    | 'ABOUT_STRIP'
     | 'OG_IMAGE'
     | 'LOGO_SQUARE'
 
@@ -99,6 +100,16 @@ export const IMAGE_SPEC: Record<ImageSpecKey, ImageSpec> = {
         ratioLabel: '16:9',
         recommended: { w: 1920, h: 1080 },
         min: { w: 1280, h: 720 },
+        maxBytes: LARGE_IMAGE_MAX_BYTES,
+        formats: ['jpg', 'webp'],
+        fit: 'cover',
+    },
+    // Dải 1/3/5 ảnh đầu trang "Về chúng tôi" (backend P15.2, 2026-11-12) — mọi ảnh cùng khung dọc 3:4.
+    ABOUT_STRIP: {
+        ratio: 3 / 4,
+        ratioLabel: '3:4',
+        recommended: { w: 1200, h: 1600 },
+        min: { w: 750, h: 1000 },
         maxBytes: LARGE_IMAGE_MAX_BYTES,
         formats: ['jpg', 'webp'],
         fit: 'cover',
@@ -464,7 +475,7 @@ export function resolveImageSrc(value: string): string {
     // `FileService.FOLDER_*`) — dạng đường dẫn gốc nhưng backend lưu, phải đi qua `/image`;
     // chỉ `/media/**` (seed storefront) mới dùng nguyên văn. So mẫu trên dạng đã chuẩn hoá ⇒ `product/x`,
     // `//product//x` cũng nhận ra là ảnh backend (không nhầm `//product/...` thành URL protocol-relative).
-    if (/^\/(category|brand|post|banner|product|avatar)\//.test(normalizeImagePath(value))) return apiImageUrl(value)
+    if (/^\/(category|brand|post|banner|product|avatar|about)\//.test(normalizeImagePath(value))) return apiImageUrl(value)
     if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:') || value.startsWith('blob:') || value.startsWith('/')) return value
     return apiImageUrl(value)
 }

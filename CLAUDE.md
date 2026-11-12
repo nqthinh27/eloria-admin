@@ -87,6 +87,10 @@ Cần biết shape dữ liệu: đọc [docs/backend/](docs/backend/README.md) t
   (chi tiết ở PLAN Phase 24 + handoff).
   **Phase 20 (CMS Bài viết + Banner, R2) xong FE 2026-10-13** (P15.1: bỏ trang tĩnh, nhóm menu Nội dung, slug tự sinh) — route `/posts`, `/banners` (SUPER_ADMIN),
   đặc tả ở [docs/backend/noi-dung-cms.md](docs/backend/noi-dung-cms.md); mục 4 `customerNote` còn chờ BE P14.
+  **Nội dung / Về chúng tôi (backend P15.2, xong 2026-11-13)** — route `/about-page` (SUPER_ADMIN), 1 bản ghi sửa trực
+  tiếp; editor CMS (dùng chung bài viết) có căn lề · bảng · nút · cỡ ảnh (`cms-extensions.ts`, thêm `@tiptap/extension-table`);
+  nút **Xem trước** (máy tính/điện thoại) mô phỏng storefront bằng `.store-preview` ở `index.css` — đổi CSS nội dung bên
+  storefront thì sửa theo ([handoff](docs/handoff/phien-2026-11-13-ve-chung-toi-editor-preview.md)).
 - **Thứ tự release (replan 2026-10-13)**: R1 catalog (Phase 22·23·24) → **R2 = Phase 20 Content/CMS**
   (làm **trước** luồng khách hàng; chờ backend P15 + quyết định D1–D11 ở `35.3.eloria-client/PLAN.md`)
   → R3 mua hàng (Phase 21a + Phase 20 mục 4) → **R3.5 thông báo + WebSocket + xác nhận chuyển khoản

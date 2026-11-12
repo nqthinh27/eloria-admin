@@ -87,6 +87,10 @@ export default {
             notExisted: 'Banner does not exist.',
             periodInvalid: 'The effective start date must be before the end date.',
         },
+        aboutPage: {
+            imageSlotInvalid: 'Invalid image slot (1–5).',
+            imageOrderInvalid: 'Invalid image order — please reload the page and try again.',
+        },
         // Notifications / bell (Phase 18b)
         notification: {
             notExisted: 'This notification no longer exists.',

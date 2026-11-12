@@ -23,6 +23,8 @@ export default {
         BANNER_WIDE:
             'Dải ảnh chạy tràn ngang (tỉ lệ {{ratio}}). Trên điện thoại khung đổi sang {{mobileRatio}} và chỉ còn thấy khoảng {{visible}} % bề ngang ảnh — chủ thể phải nằm giữa.',
         POST_COVER: 'Ảnh bìa bài viết hiển thị trong khung {{ratio}} ở trang bài viết và thẻ bài viết.',
+        ABOUT_STRIP:
+            'Ảnh đầu trang "Về chúng tôi" xếp hàng ngang, to dần về giữa, mọi ảnh cùng khung dọc {{ratio}}. Ảnh lệch tỉ lệ sẽ bị cắt để lấp đầy khung.',
         OG_IMAGE:
             'Ảnh chia sẻ lên mạng xã hội (tỉ lệ {{ratio}}). Một số nền tảng cắt về hình vuông nên chủ thể phải nằm giữa.',
         LOGO_SQUARE:

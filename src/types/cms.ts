@@ -99,6 +99,31 @@ export type BannerSearchReq = {
  * ⚠️ `PUT` **thay toàn bộ** (đo 2026-10-13): field bỏ trống ⇒ `null` (`sortOrder` ⇒ 0). `ctaUrl: ""` ⇒ 400 —
  * muốn xoá phải **bỏ field**, không gửi chuỗi rỗng.
  */
+/**
+ * `AboutPageResDTO` (backend P15.2) — trang "Về chúng tôi", bảng **1 bản ghi**.
+ * `images` luôn đúng 5 phần tử theo slot 1..5 (`null` = trống). Web chỉ hiện số ảnh **lẻ**: bỏ ô trống,
+ * số chẵn thì bỏ ảnh cuối; ảnh chính giữa là ảnh to nhất.
+ */
+export type AboutPage = {
+    title: string
+    subtitle: string | null
+    /** HTML đã sanitize; ảnh trong nội dung là `/post/<file>`. */
+    content: string | null
+    images: (string | null)[]
+    metaTitle: string | null
+    metaDescription: string | null
+    lastModifiedDate: string | null
+}
+
+/** `UpdateAboutPageReqDTO` — không có ảnh (upload theo slot). `content` bỏ trống (undefined) = giữ nguyên. */
+export type AboutPagePayload = {
+    title: string
+    subtitle?: string
+    content?: string
+    metaTitle?: string
+    metaDescription?: string
+}
+
 export type BannerPayload = {
     position?: BannerPosition
     title: string

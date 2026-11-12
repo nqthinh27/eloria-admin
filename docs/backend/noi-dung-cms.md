@@ -1,4 +1,14 @@
-# Domain Nội dung CMS — bài viết · banner (backend Phase 15 + 15.1)
+# Domain Nội dung CMS — bài viết · banner · trang "Về chúng tôi" (backend Phase 15 + 15.1 + 15.2)
+
+## Trang "Về chúng tôi" — `/about-page` (P15.2, đo thật 2026-11-12, `superadmin`)
+
+> Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-phase15_2.md`. Bảng **1 bản ghi** — không search/tạo/xoá. Route FE `/about-page`.
+
+- `GET /about-page` ⇒ luôn có dữ liệu (backend tự tạo mặc định). `images` **luôn 5 phần tử** theo slot (null = trống) + `lastModifiedDate`.
+- `PUT /about-page` `{title*, subtitle?, content?, metaTitle?, metaDescription?}` — `content` không gửi = giữ nguyên; `<`/`>` hoặc field lạ ⇒ 400 `error.input.invalid`.
+- `POST /about-page/image/{slot}` (multipart `image`, chỉ ảnh, ≤15MB) · `DELETE /about-page/image/{slot}` · `PUT /about-page/image-order {order:[hoán vị 1..5]}` — đều trả bản ghi mới. Slot ngoài 1..5 ⇒ `error.aboutPage.imageSlotInvalid`; order sai ⇒ `error.aboutPage.imageOrderInvalid` (thiếu phần tử ⇒ `error.input.invalid`).
+- Storefront chỉ hiện số ảnh **lẻ** (bỏ ô trống, số chẵn bỏ ảnh cuối) — FE admin cảnh báo + xem trước theo đúng luật này.
+- Rich text (cả bài viết): backend nhận thêm bảng (`colspan/rowspan` 1–9) + class cố định `align-*` (p/h2–h4/img) · `img-sm|img-md` · `cms-button` (a) · `cms-table-bordered` (table) · `width/height` trên img; vẫn bỏ `style`/`colgroup`/class lạ.
 
 > Nguồn: `35.1.eloria-backend/docs/api/fe-handoff-phase15-admin.md` + `docs/decisions/phase-15-content-cms.md`
 > (đo 2026-10-13). Phía FE: route `/posts`, `/banners` — **chỉ SUPER_ADMIN**, kể cả đọc (ADMIN/STAFF ⇒ 403).

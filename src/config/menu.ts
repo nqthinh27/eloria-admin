@@ -5,6 +5,7 @@ import {
     ClipboardList,
     Clock,
     GalleryHorizontal,
+    Info,
     Landmark,
     LayoutGrid,
     LayoutDashboard,
@@ -131,6 +132,8 @@ export const mainMenu: MenuGroupType[] = [
             // CMS (Phase 20): mọi endpoint `/post/*` · `/banner/*` đều `[SUPER_ADMIN]` kể cả đọc.
             { titleKey: 'menu.posts', url: '/posts', icon: Newspaper, minRole: ERole.SUPER_ADMIN },
             { titleKey: 'menu.banners', url: '/banners', icon: GalleryHorizontal, minRole: ERole.SUPER_ADMIN },
+            // Trang "Về chúng tôi" (backend P15.2) — 1 bản ghi, sửa trực tiếp.
+            { titleKey: 'menu.aboutPage', url: '/about-page', icon: Info, minRole: ERole.SUPER_ADMIN },
         ],
     },
 ]

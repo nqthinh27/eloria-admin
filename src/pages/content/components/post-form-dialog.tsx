@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
-import { Loader2, Search, X } from 'lucide-react'
+import { Eye, Loader2, Search, X } from 'lucide-react'
 import { z } from 'zod'
 
 import { postApi } from '@/api/cms'
@@ -23,6 +23,7 @@ import { AsyncSuggest } from '@/components/async-suggest'
 import { SeoFields, META_DESCRIPTION_MAX, META_TITLE_MAX } from '@/components/seo-fields'
 import { ImageUploadField } from '@/components/image/image-upload-field'
 import { RichTextEditor } from './rich-text-editor'
+import { PostPreview, StorePreviewDialog } from './store-preview'
 
 /** Trần backend `CreatePostReqDTO.productIds`. */
 const MAX_PRODUCTS = 12
@@ -111,6 +112,7 @@ export function PostFormDialog({ open, onOpenChange, post, onCreate, onUpdate, o
     const [productKeyword, setProductKeyword] = useState('')
     const [stagedCover, setStagedCover] = useState<File | null>(null)
     const [coverBusy, setCoverBusy] = useState(false)
+    const [previewOpen, setPreviewOpen] = useState(false)
     const mediaDirtyRef = useRef(false)
 
     useEffect(() => {
@@ -474,6 +476,10 @@ export function PostFormDialog({ open, onOpenChange, post, onCreate, onUpdate, o
                         {!isEdit && <p className="text-muted-foreground text-xs">{t('post:post.form.statusNote')}</p>}
 
                         <DialogFooter>
+                            <Button type="button" variant="outline" className="sm:mr-auto" onClick={() => setPreviewOpen(true)}>
+                                <Eye className="size-4" />
+                                {t('common:storePreview.button')}
+                            </Button>
                             <Button type="button" variant="outline" disabled={isSubmitting} onClick={() => onOpenChange(false)}>
                                 {t('common:action.cancel')}
                             </Button>
@@ -488,6 +494,21 @@ export function PostFormDialog({ open, onOpenChange, post, onCreate, onUpdate, o
                         </DialogFooter>
                     </form>
                 </Form>
+
+                {/* Xem trước nội dung đang soạn (chưa cần lưu) — dựng gần giống trang `/tin-tuc/[slug]`. */}
+                <StorePreviewDialog
+                    open={previewOpen}
+                    onOpenChange={setPreviewOpen}
+                    title={isEdit ? t('post:post.form.editTitle') : t('post:post.form.addTitle')}>
+                    <PostPreview
+                        typeLabel={t(`post:post.type.${watched.type}`)}
+                        title={watched.title}
+                        excerpt={watched.excerpt}
+                        coverUrl={detail?.coverUrl ?? null}
+                        coverFile={stagedCover}
+                        content={watched.content}
+                    />
+                </StorePreviewDialog>
             </DialogContent>
         </Dialog>
     )

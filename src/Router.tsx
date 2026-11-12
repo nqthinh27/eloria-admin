@@ -23,6 +23,7 @@ import BrandListPage from './pages/product/BrandListPage'
 import BankAccountPage from './pages/bank-account/BankAccountPage'
 import PostListPage from './pages/content/PostListPage'
 import BannerListPage from './pages/content/BannerListPage'
+import AboutUsPage from './pages/content/AboutUsPage'
 import StoreSettingsPage from './pages/system/StoreSettingsPage'
 import Login from './pages/auth/Login'
 import ForgotPassword from './pages/auth/ForgotPassword'
@@ -88,6 +89,8 @@ export default function Router() {
                         {/* CMS Phase 20 — `/post/*` · `/banner/*` đều `[SUPER_ADMIN]` kể cả đọc. */}
                         <Route path="posts" element={<PostListPage />} />
                         <Route path="banners" element={<BannerListPage />} />
+                        {/* Trang "Về chúng tôi" — backend P15.2, `/about-page` `[SUPER_ADMIN]`. */}
+                        <Route path="about-page" element={<AboutUsPage />} />
                         {/* `GET/PUT /system-config` đều `[SUPER_ADMIN]` — Phase 24. */}
                         <Route path="store-settings" element={<StoreSettingsPage />} />
                     </Route>
